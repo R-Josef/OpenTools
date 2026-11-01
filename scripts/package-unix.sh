@@ -101,6 +101,10 @@ version="$(cd "$project_root" && mvn -q help:evaluate -Dexpression=project.versi
 [[ -n "$version" ]] || { printf 'Could not resolve Maven project version.\n' >&2; exit 2; }
 app_version="${version%%-*}"
 package_name="opentools-$version-$release"
+jpackage_version="$app_version"
+if [[ "$platform" == "macos" && "${app_version%%.*}" == "0" ]]; then
+    jpackage_version="1"
+fi
 
 hash_file() {
     if command -v sha256sum >/dev/null 2>&1; then
@@ -220,7 +224,7 @@ jpackage_args=(
     --input "$work/jpackage-input"
     --main-jar opentools.jar
     --main-class io.opentools.app.OpenToolsLauncher
-    --app-version "$app_version"
+    --app-version "$jpackage_version"
     --vendor "OpenTools contributors"
     --description "Local-first bioinformatics workbench"
     --copyright "Copyright (C) 2026 OpenTools contributors"
@@ -248,7 +252,7 @@ fi
 
 if [[ "$platform" == "linux" ]]; then
     image_root="$work/jpackage-output/OpenTools"
-    data_root="$image_root"
+    data_root="$image_root/lib"
     gui_launcher="$image_root/bin/OpenTools"
     cli_launcher="$image_root/bin/OpenToolsCLI"
     platform_readme="$project_root/packaging/linux/README.txt"
@@ -362,6 +366,9 @@ cp -R "$project_root/opentools-plugin-api/target/reports/apidocs" "$data_root/pl
 cp "$project_root/plugin-sdk/README.txt" "$data_root/plugin-sdk/README.txt"
 cp "$project_root/LICENSE" "$project_root/NOTICE" "$project_root/THIRD_PARTY_NOTICES.md" "$data_root/"
 cp "$platform_readme" "$data_root/README.txt"
+if [[ "$platform" == "linux" ]]; then
+    cp "$platform_readme" "$image_root/README.txt"
+fi
 cp "$manifest" "$data_root/licenses/tools-manifest.json"
 cp "$project_root/licenses/WRITTEN_SOURCE_OFFER.md" "$data_root/licenses/"
 
@@ -413,15 +420,15 @@ if [[ "$platform" == "linux" ]]; then
     required_entries=(
         "$package_name/bin/OpenTools"
         "$package_name/bin/OpenToolsCLI"
-        "$package_name/app/opentools.jar"
+        "$package_name/lib/app/opentools.jar"
         "$package_name/lib/runtime/lib/modules"
-        "$package_name/tools/blast/bin/blastn"
-        "$package_name/tools/diamond/diamond"
-        "$package_name/tools/hmmer/bin/hmmscan"
-        "$package_name/tools/muscle/muscle"
-        "$package_name/tools/trimal/trimal"
-        "$package_name/tools/iqtree/bin/iqtree2"
-        "$package_name/tools/mcscanx/MCScanX"
+        "$package_name/lib/tools/blast/bin/blastn"
+        "$package_name/lib/tools/diamond/diamond"
+        "$package_name/lib/tools/hmmer/bin/hmmscan"
+        "$package_name/lib/tools/muscle/muscle"
+        "$package_name/lib/tools/trimal/trimal"
+        "$package_name/lib/tools/iqtree/bin/iqtree2"
+        "$package_name/lib/tools/mcscanx/MCScanX"
     )
     entries="$(tar -tzf "$archive")"
 else

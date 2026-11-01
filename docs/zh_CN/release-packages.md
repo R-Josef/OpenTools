@@ -56,11 +56,12 @@ opentools-<version>-linux-x64/
   bin/
     OpenTools
     OpenToolsCLI
-  app/
-  lib/runtime/
-  tools/
-  docs/
-  licenses/
+  lib/
+    app/
+    runtime/
+    tools/
+    docs/
+    licenses/
 ```
 
 完整解压后运行 `bin/OpenTools` 或 `bin/OpenToolsCLI`。

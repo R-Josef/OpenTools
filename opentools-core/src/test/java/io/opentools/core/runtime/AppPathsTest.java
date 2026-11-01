@@ -77,4 +77,32 @@ final class AppPathsTest {
             }
         }
     }
+
+    @Test
+    void linuxJpackageLibDirectoryResolvesToApplicationResources() throws Exception {
+        Path root = Files.createDirectories(tempDir.resolve("package"));
+        Path lib = Files.createDirectories(root.resolve("lib"));
+        Path app = Files.createDirectories(lib.resolve("app"));
+        Files.createDirectories(lib.resolve("runtime/lib"));
+        Files.createDirectories(lib.resolve("lang"));
+        Path jar = Files.createFile(app.resolve("opentools.jar"));
+        String previousHome = System.getProperty("opentools.home");
+        String previousClassPath = System.getProperty("java.class.path");
+        try {
+            System.clearProperty("opentools.home");
+            System.setProperty("java.class.path", jar.toString());
+            assertEquals(lib.toAbsolutePath().normalize(), AppPaths.applicationHome());
+        } finally {
+            if (previousHome == null) {
+                System.clearProperty("opentools.home");
+            } else {
+                System.setProperty("opentools.home", previousHome);
+            }
+            if (previousClassPath == null) {
+                System.clearProperty("java.class.path");
+            } else {
+                System.setProperty("java.class.path", previousClassPath);
+            }
+        }
+    }
 }

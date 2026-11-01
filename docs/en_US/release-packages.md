@@ -50,11 +50,12 @@ opentools-<version>-linux-x64/
   bin/
     OpenTools
     OpenToolsCLI
-  app/
-  lib/runtime/
-  tools/
-  docs/
-  licenses/
+  lib/
+    app/
+    runtime/
+    tools/
+    docs/
+    licenses/
 ```
 
 Extract the complete archive and run `bin/OpenTools` or `bin/OpenToolsCLI`.
