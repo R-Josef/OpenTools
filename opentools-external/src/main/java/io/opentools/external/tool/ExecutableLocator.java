@@ -12,34 +12,18 @@ import java.util.Locale;
 import java.util.Map;
 
 public final class ExecutableLocator {
-    private static final Path WINDOWS_DEVELOPMENT_TOOLS =
-            Path.of("C:\\Program Files\\OpenToolsDeps\\bin");
-
     private final Path appHome;
     private final Map<String, String> environment;
     private final ProcessRunner processRunner;
-    private final List<Path> platformFallbackDirectories;
 
     public ExecutableLocator(Path appHome) {
         this(appHome, System.getenv(), new ProcessRunner());
     }
 
     public ExecutableLocator(Path appHome, Map<String, String> environment, ProcessRunner processRunner) {
-        this(appHome, environment, processRunner, defaultPlatformFallbackDirectories());
-    }
-
-    ExecutableLocator(
-            Path appHome,
-            Map<String, String> environment,
-            ProcessRunner processRunner,
-            List<Path> platformFallbackDirectories
-    ) {
         this.appHome = appHome.toAbsolutePath().normalize();
         this.environment = Map.copyOf(environment);
         this.processRunner = processRunner;
-        this.platformFallbackDirectories = platformFallbackDirectories.stream()
-                .map(path -> path.toAbsolutePath().normalize())
-                .toList();
     }
 
     public ToolStatus resolve(ExecutableSpec spec, Path explicitDirectory, Path explicitFile) {
@@ -75,16 +59,6 @@ public final class ExecutableLocator {
             executable = findOnPath(spec.executableNames());
         }
 
-        Path fallbackDirectory = null;
-        if (executable == null && !platformFallbackDirectories.isEmpty()) {
-            for (Path directory : platformFallbackDirectories) {
-                executable = findInDirectory(directory, spec.executableNames());
-                if (executable != null) {
-                    fallbackDirectory = directory;
-                    break;
-                }
-            }
-        }
         if (executable == null) {
             String diagnostic = "Not found. Set " + spec.environmentVariable()
                     + ", choose the tool directory, or add it to PATH.";
@@ -94,15 +68,7 @@ public final class ExecutableLocator {
             return new ToolStatus(spec.id(), spec.displayName(), null, null, false, diagnostic);
         }
 
-        String discoveryWarning = fallbackDirectory == null
-                ? configurationWarning
-                : joinDiagnostics(
-                        configurationWarning,
-                        "Found through Windows development fallback " + fallbackDirectory
-                                + ". This process's PATH did not resolve the tool; "
-                                + "restart Explorer after changing PATH, or set "
-                                + spec.environmentVariable() + "."
-                );
+        String discoveryWarning = configurationWarning;
         try {
             List<String> command = new ArrayList<>();
             command.add(executable.toString());
@@ -205,10 +171,6 @@ public final class ExecutableLocator {
 
     private static boolean isWindows() {
         return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win");
-    }
-
-    private static List<Path> defaultPlatformFallbackDirectories() {
-        return isWindows() ? List.of(WINDOWS_DEVELOPMENT_TOOLS) : List.of();
     }
 
     private static Path configuredPath(String configured) {

@@ -48,7 +48,7 @@ import java.util.concurrent.Callable;
 @Command(
         name = "opentools",
         mixinStandardHelpOptions = true,
-        version = "OpenTools 0.8.0-SNAPSHOT",
+        versionProvider = OpenToolsVersionProvider.class,
         description = "Local-first bioinformatics workbench",
         subcommands = {
                 OpenToolsCli.ToolsCommand.class,

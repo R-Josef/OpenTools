@@ -2,7 +2,7 @@
 set -euo pipefail
 
 tool_root="${1:-$PWD}"
-output_dir="${2:-$tool_root/OpenToolsDeps/native}"
+output_dir="${2:-$tool_root/dependencies/native}"
 job_count="${NUMBER_OF_PROCESSORS:-4}"
 
 mkdir -p "$output_dir"

@@ -35,4 +35,16 @@
             <artifactId>junit-jupiter</artifactId>
         </dependency>
     </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>io/opentools/core/runtime/version.properties</include>
+                </includes>
+            </resource>
+        </resources>
+    </build>
 </project>

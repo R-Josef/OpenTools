@@ -20,8 +20,8 @@ opentools-<version>-windows-x64/
 ```
 
 Start the GUI with `OpenTools.exe`. Use `OpenToolsCLI.exe` for terminals and MCP.
-Java, conda, MSYS2, and `C:\Program Files\OpenToolsDeps` are not required for the
-portable package because it uses its own runtime and `tools/` directory.
+Java, conda, and MSYS2 are not required for the portable package because it uses
+its own runtime and `tools/` directory.
 
 Do not start the package directly from a ZIP viewer and do not copy
 `OpenTools.exe` by itself. The current portable ZIP is unsigned and has no
@@ -42,8 +42,11 @@ java -jar opentools.jar doctor --json
 
 ## Build from source
 
+Install JDK 21 and point `JAVA_HOME` to it. Alternatively, configure your local
+`PATH` so that `java`, `mvn`, and `jpackage` can be invoked directly.
+
 ```powershell
-$env:JAVA_HOME = 'C:\Program Files\Java\jdk-21'
+$env:JAVA_HOME = '<JDK 21 installation directory>'
 $env:Path = "$env:JAVA_HOME\bin;$env:Path"
 mvn clean verify
 ```

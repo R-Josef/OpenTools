@@ -210,12 +210,7 @@ Copy-Item -LiteralPath $jar -Destination (Join-Path $jpackageInput "opentools.ja
 $native = if ($NativeBuildDirectory) {
     (Resolve-Path -LiteralPath $NativeBuildDirectory).Path
 } else {
-    $candidate = Join-Path $projectRoot ".verification\OpenToolsDeps\bin"
-    if (Test-Path -LiteralPath $candidate -PathType Container) {
-        $candidate
-    } else {
-        ""
-    }
+    ""
 }
 
 $toolArchiveRoots = @{}

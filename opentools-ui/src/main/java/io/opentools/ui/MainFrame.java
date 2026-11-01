@@ -2,6 +2,7 @@ package io.opentools.ui;
 
 import io.opentools.core.job.JobRecord;
 import io.opentools.core.i18n.LanguageManager;
+import io.opentools.core.runtime.AppVersion;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.core.workspace.Project;
@@ -80,8 +81,9 @@ final class MainFrame extends JFrame {
     private PluginPanel pluginPanel;
 
     MainFrame(OpenToolsGui.UiSession session) {
-        super("OpenTools");
+        super("OpenTools " + AppVersion.current());
         this.session = session;
+        setTitle(windowTitle());
         this.jobsModel = new JobsTableModel(session.language());
         this.jobsTable = new JTable(jobsModel);
         this.homeJobsTable = new JTable(jobsModel);
@@ -505,10 +507,17 @@ final class MainFrame extends JFrame {
         ));
         status.setForeground(new Color(95, 101, 106));
         bar.add(status, BorderLayout.WEST);
-        JLabel runtime = new JLabel("Java " + System.getProperty("java.version"));
+        JLabel runtime = new JLabel(
+                t("settings.version_label", "Version") + " " + AppVersion.current()
+                        + "  ·  Java " + System.getProperty("java.version")
+        );
         runtime.setForeground(new Color(120, 125, 130));
         bar.add(runtime, BorderLayout.EAST);
         return bar;
+    }
+
+    private String windowTitle() {
+        return "OpenTools " + AppVersion.current() + " · " + session.project().name();
     }
 
     private void showView(String view) {
@@ -622,7 +631,7 @@ final class MainFrame extends JFrame {
         refreshProjectLabels();
         refreshSettingsDetails();
         refreshRecentProjects();
-        setTitle("OpenTools · " + session.project().name());
+        setTitle(windowTitle());
         catalogPanel.rebind(session.execution());
         resultPanel.rebind(session.execution());
         refreshJobs();
@@ -659,6 +668,8 @@ final class MainFrame extends JFrame {
     private void refreshSettingsDetails() {
         Path appRoot = session.plugins().pluginsDirectory().getParent();
         settingsDetails.setText("<html>"
+                + "<b>" + escape(t("settings.version", "Application version")) + "</b><br>"
+                + escape(AppVersion.current()) + "<br><br>"
                 + "<b>" + escape(t("settings.java", "Java")) + "</b><br>"
                 + escape(System.getProperty("java.version")) + "<br><br>"
                 + "<b>" + escape(t("settings.os", "Operating system")) + "</b><br>"

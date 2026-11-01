@@ -2,7 +2,7 @@
 
 These examples require separately installed external programs. OpenTools first
 uses packaged `tools/`, then explicit task paths, `OPENTOOLS_*` variables, the
-inherited `PATH`, and finally the optional Windows development fallback.
+inherited `PATH`.
 
 ## Protein workflow
 

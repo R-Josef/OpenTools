@@ -46,10 +46,8 @@ GPL-3.0-or-later; bundled third-party programs retain their own licenses.
    private Java runtime and pinned Windows tools, and does not require conda or
    MSYS2 for end users.
 
-On Windows, a failed lookup may use the fixed development fallback
-`C:\Program Files\OpenToolsDeps\bin`. It never overrides a valid explicit path,
-`OPENTOOLS_*` value, or PATH result and is reported in Settings. Restart Explorer
-or sign out after changing PATH so newly launched processes inherit it.
+If an external program is available on `PATH`, OpenTools can use it. Restart
+Explorer or sign out after changing PATH so newly launched processes inherit it.
 
 Only Windows x64 is packaged in this repository today. Linux and macOS require
 their own CI jobs, tool sets, and platform verification. Signing, installers,
@@ -65,7 +63,7 @@ and automatic updates are not included yet.
 Building from source:
 
 ```powershell
-$env:JAVA_HOME = 'C:\Program Files\Java\jdk-21'
+$env:JAVA_HOME = '<JDK 21 installation directory>'
 $env:Path = "$env:JAVA_HOME\bin;$env:Path"
 mvn clean verify
 ```

@@ -18,27 +18,11 @@ $toolNames = @(
     "iqtree",
     "MCScanX"
 )
-$dependencyBin = "C:\Program Files\OpenToolsDeps\bin"
-$candidateDirectories = @(
-    $dependencyBin,
-    "C:\Program Files\NCBI\blast-2.17.0+\bin"
-)
 
 function Get-ToolState {
     param([string]$Name)
-    $command = Get-Command $Name -ErrorAction SilentlyContinue |
+    $command = Get-Command $Name -CommandType Application -ErrorAction SilentlyContinue |
         Select-Object -First 1
-    if ($null -eq $command) {
-        foreach ($directory in $candidateDirectories) {
-            $candidate = Get-ChildItem -LiteralPath $directory -File -ErrorAction SilentlyContinue |
-                Where-Object { $_.BaseName -ieq $Name } |
-                Select-Object -First 1
-            if ($null -ne $candidate) {
-                $command = [pscustomobject]@{ Source = $candidate.FullName }
-                break
-            }
-        }
-    }
     if ($null -eq $command) {
         return [pscustomobject]@{
             name = $Name
@@ -137,12 +121,6 @@ $report = [ordered]@{
     videoControllers = $videoControllers
     disks = $disks
     machinePath = $machinePath
-    dependencyBin = $dependencyBin
-    dependencyBinOnMachinePath = @(
-        $machinePath -split ";" | Where-Object {
-            $_.TrimEnd("\") -ieq $dependencyBin.TrimEnd("\")
-        }
-    ).Count -gt 0
     machinePathResolution = $machinePathResolution
     tools = @($toolNames | ForEach-Object { Get-ToolState $_ })
     environment = [pscustomobject]@{

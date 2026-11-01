@@ -4,6 +4,8 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -58,6 +60,39 @@ final class PublicExamplesTest {
                 }
             }
         }
+    }
+
+    @Test
+    void publicTextContainsNoUnsharedToolDirectory() throws Exception {
+        Path root = findProjectRoot();
+        List<Path> publicFiles = new ArrayList<>(List.of(
+                root.resolve("README.md"),
+                root.resolve("README.zh-CN.md")
+        ));
+        for (String directory : List.of("docs", "examples", "packaging")) {
+            try (var files = Files.walk(root.resolve(directory))) {
+                files.filter(Files::isRegularFile)
+                        .filter(PublicExamplesTest::isPublicTextFile)
+                        .forEach(publicFiles::add);
+            }
+        }
+
+        String localToolDirectory = "OpenTools" + "Deps";
+        for (Path file : publicFiles) {
+            assertFalse(
+                    Files.readString(file).contains(localToolDirectory),
+                    "Unshared tool directory in " + file
+            );
+        }
+    }
+
+    private static boolean isPublicTextFile(Path file) {
+        String name = file.getFileName().toString().toLowerCase();
+        return name.endsWith(".md")
+                || name.endsWith(".txt")
+                || name.endsWith(".json")
+                || name.endsWith(".yaml")
+                || name.endsWith(".yml");
     }
 
     private static Path findProjectRoot() {

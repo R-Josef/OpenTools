@@ -10,8 +10,7 @@ Changing language in Settings rebuilds the interface immediately; restarting is 
 required.
 
 This package contains a private Java runtime and independent third-party Windows
-programs under tools/. Java, conda, MSYS2, and C:\Program Files\OpenToolsDeps are
-not required.
+programs under tools/. Java, conda, and MSYS2 are not required.
 
 OpenTools is GPL-3.0-or-later. Third-party programs retain their own licenses.
 See licenses/ and THIRD_PARTY_NOTICES.md. This portable ZIP is unsigned and has

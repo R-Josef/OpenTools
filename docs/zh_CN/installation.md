@@ -20,8 +20,7 @@ opentools-<version>-windows-x64/
 ```
 
 解压后双击 `OpenTools.exe`；终端、批处理和 MCP 使用 `OpenToolsCLI.exe`。
-不需要安装 Java、conda、MSYS2，也不需要把
-`C:\Program Files\OpenToolsDeps` 加入 `PATH`。程序优先查找包内 `tools/`。
+不需要安装 Java、conda 或 MSYS2；程序优先查找包内 `tools/`。
 
 不要从只读压缩包内直接运行，也不要把 `OpenTools.exe` 单独复制到其他目录。
 若 Windows 显示未知发布者，这是当前未签名便携包的限制，不应绕过组织安全策略。
@@ -39,8 +38,11 @@ java -jar opentools.jar doctor --json
 
 ## 从源码构建
 
+需要 JDK 21，并确保 `JAVA_HOME` 指向 JDK；也可以先配置本机 `PATH`，使
+`java`、`mvn` 和 `jpackage` 均可直接调用。
+
 ```powershell
-$env:JAVA_HOME = 'C:\Program Files\Java\jdk-21'
+$env:JAVA_HOME = '<JDK 21 安装目录>'
 $env:Path = "$env:JAVA_HOME\bin;$env:Path"
 mvn clean verify
 ```

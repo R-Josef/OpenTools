@@ -18,14 +18,11 @@ independent programs:
 1. package `tools/`;
 2. explicit task directory or executable;
 3. `OPENTOOLS_*` environment variable;
-4. the system `PATH` inherited by the running process;
-5. Windows-only fallback `C:\Program Files\OpenToolsDeps\bin`.
+4. the system `PATH` inherited by the running process.
 
-The fifth entry is a development-environment fallback. It checks only that one
-fixed directory after every preceding lookup fails. It does not scan other
-Program Files directories or override a valid explicit path, `OPENTOOLS_*`
-value, or PATH result. When the fallback resolves a tool, Settings shows a
-warning because the current process PATH did not resolve it.
+OpenTools does not scan other fixed directories. If a program is available on
+`PATH`, OpenTools can use it. After changing `PATH`, make sure newly started
+OpenTools processes inherit the updated environment.
 
 OpenTools performs a bounded version check and records the executable, version,
 and arguments in the run manifest. External commands use structured arguments,
@@ -53,8 +50,8 @@ Running Explorer, terminal, and OpenTools processes do not receive later
 machine-level PATH changes automatically; they retain the environment captured
 at process start. For double-click launches, close the old OpenTools process and
 restart Explorer, or sign out and back in. Settings checks the PATH actually
-inherited by the current OpenTools process and shows the resolved executable
-and any fallback warning.
+inherited by the current OpenTools process and shows the resolved executable or
+a missing-tool diagnostic.
 
 ## Failure boundaries
 

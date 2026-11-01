@@ -86,10 +86,8 @@ mvn clean verify
   `OPENTOOLS_MCSCANX`；
 - 系统 `PATH`。
 
-Windows 开发环境在上述查找失败后还会检查固定目录
-`C:\Program Files\OpenToolsDeps\bin`。该后备不会覆盖显式路径、`OPENTOOLS_*`
-或 PATH，并会在 Settings 中明确提示；修改 PATH 后通常需要重启 Explorer 或重新
-登录，才能让新启动的程序继承更新后的环境。
+如果外部程序在系统 `PATH` 中可用，OpenTools 也能使用。修改 PATH 后通常需要重启
+Explorer 或重新登录，才能让新启动的程序继承更新后的环境。
 
 构建维护者从官方固定地址下载并校验 SHA-256，缓存后可离线复用。终端用户不需要
 conda。第三方许可证、源码地址和构建信息见 `licenses/`、

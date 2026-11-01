@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class ExecutableLocatorTest {
@@ -60,12 +61,11 @@ final class ExecutableLocatorTest {
     }
 
     @Test
-    void packagedToolsWinOverExplicitEnvironmentPathAndFallback() throws Exception {
+    void packagedToolsWinOverExplicitEnvironmentAndPath() throws Exception {
         Path packaged = createProbe(tempDir.resolve("tools/probe"));
         Path explicit = createProbe(tempDir.resolve("explicit"));
         Path environment = createProbe(tempDir.resolve("environment"));
         Path path = createProbe(tempDir.resolve("path"));
-        Path fallback = createProbe(tempDir.resolve("fallback"));
         ExecutableSpec spec = testSpec(List.of("tools/probe"));
 
         ToolStatus status = new ExecutableLocator(
@@ -74,19 +74,17 @@ final class ExecutableLocatorTest {
                         "OPENTOOLS_LOCATOR_TEST", environment.toString(),
                         "PATH", path.getParent().toString()
                 ),
-                new io.opentools.external.process.ProcessRunner(),
-                List.of(fallback.getParent())
+                new io.opentools.external.process.ProcessRunner()
         ).resolve(spec, explicit.getParent(), explicit);
 
         assertEquals(packaged.toAbsolutePath().normalize(), status.executable());
     }
 
     @Test
-    void explicitPathWinsOverEnvironmentPathAndFallback() throws Exception {
+    void explicitPathWinsOverEnvironmentAndPath() throws Exception {
         Path explicit = createProbe(tempDir.resolve("explicit"));
         Path environment = createProbe(tempDir.resolve("environment"));
         Path path = createProbe(tempDir.resolve("path"));
-        Path fallback = createProbe(tempDir.resolve("fallback"));
 
         ToolStatus status = new ExecutableLocator(
                 tempDir,
@@ -94,18 +92,16 @@ final class ExecutableLocatorTest {
                         "OPENTOOLS_LOCATOR_TEST", environment.toString(),
                         "PATH", path.getParent().toString()
                 ),
-                new io.opentools.external.process.ProcessRunner(),
-                List.of(fallback.getParent())
+                new io.opentools.external.process.ProcessRunner()
         ).resolve(testSpec(List.of()), explicit.getParent(), explicit);
 
         assertEquals(explicit.toAbsolutePath().normalize(), status.executable());
     }
 
     @Test
-    void environmentDirectoryWinsOverPathAndFallback() throws Exception {
+    void environmentDirectoryWinsOverPath() throws Exception {
         Path environment = createProbe(tempDir.resolve("environment"));
         Path path = createProbe(tempDir.resolve("path"));
-        Path fallback = createProbe(tempDir.resolve("fallback"));
 
         ToolStatus status = new ExecutableLocator(
                 tempDir,
@@ -113,43 +109,38 @@ final class ExecutableLocatorTest {
                         "OPENTOOLS_LOCATOR_TEST", environment.getParent().toString(),
                         "PATH", path.getParent().toString()
                 ),
-                new io.opentools.external.process.ProcessRunner(),
-                List.of(fallback.getParent())
+                new io.opentools.external.process.ProcessRunner()
         ).resolve(testSpec(List.of()), null, null);
 
         assertEquals(environment.toAbsolutePath().normalize(), status.executable());
     }
 
     @Test
-    void pathWinsOverWindowsDevelopmentFallback() throws Exception {
+    void locatesToolFromPath() throws Exception {
         Path path = createProbe(tempDir.resolve("path"));
-        Path fallback = createProbe(tempDir.resolve("fallback"));
 
         ToolStatus status = new ExecutableLocator(
                 tempDir,
                 Map.of("PATH", path.getParent().toString()),
-                new io.opentools.external.process.ProcessRunner(),
-                List.of(fallback.getParent())
+                new io.opentools.external.process.ProcessRunner()
         ).resolve(testSpec(List.of()), null, null);
 
         assertEquals(path.toAbsolutePath().normalize(), status.executable());
     }
 
     @Test
-    void stalePathFallsBackToWindowsDevelopmentDirectoryWithWarning() throws Exception {
-        Path fallback = createProbe(tempDir.resolve("fallback"));
+    void doesNotSearchUndocumentedDirectoriesWhenPathIsEmpty() throws Exception {
+        createProbe(tempDir.resolve("external"));
+        Path appHome = Files.createDirectories(tempDir.resolve("app"));
 
         ToolStatus status = new ExecutableLocator(
-                tempDir,
+                appHome,
                 Map.of("PATH", ""),
-                new io.opentools.external.process.ProcessRunner(),
-                List.of(fallback.getParent())
+                new io.opentools.external.process.ProcessRunner()
         ).resolve(testSpec(List.of()), null, null);
 
-        assertEquals(fallback.toAbsolutePath().normalize(), status.executable());
-        assertTrue(status.available());
-        assertTrue(status.diagnostic().contains("Windows development fallback"));
-        assertTrue(status.diagnostic().contains("restart Explorer"));
+        assertFalse(status.available());
+        assertTrue(status.diagnostic().contains("add it to PATH"));
     }
 
     private Path createProbe(Path directory) throws Exception {

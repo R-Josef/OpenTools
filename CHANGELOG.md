@@ -18,6 +18,11 @@
   GUI and console launchers, self-contained runtime, bundled docs, licenses,
   and seven external tools.
 - New `opentools-analysis` module and `BuiltInAnalysis` registration entry.
+- Application version is generated from the Maven project version and shown in
+  the GUI title, status bar, and Settings; CLI and MCP use the same source.
+- External executables are discovered only from packaged tools, explicit task
+  settings, `OPENTOOLS_*` variables, or the inherited `PATH`; machine-specific
+  fallback directories have been removed.
 - `fasta.filter`: streaming ID, regular-expression, length, GC, and N-content
   filters with a per-record reason report.
 - `fasta.transform`: forward/reverse/complement/reverse-complement transforms,
