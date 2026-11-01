@@ -204,7 +204,7 @@ if [[ -z "$native" ]]; then
     native="$work/native"
     HMMER_SOURCE_DIR="$(tool_root "$hmmer_json")" \
     MCSCANX_SOURCE_DIR="$(tool_root "$mcscanx_json")" \
-    TRIMAL_SOURCE_DIR="$(tool_root "$trimal_json")" \
+    TRIMAL_SOURCE_DIR="$(tool_root "$trimal_json")/source" \
         bash "$script_dir/build-unix-dependencies.sh" "$native"
 else
     native="$(cd "$native" && pwd)"
