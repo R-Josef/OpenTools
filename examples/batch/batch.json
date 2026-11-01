@@ -1,0 +1,19 @@
+{
+  "continueOnError": false,
+  "jobs": [
+    {
+      "toolId": "fasta.stats",
+      "parameters": {
+        "input": "sample.fa"
+      },
+      "dryRun": false
+    },
+    {
+      "toolId": "gxf.inspect",
+      "parameters": {
+        "input": "sample.gff3"
+      },
+      "dryRun": false
+    }
+  ]
+}

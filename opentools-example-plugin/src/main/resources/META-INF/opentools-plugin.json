@@ -1,0 +1,11 @@
+{
+  "id": "example.plugin",
+  "name": "Example OpenTools Plugin",
+  "version": "1.0.0",
+  "apiVersion": "1.0",
+  "mainClass": "io.opentools.examples.plugin.ExamplePlugin",
+  "description": "Reference plugin with a task, page, and private data directory.",
+  "author": "OpenTools contributors",
+  "dependencies": [],
+  "requestedCapabilities": ["tool", "page", "data"]
+}

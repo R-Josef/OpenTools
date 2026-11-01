@@ -1,0 +1,9 @@
+##gff-version 3
+chr1	OpenTools	gene	1000	5200	.	+	.	ID=geneA;Name=GeneA
+chr1	OpenTools	mRNA	1000	5200	.	+	.	ID=geneA.t1;Parent=geneA
+chr1	OpenTools	exon	1000	1500	.	+	.	ID=geneA.e1;Parent=geneA.t1
+chr1	OpenTools	exon	2300	2850	.	+	.	ID=geneA.e2;Parent=geneA.t1
+chr1	OpenTools	exon	4200	5200	.	+	.	ID=geneA.e3;Parent=geneA.t1
+chr1	OpenTools	CDS	1100	1500	.	+	0	ID=geneA.c1;Parent=geneA.t1
+chr1	OpenTools	CDS	2300	2850	.	+	0	ID=geneA.c2;Parent=geneA.t1
+chr1	OpenTools	CDS	4200	4900	.	+	0	ID=geneA.c3;Parent=geneA.t1

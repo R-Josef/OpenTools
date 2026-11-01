@@ -1,0 +1,3 @@
+query	seed_ortholog	Preferred_name	GOs	KEGG_ko	COG_category	evalue	score	Description
+gene1	1ABC	KIN1	GO:000001;GO:000002	ko:K00001	T	1e-50	900	Kinase
+gene2	2DEF	-	-	-	S	1e-20	300	Unknown

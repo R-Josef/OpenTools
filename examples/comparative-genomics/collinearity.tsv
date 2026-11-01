@@ -1,0 +1,4 @@
+block	block_score	gene_a	gene_b	pair_index
+1	100	geneA	geneX	0
+1	100	geneB	geneY	1
+1	100	geneC	geneZ	2

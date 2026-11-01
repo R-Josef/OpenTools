@@ -1,0 +1,448 @@
+# Changelog
+
+## 0.8.0-SNAPSHOT
+
+### Added
+
+- Public GitHub-facing README, user guides, task reference, file-format,
+  CLI/MCP, plugin, external-tool, release-package, FAQ, and error-code docs.
+- English public homepage and a linked `README.zh-CN.md` Chinese edition.
+- Complete locale-scoped user documentation under `docs/en_US` and
+  `docs/zh_CN`, including category pages and localized screenshots.
+- Offline in-app Markdown Docs page with searchable navigation, category task
+  lists, descriptor-generated parameter tables, safe local links/images, and
+  all 86 built-in task pages.
+- Pinned Windows x64 third-party tool manifest with official URLs, SHA-256
+  values, licenses, source URLs, build recipes, and offline cache reuse.
+- Windows x64 portable app-image pipeline using JDK 21 `jpackage`, with separate
+  GUI and console launchers, self-contained runtime, bundled docs, licenses,
+  and seven external tools.
+- New `opentools-analysis` module and `BuiltInAnalysis` registration entry.
+- `fasta.filter`: streaming ID, regular-expression, length, GC, and N-content
+  filters with a per-record reason report.
+- `fasta.transform`: forward/reverse/complement/reverse-complement transforms,
+  uppercase/lowercase modes, sequence-type checks, and invalid-character cleanup.
+- `fasta.subsequence`: 1-based inclusive whole-record and region extraction,
+  negative-strand reverse complement, duplicate source-ID diagnostics, and
+  missing/out-of-range diagnostics.
+- Gzip output support through the shared `Compression` utility.
+- F1 examples and completion notes.
+- F2 annotation/BED tools: filtering, conversion, overlap detection,
+  representative transcript selection, ID mapping, annotation merge/split,
+  diagnostics and safe repairs, gene-density windows, BED statistics, and
+  BED-to-GFF3 conversion.
+- BED3/BED3+ reader and writer with 0-based half-open validation.
+- F3 alignment and annotation tools: BLAST XML/RBH/FASTQ/region workflows,
+  HMMER hmmscan, Pfam and eggNOG imports, MUSCLE, and trimAl.
+- Streaming FASTQ parser and FASTQ-to-FASTA query preparation.
+- F4 expression normalization, Pearson/Spearman correlation, PCA, and
+  differential-analysis input preparation.
+- Generic serializable scatter/line/bar/stacked-bar/box/violin plotting with
+  PCA, correlation, volcano, box, violin, and bar tasks.
+- F5 offline GO/KEGG enrichment, GO hierarchy levels, and enrichment bar/bubble
+  plots with hypergeometric tests and Benjamini-Hochberg correction.
+- F6 Newick summary/subset/render, IQ-TREE, MCScanX input/run/import,
+  collinearity/dot plots, and approximate Ka/Ks calculation.
+- F7 sequence logos, gene-location/domain/motif plots, circular overviews, and
+  eFP-style expression heatmaps.
+- F8 HTSJDK-backed SAM/BAM/CRAM statistics, subsetting, coverage, VCF
+  statistics/filtering, and BED mean coverage.
+- F9 table filter, column selection, join, transpose, deduplication, pivot, and
+  regex replacement with gzip input support.
+- Completed F1 with FASTA rename/conversion, six-frame ORF prediction, FASTQ
+  statistics, and quality/length/N filtering with per-read reasons.
+- F1 limitation pass: 24 unambiguous NCBI genetic-code tables in ORF and CDS
+  translation, Phred+33/Phred+64/Solexa+64 quality decoding, gzip region-file
+  input, and RFC 4180-style multiline TSV conversion.
+- Shared quoted delimited reader/writer used by preview, sequence conversion,
+  table operations, and generic plotting.
+- Random-access index for uniformly wrapped uncompressed genome FASTA.
+- Streaming first pass for representative-transcript selection and explicit
+  record bounds for overlap and annotation SPLIT operations.
+- Disk-spooled `gxf.overlap` mode using an indexed temporary SQLite feature
+  table, with automatic fallback from the bounded in-memory sweep.
+- Deterministic average-linkage row/column clustering for heatmaps.
+- OBO 1.4 parsing and alternate-ID normalization for GO levels.
+- SeqLogo PWM computation from equal-length FASTA with pseudocounts and
+  optional reverse-complement counting.
+- Secure StAX conversion for BLAST XML and `alignment.hmmer.hmmsearch`.
+- Reusable BLAST databases keyed by subject hash, makeblastdb version, program,
+  and database type, with cross-process locking, atomic publication, refresh,
+  interruption recovery, and Windows space-path staging.
+- Bounded BLAST database caches with byte and entry limits, LRU metadata,
+  per-use leases, active-entry protection, interrupted-eviction recovery, and
+  configurable `cacheMaxMegabytes` / `cacheMaxEntries`.
+- BAM/CRAM index queries, BAI creation, and interval-event coverage without
+  per-base arrays.
+- Optional QNAME-based overlapping mate deduplication for BAM/BED coverage,
+  preserving spliced match loci.
+- TBI indexes for compressed VCF and CSI indexes for BCF filter output, with
+  sequence-dictionary and sort-order validation.
+- Streaming table filter/select/replace/deduplicate, bounded indexed joins with
+  compound keys and INNER/LEFT/RIGHT/FULL modes, plus incremental pivot
+  SUM/MEAN/COUNT/MIN/MAX aggregation.
+- `table.transpose` disk spool mode using a temporary SQLite cell table, with
+  automatic fallback when the in-memory cell bound is reached.
+- Temporary SQLite capacity limits for `gxf.overlap` and `table.transpose`,
+  with stable disk-full/I/O/memory errors and guaranteed working-file cleanup.
+- Process-level SQLite spool benchmark for 100,000-row transpose and 100,000
+  sparse annotation intervals, including sampled working-set and temporary-file
+  peaks.
+- Black-box TBtools performance comparison harness for FASTA statistics and
+  table transpose, using TBtools' public RPC without inspecting its internals.
+- Bounded ordered parallel record processing for FASTA/FASTQ/GXF/BED, indexed
+  BAM/BED coverage, VCF statistics, Ka/Ks, expression correlation, and heatmap
+  distance rows.
+- Indexed `hts.bam.subset` region-level parallelism with independent
+  `SamReader` workers, deterministic coordinate merging, duplicate-region
+  suppression, and optional queryable BAI output.
+- Ordered `hts.vcf.filter` decision blocks with a single dictionary-order
+  VCF/BCF writer and single-threaded TBI/CSI creation.
+- Bounded record-block parallelism for `table.filter`, `table.select-columns`,
+  and `table.replace`, preserving quoted and multiline logical records.
+- Paired publication for BAM/VCF outputs and index sidecars, including rollback
+  of a newly published primary file when the sidecar cannot be published.
+- Unified `threads` parameters with `0=AUTO`, `1=sequential`, and capped explicit
+  worker counts; AUTO thresholds vary by task I/O profile.
+- F8 indexed-versus-linear process-level benchmark script.
+- Swing project workflow: create/open projects, recent-project persistence,
+  invalid-project diagnostics, active-job switch protection, and full runtime
+  session rebuild after switching.
+- Tools catalog category filtering with visible group headers, task counts, and
+  a workflow-oriented category order. Global search resets to all categories.
+- Reproducible target-environment, display-mode, GUI launcher, and 1 GB HTS
+  pressure scripts under `scripts/`.
+- Real external-tool validation for BLAST+ 2.17.0, DIAMOND 2.2.8, HMMER 3.4,
+  MUSCLE 5.3, trimAl 1.5, IQ-TREE 2.4.0, and MCScanX 1.0.0.
+- Physical 4K UI validation at 3840x2160/60 Hz with 150% Windows DPI and app
+  scaling checks at 1.0 and 1.5.
+- 1.042 GiB BAM, 2.000 GiB VCF, 1.115 GiB BCF, and 1.094 GiB filtered VCF.gz
+  pressure runs with sampled peak working-set measurements.
+- Reference-dependent CRAM subset coverage, including missing-reference failure
+  and queryable output BAI.
+
+### Changed
+
+- Internal phase history, real-machine reports, benchmarks, and planning records
+  moved outside the public repository under the parent `docs/OpenToolsInternal`
+  archive.
+- Public distribution docs now use an explicit allowlist; no internal completion
+  notes or target-machine evidence is packaged.
+- Docs now selects `docs/en_US` or `docs/zh_CN` from the active interface
+  language, with explicit English fallback for languages without a bundled guide.
+- Changing interface language in Settings now rebuilds the main window in the
+  same process and takes effect immediately instead of requiring a restart.
+- External tools are discovered from the portable package first, then explicit
+  paths, environment variables, and PATH.
+- Windows child processes remove the private Java runtime/app directories from
+  PATH and retain the executable directory, preventing launcher DLL conflicts.
+- Microsoft VC++ runtime support is pinned and recorded for bundled BLAST+.
+- Project version advanced to `0.8.0-SNAPSHOT`.
+- GUI, CLI, and MCP runtimes register the analysis tasks through the same
+  `ToolRegistry` and generate their JSON Schema from the task descriptors.
+- Built-in task count increased from 14 to 17.
+- Built-in task count increased again to 27 after F2.
+- Built-in task count increased to 36 after F3.
+- Built-in task count increased to 46 after F4.
+- Built-in task count increased to 51 after F5.
+- Built-in task count increased to 61 after F6.
+- Built-in task count increased to 67 after F7.
+- Built-in task count increased to 73 after F8.
+- Built-in task count increased to 80 after F9.
+- Built-in task count increased to 85 after completing F1, then to 86 with
+  `alignment.hmmer.hmmsearch`.
+- Filter and transform outputs are committed from temporary files only after a
+  successful complete read.
+- Disk overlap now streams an index-ordered SQLite sweep with bounded active
+  intervals instead of issuing one interval query per annotation record.
+- Mate deduplication includes read group in the template identity, preventing
+  same-name reads from different read groups from being merged.
+- Parallel record paths preserve input order, bound in-flight batches, propagate
+  worker failures, and publish output only after successful completion.
+- BAM subset reuses indexed region queries without per-worker resorting; the
+  final merge remains ordered and the compressed writer is single-threaded.
+- VCF filter validates dictionary order while writing retained records instead
+  of pre-reading the complete input for an index pass.
+- Table AUTO remains sequential for filter, column selection, and replacement;
+  explicit worker counts remain available for measured high-cost cases.
+- The task catalog now groups related tools instead of interleaving all 86 tasks
+  alphabetically across domains.
+- hmmscan now stages the complete pressed database (`h3f/h3i/h3m/h3p`) into its
+  temporary workspace and reports missing sidecars explicitly.
+- MCScanX input preparation now writes standard sequence/gene-ID coordinates
+  instead of chromosome/type placeholders, and handles tools without a version
+  command without failing after successful output.
+
+### Verification
+
+- Docs tests cover Markdown blocks, escaping, unsafe schemes, absolute and
+  traversal paths, both language roots, local links/images, language switching,
+  category navigation, all 86 tasks, fallback, and packaged classpath resources.
+- Windows portable ZIP verification checks required runtime, docs, license, and
+  external-tool entries; clean-PATH console startup and all tool discovery were
+  tested from the app image.
+- Added coverage for 100,000-record gzip streaming, coordinate boundaries,
+  negative strand, invalid characters, duplicate IDs, missing IDs, and empty
+  extraction results.
+- CLI and MCP integration tests exercise the same F1 task contracts.
+- `mvn clean verify` passes 207 tests with 0 failures, errors, or skips.
+- Indexed BAM benchmark: 200,000 100-bp records, `subset` 1.25x and `coverage`
+  1.17x faster than the linear fallback in a process-level Java 21 smoke test.
+- SQLite spool benchmark, Java 21.0.9, three process-level runs:
+  100,000-row DISK transpose median 4,209.5 ms with 421.4 MiB maximum sampled
+  working set and 59.1 MiB sampled temporary SQLite peak; 100,000 sparse GFF
+  intervals median 1,356.3 ms with 291.5 MiB maximum sampled working set and
+  6.6 MiB temporary SQLite peak.
+- A 20,000-interval overlap smoke test fell from a 132.9 s median for per-record
+  queries to 1.01 s with the streaming sweep.
+- Parallel smoke test, Java 21.0.9: FASTQ stats improved from 216 ms to 162 ms,
+  GXF inspection from 150 ms to 101 ms, and VCF stats from 338 ms to 286 ms.
+  All parallel outputs were byte-identical to sequential output.
+- Careful-parallel process benchmark, Java 21.0.9, three runs per configuration:
+  16-region indexed BAM subset improved from 1,860.18 ms to 1,579.14 ms
+  (1.18x, sampled peak working set 549.84 to 611.14 MiB); 300,000-variant VCF
+  filter improved from 1,999.67 ms to 1,961.60 ms (1.02x, 476.11 to 490.91 MiB).
+  All output SHA-256 values matched.
+- The same benchmark kept AUTO sequential for sub-threshold inputs. At 7.9 MiB,
+  table filter/select/replace AUTO resolved to one worker; explicit four-worker
+  medians were 1.02x, 0.98x, and 0.97x versus sequential, respectively.
+- A separate 2,000,000-row (157.47 MiB) Java 21 smoke run did not justify table
+  AUTO parallelism: explicit four-worker ratios were 1.00x for filter, 0.96x for
+  column selection, and 1.01x for replacement. Table AUTO therefore remains
+  sequential at all sizes; explicit `threads=2-64` is the opt-in path.
+- A 100,000-record sparse `gxf.overlap` DISK run remained sequential at a
+  1,298.74 ms median with a sampled 279.63 MiB median peak working set.
+
+### Known limitations
+
+- A single FASTA record still resides in memory while parsed and transformed.
+- Subsequence extraction performs two streaming passes and retains request
+  metadata plus occurrence counts for requested IDs.
+- AUTO sequence typing is alphabet-based and may need an explicit type for
+  ambiguous biological sequences.
+- Region-file input is parsed into the existing request model and is not a
+  streaming request engine.
+- Genome random access is indexed only for uncompressed, uniformly wrapped
+  FASTA; gzip or irregular wrapping falls back to in-memory storage.
+- NCBI tables 27/28 are excluded because stop/amino-acid interpretation can be
+  context-dependent.
+- FASTQ AUTO cannot distinguish Phred+64 from Solexa+64 and filter AUTO requires
+  a full detection pass.
+- Overlap AUTO/DISK needs temporary disk space and bounds dense active intervals
+  with `maxActiveRecords`; annotation SPLIT still uses a bounded in-memory cache.
+- IN_MEMORY table transpose remains fully resident and bounded; AUTO/DISK modes
+  require temporary disk space and are bounded by `maxTempMegabytes`. Pivot
+  custom expressions and multi-value columns remain out of scope.
+- Coverage mate deduplication is opt-in and slower than the default event path;
+  indexed coverage still queries each BED interval independently.
+- BLAST cache maintenance is best-effort under lock contention or filesystem
+  errors and may briefly exceed its configured limit until active leases end;
+  multi-host shared-cache consistency remains out of scope.
+- Indexed VCF/BCF output requires a sequence dictionary and dictionary-ordered
+  records; ordinary uncompressed VCF output remains unindexed.
+- Large VCF/BCF performance and working-set pressure have been tested locally;
+  results are environment-specific and documented in
+  `docs/目标环境与1GB压力验证.md`.
+- Recent GUI projects are a single-machine setting; concurrent app instances use
+  last-writer-wins behavior.
+- Parallel record tasks still use one sequential decompression reader and one
+  ordered output writer; small files can be slower with explicit extra threads.
+- Table transpose/global-state tables, `gxf.overlap`, and final Java2D rendering
+  remain sequential by design. `gxf.overlap` has no text-region random access;
+  partitioning, ordered pair merging, and global `maxPairs` bounds did not show
+  enough measured benefit to justify AUTO parallelism.
+
+## 0.7.0-SNAPSHOT
+
+### Added
+
+- Reproducible P7 performance smoke script for startup, 200k-record FASTA
+  statistics, and bounded 200k-row table preview.
+- Font-scale override through `-Dopentools.ui.scale` with bounded 75%-250%
+  behavior.
+- Accessible names/descriptions for the main window, navigation, task catalog,
+  parameter controls, job/result tables, plugin table, and interactive plot.
+- Explicit security, data-boundary, error-code, P7 acceptance, and benchmark
+  documentation.
+
+### Changed
+
+- Project version advanced to `0.7.0-SNAPSHOT`.
+- New plug-ins are disabled by default. Copying a JAR never executes it until
+  an explicit `plugins enable` / GUI enable action.
+- Plugin JARs now have file, entry, individual-entry, and unpacked-size limits
+  and reject absolute or traversal entry names.
+- MCP HTTP uses a bounded worker pool, enforces JSON Content-Type, security
+  response headers, longer explicit tokens, and stricter Origin behavior.
+- Batch automation is capped at 100 items and batch files at 10 MB.
+- Removed unused Batik dependency management.
+- P8 release engineering is paused in favor of prioritized TBtools feature
+  coverage waves documented in `docs/TBtools功能覆盖与后续开发交接.md`.
+
+### Known limitations
+
+- Enabled Java plug-ins remain trusted in-process code and are not a security
+  sandbox.
+- MCP HTTP remains loopback-only and has no TLS or token rotation.
+- Physical 4K at 150% Windows DPI has been validated. A 100% DPI and mixed
+  multi-monitor matrix remains a separate display configuration.
+- The recorded benchmark is a single-machine smoke baseline, not a statistically
+  stable microbenchmark.
+
+## 0.6.0-SNAPSHOT
+
+### Added
+
+- Dedicated `opentools-mcp` automation module using the same task registry,
+  validation, job store, plugins, and execution service as the GUI and CLI.
+- Draft 2020-12 JSON Schema generation for every registered task parameter.
+- MCP over stdio and authenticated loopback HTTP for task search, description,
+  validation, submission, status/waits, cancellation, retry, results, recent
+  jobs, format detection, and sequential batches.
+- Random bearer-token generation, loopback binding, local Origin checks, and
+  request-size limits for the HTTP transport.
+- Workspace path policy for MCP and batch automation with relative-to-project
+  path resolution and overwrite rejection.
+- Stable CLI JSON envelope with `ok`, `apiVersion`, `data`, and `error`.
+- Stable CLI exit codes for input, dependency, execution, cancellation, and
+  internal failures.
+- Sequential JSON batch execution with dry-run and continue-on-error controls.
+- OpenTools Agent Skill with MCP and CLI operating guidance.
+
+### Changed
+
+- Project version advanced to `0.6.0-SNAPSHOT`.
+- Automation now records normalized/default task parameters before submission.
+- Job failures in `--json` mode return structured error details instead of
+  stack traces.
+
+### Known limitations
+
+- Batch execution is sequential and does not yet resolve a workflow DAG or
+  artifact references between jobs.
+- MCP HTTP has no TLS; it is restricted to loopback and a per-process token.
+- MCP result reads return the bounded persisted result document, not streaming
+  output while a task is running.
+- stdio transport relies on the parent process for access control.
+
+## 0.5.0-SNAPSHOT
+
+### Added
+
+- Plugin API 1.0 with declared plugin dependencies and requested capabilities.
+- Separate child-first class loader per plugin, with dependency JARs on the
+  plugin's private class path.
+- Topological dependency loading, missing-dependency and cycle diagnostics,
+  API compatibility checks, capability enforcement, and failure rollback.
+- Persistent enable/disable state in `plugins/plugin-state.json`.
+- CLI commands `plugins inspect`, `plugins enable`, and `plugins disable`.
+- Automatic plugin discovery before CLI task execution.
+- Enable/disable controls and API/dependency columns in the Swing plugin panel.
+- Buildable example plugin with a registered task, page, and private data
+  directory.
+- Self-contained plugin API with public task contracts and a compile SDK.
+
+### Changed
+
+- Project version advanced to `0.5.0-SNAPSHOT`.
+- Omitted capabilities default to the tool/page/data behavior.
+- Plugin tools are removed from the shared registry when plugins are disabled
+  or fail to initialize.
+
+### Known limitations
+
+- Java plugins still run inside the host JVM and are not strongly sandboxed.
+- Plugin dependency declarations reference plugin IDs, not version ranges.
+- Plugin scanning reloads currently enabled plugins.
+
+## 0.4.0-SNAPSHOT
+
+### Added
+
+- Dedicated `opentools-visualization` module with serializable PlotSpec,
+  typed heatmap/Venn/gene data, and PlotModel lineage documents.
+- Headless PNG, SVG, and PDF rendering through a shared plot scene model.
+- `visual.heatmap` with streamed matrix parsing, bounded fixed-seed sampling,
+  missing/invalid diagnostics, deterministic row and column ordering,
+  row z-score normalization, configurable palettes, and processed-matrix export.
+- `visual.venn` with exact set intersections and automatic Venn/UpSet display
+  selection.
+- `visual.gene-structure` for selected GFF3/GTF loci with transcript, exon,
+  CDS, strand, and coordinate tracks.
+- Interactive Swing Plot result tab with hover details, wheel zoom, drag pan,
+  fit-to-window, and PNG/SVG/PDF export.
+- External language keys and P4 example inputs.
+
+### Changed
+
+- Project version advanced to `0.4.0-SNAPSHOT`.
+- Task execution now records declared defaults in jobs, manifests, retries,
+  and CLI runs before task execution.
+- Plot inputs, styles, ordering, normalization, dimensions, DPI, formats, and
+  lineage are persisted with every visual job.
+
+### Known limitations
+
+- Heatmap ordering is deterministic mean/name sorting; hierarchical clustering
+  is not implemented yet.
+- Oversized heatmaps use fixed-seed sampling for display rather than loading
+  every source cell into the Swing viewer.
+- Gene-structure parsing currently targets the common GFF3/GTF grouping model.
+- PDF Chinese text requires an embeddable system font; PNG and SVG preserve
+  Unicode labels independently.
+
+## 0.3.0-SNAPSHOT
+
+### Added
+
+- Dedicated external-tool module for executable discovery and version checks.
+- Shell-free process runner with merged output capture, timeout, cancellation,
+  process-tree termination, and full run-log integration.
+- Local BLAST+ workflow with automatic program selection for common sequence
+  type combinations.
+- Temporary BLAST database construction through `makeblastdb`.
+- BLAST tabular best-hit summaries and result-table previews.
+- DIAMOND `makedb` and `blastp` workflow with best-hit summaries.
+- External tool diagnostics in CLI `doctor` and Swing Settings.
+- Support for project, input, and output paths containing spaces and Chinese
+  characters, including the BLAST+ Windows path workaround.
+
+### Changed
+
+- Project version advanced to `0.3.0-SNAPSHOT`.
+- External-tool versions and actual program names are recorded in manifests.
+
+## 0.2.0-SNAPSHOT
+
+### Added
+
+- GFF3/GTF unified parsing for features and attributes.
+- Annotation inspection with feature and sequence summaries.
+- Genome/annotation sequence-name and coordinate compatibility checks.
+- Feature sequence extraction with `FEATURE`, `UPSTREAM`, `DOWNSTREAM`, and
+  `WITH_FLANKS` modes.
+- Negative-strand segment concatenation and strand-aware promoter extraction.
+- CDS-to-protein translation with the standard genetic code.
+- Bounded preview of large TSV/CSV files without retaining all rows in memory.
+- Job retry from GUI and CLI.
+- Copy a job's equivalent CLI command from the Desktop UI.
+- Export displayed result-table data as TSV or CSV.
+- OpenTools version and complete input provenance in run manifests.
+
+### Changed
+
+- Project version advanced to `0.2.0-SNAPSHOT`.
+- English and Simplified Chinese language files expanded for all P2 tasks.
+
+## 0.1.0-SNAPSHOT
+
+### Added
+
+- Java 21 Maven multi-module foundation.
+- Swing/FlatLaf desktop workbench.
+- FASTA statistics, extraction, merge, and split.
+- SQLite job history and reproducible manifests.
+- CLI task discovery, validation, execution, logs, cancellation, and plugins.
+- Plugin loading foundation.
+- External English and Simplified Chinese language files.
+- GPL-3.0-or-later licensing and third-party notices.

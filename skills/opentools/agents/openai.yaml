@@ -1,0 +1,3 @@
+interface:
+  display_name: "OpenTools"
+  short_description: "Run local bioinformatics tasks reproducibly"

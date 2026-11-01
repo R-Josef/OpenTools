@@ -1,0 +1,13 @@
+target/
+.release-cache/
+.idea/
+.vscode/
+*.iml
+*.log
+.opentools/
+.verification/
+runs/
+plugins/*.jar
+plugins/data/
+plugins/logs/
+

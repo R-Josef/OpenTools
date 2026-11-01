@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.opentools</groupId>
+        <artifactId>opentools-parent</artifactId>
+        <version>0.8.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>opentools-app</artifactId>
+    <name>OpenTools Application</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.opentools</groupId>
+            <artifactId>opentools-cli</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.opentools</groupId>
+            <artifactId>opentools-ui</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>opentools</finalName>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>io.opentools.app.OpenToolsLauncher</mainClass>
+                                    <manifestEntries>
+                                        <Implementation-Title>OpenTools</Implementation-Title>
+                                        <Implementation-Version>${project.version}</Implementation-Version>
+                                    </manifestEntries>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>assemble-distribution</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${project.build.directory}/dist/lang"/>
+                                <mkdir dir="${project.build.directory}/dist/plugin-sdk"/>
+                                <copy file="${project.build.directory}/opentools.jar"
+                                      tofile="${project.build.directory}/dist/opentools.jar"/>
+                                <copy file="${project.basedir}/../opentools-plugin-api/target/opentools-plugin-api-${project.version}.jar"
+                                      tofile="${project.build.directory}/dist/plugin-sdk/opentools-plugin-api-${project.version}.jar"/>
+                                <copy file="${project.basedir}/../opentools-plugin-api/target/opentools-plugin-api-${project.version}-javadoc.jar"
+                                      tofile="${project.build.directory}/dist/plugin-sdk/opentools-plugin-api-${project.version}-javadoc.jar"/>
+                                <copy todir="${project.build.directory}/dist/plugin-sdk/javadoc">
+                                    <fileset dir="${project.basedir}/../opentools-plugin-api/target/reports/apidocs"/>
+                                </copy>
+                                <copy file="${project.basedir}/../plugin-sdk/README.txt"
+                                      tofile="${project.build.directory}/dist/plugin-sdk/README.txt"/>
+                                <copy todir="${project.build.directory}/dist/lang">
+                                    <fileset dir="${project.basedir}/../lang"/>
+                                </copy>
+                                <copy file="${project.basedir}/../LICENSE"
+                                      tofile="${project.build.directory}/dist/LICENSE"/>
+                                <copy file="${project.basedir}/../NOTICE"
+                                      tofile="${project.build.directory}/dist/NOTICE"/>
+                                <copy file="${project.basedir}/../THIRD_PARTY_NOTICES.md"
+                                      tofile="${project.build.directory}/dist/THIRD_PARTY_NOTICES.md"/>
+                                <copy file="${project.basedir}/../README.md"
+                                      tofile="${project.build.directory}/dist/README.md"/>
+                                <copy file="${project.basedir}/../README.zh-CN.md"
+                                      tofile="${project.build.directory}/dist/README.zh-CN.md"/>
+                                <copy file="${project.basedir}/../CHANGELOG.md"
+                                      tofile="${project.build.directory}/dist/CHANGELOG.md"/>
+                                <mkdir dir="${project.build.directory}/dist/docs"/>
+                                <copy todir="${project.build.directory}/dist/docs">
+                                    <fileset dir="${project.basedir}/../docs">
+                                        <include name="README.md"/>
+                                        <include name="en_US/**"/>
+                                        <include name="zh_CN/**"/>
+                                    </fileset>
+                                </copy>
+                                <mkdir dir="${project.build.directory}/dist/examples"/>
+                                <copy todir="${project.build.directory}/dist/examples">
+                                    <fileset dir="${project.basedir}/../examples"/>
+                                </copy>
+                                <mkdir dir="${project.build.directory}/dist/examples/plugins"/>
+                                <copy file="${project.basedir}/../opentools-example-plugin/target/opentools-example-plugin.jar"
+                                      failonerror="false"
+                                      tofile="${project.build.directory}/dist/examples/plugins/opentools-example-plugin.jar"/>
+                                <mkdir dir="${project.build.directory}/dist/skills"/>
+                                <copy todir="${project.build.directory}/dist/skills">
+                                    <fileset dir="${project.basedir}/../skills"/>
+                                </copy>
+                                <mkdir dir="${project.build.directory}/dist/scripts"/>
+                                <copy todir="${project.build.directory}/dist/scripts">
+                                    <fileset dir="${project.basedir}/../scripts"/>
+                                </copy>
+                                <copy file="${project.basedir}/../plugins/README.md"
+                                      tofile="${project.build.directory}/dist/plugins/README.md"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

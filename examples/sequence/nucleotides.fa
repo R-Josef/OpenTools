@@ -1,0 +1,8 @@
+>chr1 example chromosome
+ACGTACGTACGTNNNNACGT
+>geneA upstream sequence
+GGCCATTAGC
+>duplicate first
+TTAA
+>duplicate second
+CCGG

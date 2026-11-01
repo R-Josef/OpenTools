@@ -1,0 +1,8 @@
+##gff-version 3
+chr1	OpenTools	gene	1	100	.	+	.	ID=g1;Name=gene-one
+chr1	OpenTools	mRNA	1	100	.	+	.	ID=t1;Parent=g1
+chr1	OpenTools	exon	1	20	.	+	.	ID=e1;Parent=t1
+chr1	OpenTools	CDS	5	17	.	+	0	ID=c1;Parent=t1
+chr1	OpenTools	mRNA	1	60	.	+	.	ID=t2;Parent=g1
+chr1	OpenTools	exon	1	60	.	+	.	ID=e2;Parent=t2
+chr2	OpenTools	gene	20	80	.	-	.	ID=g2;Name=gene-two

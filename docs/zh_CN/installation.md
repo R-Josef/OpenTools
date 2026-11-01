@@ -1,0 +1,72 @@
+# 安装与运行
+
+## Windows x64 便携整合包
+
+发布目录应保持：
+
+```text
+opentools-<version>-windows-x64/
+  OpenTools.exe
+  OpenToolsCLI.exe
+  app/
+  runtime/
+  tools/
+  docs/
+    en_US/
+    zh_CN/
+  licenses/
+  THIRD_PARTY_NOTICES.md
+  README.txt
+```
+
+解压后双击 `OpenTools.exe`；终端、批处理和 MCP 使用 `OpenToolsCLI.exe`。
+不需要安装 Java、conda、MSYS2，也不需要把
+`C:\Program Files\OpenToolsDeps` 加入 `PATH`。程序优先查找包内 `tools/`。
+
+不要从只读压缩包内直接运行，也不要把 `OpenTools.exe` 单独复制到其他目录。
+若 Windows 显示未知发布者，这是当前未签名便携包的限制，不应绕过组织安全策略。
+
+## 通用 JAR
+
+通用 JAR 需要 Java 21。应用、语言和工具资源应保持发布目录结构。外部分析工具
+需由用户安装，并通过包内 `tools/`、任务参数、环境变量或 `PATH` 提供。
+
+```powershell
+java -jar opentools.jar
+java -jar opentools.jar tools list
+java -jar opentools.jar doctor --json
+```
+
+## 从源码构建
+
+```powershell
+$env:JAVA_HOME = 'C:\Program Files\Java\jdk-21'
+$env:Path = "$env:JAVA_HOME\bin;$env:Path"
+mvn clean verify
+```
+
+主要构建产物：
+
+```text
+opentools-app/target/opentools.jar
+opentools-app/target/dist/
+target/release/opentools-<version>-windows-x64.zip
+```
+
+Windows 便携包需要 JDK 21 的 `jpackage`。维护者可先运行
+`scripts/package-windows.ps1`；下载和第三方构建只在构建阶段发生。
+
+## 升级
+
+1. 退出 OpenTools，确认没有运行中的作业。
+2. 备份项目和自定义插件。项目通常位于用户选择的目录，不随应用升级删除。
+3. 解压新版本到新目录，不要覆盖仍在使用中的旧目录。
+4. 先启动新版本检查项目和插件兼容性，再删除旧版本。
+5. 外部工具升级后重新运行 Environment Check。
+
+语言文件位于应用目录的 `lang/`。自定义翻译应在升级前保存，并与新版本键集合比较。
+
+## 卸载
+
+便携包没有系统安装步骤。退出应用后可删除解压目录。项目、用户设置和外部工具
+目录需要单独决定是否保留；应用不会自动删除它们。

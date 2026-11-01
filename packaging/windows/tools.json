@@ -1,0 +1,350 @@
+{
+  "schemaVersion": 1,
+  "release": "windows-x64",
+  "platform": "windows",
+  "architecture": "x64",
+  "runtimeSupport": {
+    "id": "microsoft-vc-runtime-x64",
+    "name": "Microsoft Visual C++ Redistributable x64",
+    "version": "14.44.35211.0",
+    "minimumBuild": "14.40",
+    "archive": {
+      "file": "vc_redist.x64.exe",
+      "url": "https://aka.ms/vs/17/release/vc_redist.x64.exe",
+      "sha256": "CC0FF0EB1DC3F5188AE6300FAEF32BF5BEEBA4BDD6E8E445A9184072096B713B",
+      "type": "binary",
+      "root": ""
+    },
+    "license": "Microsoft Visual Studio Redistributable license terms",
+    "licenseUrl": "https://visualstudio.microsoft.com/license-terms/mlt984625/",
+    "sourceUrl": "https://learn.microsoft.com/cpp/windows/latest-supported-vc-redist",
+    "usedFiles": [
+      "System32/MSVCP140.dll"
+    ]
+  },
+  "tools": [
+    {
+      "id": "blast",
+      "name": "NCBI BLAST+",
+      "version": "2.17.0+",
+      "archive": {
+        "file": "ncbi-blast-2.17.0+-x64-win64.tar.gz",
+        "url": "https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.17.0/ncbi-blast-2.17.0+-x64-win64.tar.gz",
+        "sha256": "CCDE8788641E8F4137536AAADEDFEAC2F3599DBBC6166E701B5D89D19FA79038",
+        "type": "tar.gz",
+        "root": "ncbi-blast-2.17.0+"
+      },
+      "destination": "tools/blast",
+      "copy": [
+        "bin/blastn.exe",
+        "bin/blastp.exe",
+        "bin/blastx.exe",
+        "bin/tblastn.exe",
+        "bin/tblastx.exe",
+        "bin/makeblastdb.exe",
+        "bin/MSVCP140.dll",
+        "bin/*.dll"
+      ],
+      "requiredFiles": [
+        "bin/blastn.exe",
+        "bin/blastp.exe",
+        "bin/makeblastdb.exe",
+        "bin/MSVCP140.dll"
+      ],
+      "license": "NCBI Public Domain Notice",
+      "licenseUrl": "https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.17.0/",
+      "sourceUrl": "https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.17.0/ncbi-blast-2.17.0+-src.tar.gz",
+      "licenseFiles": [
+        {
+          "archivePath": "LICENSE",
+          "destination": "LICENSE"
+        },
+        {
+          "archivePath": "README",
+          "destination": "README"
+        }
+      ],
+      "build": "official-win64-binary"
+    },
+    {
+      "id": "diamond",
+      "name": "DIAMOND",
+      "version": "2.2.8",
+      "archive": {
+        "file": "diamond-windows.zip",
+        "url": "https://github.com/bbuchfink/diamond/releases/download/v2.2.8/diamond-windows.zip",
+        "sha256": "8035ECE14562E13576DA6E9583C74AB1AAFF9D0C96086D93AB337E95CD288CE1",
+        "type": "zip",
+        "root": ""
+      },
+      "destination": "tools/diamond",
+      "copy": [
+        "diamond.exe",
+        "MSVCP140.dll"
+      ],
+      "requiredFiles": [
+        "diamond.exe",
+        "MSVCP140.dll"
+      ],
+      "license": "GPL-3.0",
+      "licenseUrl": "https://github.com/bbuchfink/diamond/blob/v2.2.8/LICENSE",
+      "sourceUrl": "https://github.com/bbuchfink/diamond/archive/refs/tags/v2.2.8.zip",
+      "licenseFiles": [
+        {
+          "download": "diamond-LICENSE",
+          "url": "https://raw.githubusercontent.com/bbuchfink/diamond/v2.2.8/LICENSE",
+          "sha256": "5220A7AB700B568136FF65182B41E9658F1A980C50FBA36425F0EDE86AC68652",
+          "destination": "LICENSE"
+        }
+      ],
+      "build": "official-win64-binary"
+    },
+    {
+      "id": "hmmer",
+      "name": "HMMER",
+      "version": "3.4",
+      "archive": {
+        "file": "hmmer-3.4.tar.gz",
+        "url": "https://eddylab.org/software/hmmer/hmmer-3.4.tar.gz",
+        "sha256": "CA70D94FD0CF271BD7063423AABB116D42DE533117343A9B27A65C17FF06FBF3",
+        "type": "tar.gz",
+        "root": "hmmer-3.4"
+      },
+      "destination": "tools/hmmer/bin",
+      "copy": [
+        "native/hmmbuild.exe",
+        "native/hmmpress.exe",
+        "native/hmmscan.exe",
+        "native/hmmsearch.exe",
+        "native/msys-2.0.dll",
+        "native/msys-gcc_s-seh-1.dll",
+        "native/msys-stdc++-6.dll"
+      ],
+      "requiredFiles": [
+        "hmmscan.exe",
+        "hmmsearch.exe"
+      ],
+      "license": "BSD-3-Clause",
+      "licenseUrl": "https://github.com/EddyRivasLab/hmmer/blob/hmmer-3.4/LICENSE",
+      "sourceUrl": "https://eddylab.org/software/hmmer/hmmer-3.4.tar.gz",
+      "licenseFiles": [
+        {
+          "archivePath": "LICENSE",
+          "destination": "LICENSE"
+        },
+        {
+          "archivePath": "easel/LICENSE",
+          "destination": "EASEL-LICENSE"
+        },
+        {
+          "archivePath": "libdivsufsort/COPYING",
+          "destination": "LIBDIVSUFSORT-COPYING"
+        }
+      ],
+      "build": {
+        "type": "msys2",
+        "sourceArchive": "hmmer-3.4.tar.gz",
+        "workingDirectory": "hmmer-3.4",
+        "commands": [
+          "./configure",
+          "make -j${NUMBER_OF_PROCESSORS:-4}"
+        ],
+        "outputs": [
+          "src/hmmbuild.exe",
+          "src/hmmpress.exe",
+          "src/hmmscan.exe",
+          "src/hmmsearch.exe"
+        ]
+      }
+    },
+    {
+      "id": "muscle",
+      "name": "MUSCLE",
+      "version": "5.3",
+      "archive": {
+        "file": "muscle-win64.v5.3.exe",
+        "url": "https://github.com/rcedgar/muscle/releases/download/v5.3/muscle-win64.v5.3.exe",
+        "sha256": "A86637DB99DEB3EFA1CB6762C4E3160CA33644608270EB167E4214F1F9409711",
+        "type": "binary",
+        "root": ""
+      },
+      "destination": "tools/muscle",
+      "copy": [
+        "muscle-win64.v5.3.exe|muscle.exe"
+      ],
+      "requiredFiles": [
+        "muscle.exe"
+      ],
+      "license": "GPL-3.0",
+      "licenseUrl": "https://github.com/rcedgar/muscle/blob/v5.3/LICENSE",
+      "sourceUrl": "https://github.com/rcedgar/muscle/archive/refs/tags/v5.3.zip",
+      "licenseFiles": [
+        {
+          "download": "muscle-LICENSE",
+          "url": "https://raw.githubusercontent.com/rcedgar/muscle/v5.3/LICENSE",
+          "sha256": "3972DC9744F6499F0F9B2DBF76696F2AE7AD8AF9B23DDE66D6AF86C9DFB36986",
+          "destination": "LICENSE"
+        }
+      ],
+      "build": "official-win64-binary"
+    },
+    {
+      "id": "trimal",
+      "name": "trimAl",
+      "version": "1.5.1",
+      "archive": {
+        "file": "trimAl_Windows_x86-64.zip",
+        "url": "https://github.com/inab/trimal/releases/download/v1.5.1/trimAl_Windows_x86-64.zip",
+        "sha256": "EE202E46687EB8E58556DAA33EDCE28ACB9131550E902A398A04EDF1E672A3BE",
+        "type": "zip",
+        "root": "trimAl_Windows_x86-64"
+      },
+      "destination": "tools/trimal",
+      "copy": [
+        "native/readal.exe",
+        "native/statal.exe",
+        "native/trimal.exe",
+        "native/msys-2.0.dll",
+        "native/msys-gcc_s-seh-1.dll",
+        "native/msys-stdc++-6.dll"
+      ],
+      "requiredFiles": [
+        "trimal.exe"
+      ],
+      "license": "GPL-3.0",
+      "licenseUrl": "https://github.com/inab/trimal/blob/v1.5.1/LICENSE",
+      "sourceUrl": "https://github.com/inab/trimal/archive/refs/tags/v1.5.1.tar.gz",
+      "sourceArchive": {
+        "file": "trimal-1.5.1-source.tar.gz",
+        "url": "https://github.com/inab/trimal/archive/refs/tags/v1.5.1.tar.gz",
+        "sha256": "58751054861B152E92214FF8C01A132071230614E8E777A7C9280D03648CDE3B",
+        "type": "tar.gz",
+        "root": "trimal-1.5.1"
+      },
+      "licenseFiles": [
+        {
+          "archivePath": "LICENSE",
+          "archive": "sourceArchive",
+          "destination": "LICENSE"
+        }
+      ],
+      "binaryArchiveNote": "The official Windows release is pinned for audit. The packaged executable is rebuilt from the pinned source because the official archive depends on runtime DLLs not included or documented by upstream.",
+      "build": {
+        "type": "msys2",
+        "sourceArchive": "trimal-1.5.1-source.tar.gz",
+        "workingDirectory": "trimal-1.5.1/source",
+        "commands": [
+          "make clean",
+          "make -j${NUMBER_OF_PROCESSORS:-4} CC=g++"
+        ],
+        "outputs": [
+          "readal.exe",
+          "statal.exe",
+          "trimal.exe"
+        ]
+      }
+    },
+    {
+      "id": "iqtree",
+      "name": "IQ-TREE",
+      "version": "2.4.0",
+      "archive": {
+        "file": "iqtree-windows.zip",
+        "url": "https://github.com/iqtree/iqtree2/releases/download/v2.4.0/iqtree-2.4.0-Windows.zip",
+        "sha256": "93F488A6CFEF96EF664B23FEFE5BE97C2C80EBCAE9CD2031C0CAC92B467278BE",
+        "type": "zip",
+        "root": "iqtree-2.4.0-Windows"
+      },
+      "destination": "tools/iqtree",
+      "copy": [
+        "bin/iqtree2.exe",
+        "bin/MSVCP140.dll",
+        "bin/*.dll"
+      ],
+      "requiredFiles": [
+        "bin/iqtree2.exe",
+        "bin/MSVCP140.dll"
+      ],
+      "license": "GPL-2.0",
+      "licenseUrl": "https://github.com/iqtree/iqtree2/blob/v2.4.0/LICENSE",
+      "sourceUrl": "https://github.com/iqtree/iqtree2/archive/refs/tags/v2.4.0.zip",
+      "licenseFiles": [
+        {
+          "download": "iqtree-LICENSE",
+          "url": "https://raw.githubusercontent.com/iqtree/iqtree2/v2.4.0/LICENSE",
+          "sha256": "C03CEA027B4B40E4402FABD08557736727EC3D5BC54AD64AB6472DE432198CAD",
+          "destination": "LICENSE"
+        },
+        {
+          "download": "intel-simplified-software-license.pdf",
+          "url": "https://www.intel.com/content/dam/develop/external/us/en/documents/pdf/intel-simplified-software-license.pdf",
+          "sha256": "4CDDE91F2964F3473F4534ACCD4C2288FFCD8C2EE73318827ACF586B9BB63839",
+          "destination": "bundled/LIBIOMP5MD-INTEL-SIMPLIFIED-SOFTWARE-LICENSE.pdf"
+        }
+      ],
+      "bundledLibraries": [
+        {
+          "file": "libiomp5md.dll",
+          "license": "Intel Simplified Software License",
+          "licenseUrl": "https://www.intel.com/content/dam/develop/external/us/en/documents/pdf/intel-simplified-software-license.pdf"
+        }
+      ],
+      "build": "official-win64-binary"
+    },
+    {
+      "id": "mcscanx",
+      "name": "MCScanX",
+      "version": "1.0.0",
+      "archive": {
+        "file": "mcscanx-source.zip",
+        "url": "https://github.com/wyp1125/MCScanX/archive/refs/tags/v1.0.0.zip",
+        "sha256": "34C44BF2929008784459C27A695C4D8B9E7540E4BC4D52DEB464DCA1246BE86A",
+        "type": "zip",
+        "root": "MCScanX-1.0.0"
+      },
+      "destination": "tools/mcscanx",
+      "copy": [
+        "native/MCScanX.exe",
+        "native/MCScanX_h.exe",
+        "native/duplicate_gene_classifier.exe",
+        "native/msys-2.0.dll",
+        "native/msys-gcc_s-seh-1.dll",
+        "native/msys-stdc++-6.dll"
+      ],
+      "requiredFiles": [
+        "MCScanX.exe"
+      ],
+      "license": "BSD-2-Clause",
+      "licenseUrl": "https://github.com/wyp1125/MCScanX/blob/v1.0.0/LICENSE",
+      "sourceUrl": "https://github.com/wyp1125/MCScanX/archive/refs/tags/v1.0.0.zip",
+      "sourceArchive": {
+        "file": "mcscanx-source.zip",
+        "url": "https://github.com/wyp1125/MCScanX/archive/refs/tags/v1.0.0.zip",
+        "sha256": "34C44BF2929008784459C27A695C4D8B9E7540E4BC4D52DEB464DCA1246BE86A",
+        "type": "zip",
+        "root": "MCScanX-1.0.0"
+      },
+      "licenseFiles": [
+        {
+          "archivePath": "LICENSE",
+          "destination": "LICENSE"
+        }
+      ],
+      "build": {
+        "type": "msys2",
+        "sourceArchive": "mcscanx-source.zip",
+        "workingDirectory": "MCScanX-1.0.0",
+        "commands": [
+          "g++ -DNDEBUG -U_GLIBCXX_ASSERTIONS -O2 struct.cc mcscan.cc read_data.cc out_utils.cc dagchainer.cc msa.cc permutation.cc -o MCScanX",
+          "g++ -DNDEBUG -U_GLIBCXX_ASSERTIONS -O2 struct.cc mcscan_h.cc read_homology.cc out_homology.cc dagchainer.cc msa.cc permutation.cc -o MCScanX_h",
+          "g++ -DNDEBUG -U_GLIBCXX_ASSERTIONS -O2 struct.cc dup_classifier.cc read_data.cc out_utils.cc dagchainer.cc cls.cc permutation.cc -o duplicate_gene_classifier"
+        ],
+        "outputs": [
+          "MCScanX.exe",
+          "MCScanX_h.exe",
+          "duplicate_gene_classifier.exe"
+        ]
+      }
+    }
+  ]
+}

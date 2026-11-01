@@ -1,0 +1,4 @@
+@HD	VN:1.6	SO:coordinate
+@SQ	SN:chr1	LN:100
+r1	0	chr1	1	60	4M	*	0	0	ACGT	IIII	NM:i:0
+r2	4	*	0	0	*	*	0	0	NNNN	IIII

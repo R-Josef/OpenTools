@@ -1,0 +1,5 @@
+chr1	1	8	+	chr1_left
+chr1	9	20	-	chr1_right_rc
+geneA	2	6	+	geneA_mid
+duplicate
+missing	1	5	+	missing_region

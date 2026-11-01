@@ -1,0 +1,72 @@
+package io.opentools.ui;
+
+import io.opentools.core.job.JobRecord;
+import io.opentools.core.i18n.LanguageManager;
+
+import javax.swing.table.AbstractTableModel;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+
+final class JobsTableModel extends AbstractTableModel {
+    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter
+            .ofPattern("MM-dd HH:mm:ss")
+            .withZone(ZoneId.systemDefault());
+    private List<JobRecord> jobs = new ArrayList<>();
+    private final LanguageManager language;
+
+    JobsTableModel(LanguageManager language) {
+        this.language = language;
+    }
+
+    public void setJobs(List<JobRecord> jobs) {
+        this.jobs = new ArrayList<>(jobs);
+        fireTableDataChanged();
+    }
+
+    public JobRecord row(int index) {
+        return index < 0 || index >= jobs.size() ? null : jobs.get(index);
+    }
+
+    @Override
+    public int getRowCount() {
+        return jobs.size();
+    }
+
+    @Override
+    public int getColumnCount() {
+        return 6;
+    }
+
+    @Override
+    public String getColumnName(int column) {
+        return switch (column) {
+            case 0 -> language.text("jobs.column.run_id", "Run ID");
+            case 1 -> language.text("jobs.column.tool", "Task");
+            case 2 -> language.text("jobs.column.status", "Status");
+            case 3 -> language.text("jobs.column.started", "Started");
+            case 4 -> language.text("jobs.column.finished", "Finished");
+            case 5 -> language.text("jobs.column.diagnostic", "Diagnostic");
+            default -> "";
+        };
+    }
+
+    @Override
+    public Object getValueAt(int rowIndex, int columnIndex) {
+        JobRecord job = jobs.get(rowIndex);
+        return switch (columnIndex) {
+            case 0 -> shortened(job.runId());
+            case 1 -> job.toolId();
+            case 2 -> language.text("job.status." + job.status().name(), job.status().name());
+            case 3 -> job.startedAt() == null ? "" : TIME_FORMAT.format(job.startedAt());
+            case 4 -> job.finishedAt() == null ? "" : TIME_FORMAT.format(job.finishedAt());
+            case 5 -> job.errorMessage() == null ? "" : job.errorMessage();
+            default -> "";
+        };
+    }
+
+    private static String shortened(String value) {
+        return value.length() <= 12 ? value : value.substring(0, 8);
+    }
+}

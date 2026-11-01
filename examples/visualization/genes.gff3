@@ -1,0 +1,3 @@
+##gff-version 3
+chr1	OpenTools	gene	1	100	.	+	.	ID=g1
+chr1	OpenTools	gene	130	220	.	-	.	ID=g2

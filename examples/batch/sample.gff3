@@ -1,0 +1,3 @@
+##gff-version 3
+chr1	OpenTools	gene	1	100	.	+	.	ID=geneA
+chr1	OpenTools	exon	1	40	.	+	.	ID=exon1;Parent=geneA

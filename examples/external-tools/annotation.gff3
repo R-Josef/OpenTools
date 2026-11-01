@@ -1,0 +1,13 @@
+##gff-version 3
+chr1	test	gene	1	100	.	+	.	ID=g1
+chr1	test	gene	201	300	.	+	.	ID=g2
+chr1	test	gene	401	500	.	+	.	ID=g3
+chr1	test	gene	601	700	.	+	.	ID=g4
+chr1	test	gene	801	900	.	+	.	ID=g5
+chr1	test	gene	1001	1100	.	+	.	ID=g6
+chr2	test	gene	1	100	.	+	.	ID=g7
+chr2	test	gene	201	300	.	+	.	ID=g8
+chr2	test	gene	401	500	.	+	.	ID=g9
+chr2	test	gene	601	700	.	+	.	ID=g10
+chr2	test	gene	801	900	.	+	.	ID=g11
+chr2	test	gene	1001	1100	.	+	.	ID=g12

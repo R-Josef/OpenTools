@@ -1,0 +1,3 @@
+id	header	sequence	length
+q1	"quoted header	with a tab"	"ACGT
+ACGT"	8

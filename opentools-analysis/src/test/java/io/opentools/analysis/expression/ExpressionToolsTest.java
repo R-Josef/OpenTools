@@ -1,0 +1,141 @@
+package io.opentools.analysis.expression;
+
+import io.opentools.analysis.BuiltInAnalysis;
+import io.opentools.api.tool.CancellationToken;
+import io.opentools.api.tool.OpenTool;
+import io.opentools.api.tool.TaskContext;
+import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolParameter;
+import io.opentools.core.tool.ToolRegistry;
+import io.opentools.api.tool.ToolRequest;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+final class ExpressionToolsTest {
+    @TempDir
+    Path tempDir;
+
+    @Test
+    void normalizesCountsToTpm() throws Exception {
+        Path input = writeCounts();
+        Path lengths = tempDir.resolve("lengths.tsv");
+        Files.writeString(lengths, "gene\tlength\nA\t1000\nB\t2000\nC\t500\nD\t800\n");
+        Path output = tempDir.resolve("tpm.tsv");
+        TaskResult result = run("expression.normalize", Map.of(
+                "input", input,
+                "geneLengths", lengths,
+                "method", "TPM",
+                "output", output
+        ));
+        assertEquals("TPM", result.metrics().get("method"));
+        List<String> rows = Files.readAllLines(output);
+        double[] totals = new double[3];
+        for (int row = 1; row < rows.size(); row++) {
+            String[] fields = rows.get(row).split("\t");
+            for (int sample = 0; sample < 3; sample++) {
+                totals[sample] += Double.parseDouble(fields[sample + 1]);
+            }
+        }
+        assertEquals(1_000_000, totals[0], 1.0);
+        assertEquals(1_000_000, totals[1], 1.0);
+        assertEquals(1_000_000, totals[2], 1.0);
+    }
+
+    @Test
+    void calculatesCorrelationAndPcaCoordinates() throws Exception {
+        Path input = writeCounts();
+        Path correlation = tempDir.resolve("correlation.tsv");
+        TaskResult correlationResult = run("expression.correlation", Map.of(
+                "input", input,
+                "method", "PEARSON",
+                "output", correlation
+        ));
+        assertEquals(3, correlationResult.metrics().get("samples"));
+        String matrix = Files.readString(correlation);
+        assertTrue(matrix.contains("S1\t1.0"));
+
+        Path groups = tempDir.resolve("groups.tsv");
+        Files.writeString(groups, "sample\tgroup\nS1\tA\nS2\tA\nS3\tB\n");
+        Path pca = tempDir.resolve("pca.tsv");
+        TaskResult pcaResult = run("expression.pca", Map.of(
+                "input", input,
+                "groups", groups,
+                "components", 2,
+                "output", pca
+        ));
+        assertEquals(2, pcaResult.metrics().get("components"));
+        String coordinates = Files.readString(pca);
+        assertTrue(coordinates.contains("S1\tA\t"));
+        assertTrue(coordinates.contains("PC1\tPC2"));
+    }
+
+    @Test
+    void preparesDifferentialLongTable() throws Exception {
+        Path input = writeCounts();
+        Path groups = tempDir.resolve("groups.tsv");
+        Files.writeString(groups, "sample\tgroup\nS1\tA\nS2\tA\nS3\tB\n");
+        Path output = tempDir.resolve("differential.tsv");
+        TaskResult result = run("expression.differential-input", Map.of(
+                "input", input,
+                "groups", groups,
+                "output", output
+        ));
+        assertEquals(12L, result.metrics().get("observations"));
+        assertEquals(13, Files.readAllLines(output).size());
+        assertTrue(Files.readString(output).contains("A\tS1\tA\t"));
+    }
+
+    @Test
+    void parallelCorrelationMatchesSequentialMatrix() throws Exception {
+        Path input = writeCounts();
+        Path sequential = tempDir.resolve("correlation-sequential.tsv");
+        Path parallel = tempDir.resolve("correlation-parallel.tsv");
+        run("expression.correlation", Map.of(
+                "input", input, "threads", 1, "output", sequential));
+        TaskResult result = run("expression.correlation", Map.of(
+                "input", input, "threads", 3, "output", parallel));
+
+        assertEquals(Files.readString(sequential), Files.readString(parallel));
+        assertEquals(3, result.metrics().get("threads"));
+    }
+
+    private Path writeCounts() throws Exception {
+        Path input = tempDir.resolve("counts.tsv");
+        Files.writeString(input, """
+                gene	S1	S2	S3
+                A	10	20	5
+                B	30	10	15
+                C	0	5	25
+                D	20	20	10
+                """);
+        return input;
+    }
+
+    private TaskResult run(String id, Map<String, Object> supplied) throws Exception {
+        ToolRegistry registry = new ToolRegistry();
+        BuiltInAnalysis.register(registry);
+        OpenTool tool = registry.find(id).orElseThrow();
+        Map<String, Object> parameters = new LinkedHashMap<>();
+        for (ToolParameter parameter : tool.descriptor().parameters()) {
+            if (parameter.defaultValue() != null) {
+                parameters.put(parameter.id(), parameter.defaultValue());
+            }
+        }
+        parameters.putAll(supplied);
+        ToolRequest request = new ToolRequest(id, parameters);
+        var validation = tool.validate(request);
+        assertTrue(validation.valid(), validation.issues().toString());
+        Path output = Files.createDirectories(tempDir.resolve("out"));
+        return tool.execute(request, new TaskContext("expression", tempDir, output, output,
+                ignored -> { }, ignored -> { }, new CancellationToken()));
+    }
+}
