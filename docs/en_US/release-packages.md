@@ -43,20 +43,107 @@ opentools-<version>-windows-x64/
 `OpenTools.exe` is the GUI entry, and `OpenToolsCLI.exe` is the terminal and MCP
 entry. Development `.bat` files are not end-user dependencies.
 
+## Linux x64 portable package
+
+```text
+opentools-<version>-linux-x64/
+  bin/
+    OpenTools
+    OpenToolsCLI
+  app/
+  lib/runtime/
+  tools/
+  docs/
+  licenses/
+```
+
+Extract the complete archive and run `bin/OpenTools` or `bin/OpenToolsCLI`.
+
+## macOS portable packages
+
+Separate `macos-x64` and `macos-arm64` archives contain a complete
+`OpenTools.app` bundle. The GUI launcher is `Contents/MacOS/OpenTools`; terminal
+and MCP use `Contents/MacOS/OpenToolsCLI`.
+
 ## Platform policy
 
-Only Windows x64 is packaged here. Linux and macOS need separate CI, manifests,
-tool sets, and regression results. Do not mix binaries from other platforms into
-the Windows package.
+Windows x64, Linux x64, macOS Intel, and macOS Apple Silicon use independent
+manifests and tool sets. Tagged releases are built on native GitHub Actions
+runners. Never mix binaries from another platform into a package.
+
+## Building release archives
+
+Use a native runner or VM for each target platform. Start with:
+
+```bash
+mvn clean verify
+```
+
+Windows x64:
+
+```powershell
+./scripts/package-windows.ps1
+```
+
+The Windows package uses JDK 21 `jpackage`. CI installs MSYS2 with `make` and
+`gcc`; local maintainers may pass `-NativeBuildDirectory` to reuse native
+HMMER, trimAl, and MCScanX builds.
+
+Linux x64:
+
+```bash
+sudo apt-get install -y autoconf automake build-essential file jq \
+  libbz2-dev libcurl4-openssl-dev liblzma-dev libtool unzip zlib1g-dev
+export JAVA_HOME=/path/to/jdk-21
+./scripts/package-linux.sh
+```
+
+macOS Intel or Apple Silicon:
+
+```bash
+brew install jq
+export JAVA_HOME="$(/usr/libexec/java_home -v 21)"
+./scripts/package-macos.sh x64
+./scripts/package-macos.sh arm64
+```
+
+Run only the command matching the current Mac architecture. Each packaging
+script downloads pinned artifacts into `.release-cache/<release>`, verifies
+checksums, builds HMMER/trimAl/MCScanX from source, runs the packaged CLI
+doctor check, and writes the archive plus checksum metadata to
+`target/release/`.
+
+Common Unix packaging options:
+
+```text
+--cache-dir PATH
+--native-build-dir PATH
+--output-dir PATH
+--offline
+--skip-build
+--keep-work
+```
+
+`--offline` requires all archives to be cached. `--skip-build` reuses
+`opentools-app/target/opentools.jar`. The staged application is kept under
+`target/release-work-<release>/` when `--keep-work` is used.
+
+The `Build release packages` GitHub Actions workflow can be started manually to
+validate all four builds without publishing. Pushing a version tag builds and
+validates every platform, then creates or updates the matching GitHub Release
+with all archives and checksum JSON files.
 
 ## Signing and installers
 
-The portable ZIP is currently unsigned and has no installer or auto-update. An
-organization that needs signing should use a separate release process.
+The portable archives currently have no installer or auto-update. Windows and
+Linux archives are unsigned; macOS snapshot packages use ad-hoc signing and are
+not notarized. Developer ID signing and notarization require separate release
+credentials.
 
 ## Reproducibility
 
-The pinned manifest records versions, official URLs, SHA-256 values,
+The pinned manifest records versions, official URLs, SHA-256 or official NCBI
+MD5 values,
 destinations, licenses, and source URLs. Build caches can be reused offline and
 checksum mismatches stop the package immediately. See `licenses/` and
 `tools-manifest.json` in the extracted package.

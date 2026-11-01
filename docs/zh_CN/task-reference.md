@@ -1,6 +1,6 @@
 # 任务参考
 
-OpenTools `0.8.0-SNAPSHOT` 注册 86 个内置任务。应用内 Docs 的左侧目录列出全部
+OpenTools `0.8.1-SNAPSHOT` 注册 86 个内置任务。应用内 Docs 的左侧目录列出全部
 任务；每个任务页从当前 `ToolDescriptor` 和语言文件生成：
 
 - 用途与适用场景；

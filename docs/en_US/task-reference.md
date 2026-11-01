@@ -1,6 +1,6 @@
 # Task reference
 
-OpenTools `0.8.0-SNAPSHOT` registers 86 built-in tasks. The in-app Docs tree lists
+OpenTools `0.8.1-SNAPSHOT` registers 86 built-in tasks. The in-app Docs tree lists
 all of them. Each task page is generated from the active language files and
 `ToolDescriptor`, including:
 

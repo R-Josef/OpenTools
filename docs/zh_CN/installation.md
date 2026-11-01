@@ -25,6 +25,32 @@ opentools-<version>-windows-x64/
 不要从只读压缩包内直接运行，也不要把 `OpenTools.exe` 单独复制到其他目录。
 若 Windows 显示未知发布者，这是当前未签名便携包的限制，不应绕过组织安全策略。
 
+## Linux x64 便携包
+
+完整解压 `opentools-<version>-linux-x64.tar.gz`。图形界面使用
+`bin/OpenTools`，终端使用 `bin/OpenToolsCLI`：
+
+```bash
+tar -xzf opentools-<version>-linux-x64.tar.gz
+cd opentools-<version>-linux-x64
+bin/OpenToolsCLI --version
+bin/OpenTools
+```
+
+归档自带 Java 运行时和 Linux 工具。`app/`、`lib/`、`tools/`、`docs/` 和
+`licenses/` 应保持在一起。
+
+## macOS 便携包
+
+Intel Mac 使用 `macos-x64`，Apple Silicon 使用 `macos-arm64`。解压 ZIP 后打开
+`OpenTools.app`。终端和 MCP：
+
+```bash
+OpenTools.app/Contents/MacOS/OpenToolsCLI --version
+```
+
+当前快照包未公证。严格执行 Gatekeeper 策略时，应使用组织签名和公证后的构建。
+
 ## 通用 JAR
 
 通用 JAR 需要 Java 21。应用、语言和工具资源应保持发布目录结构。外部分析工具
@@ -53,10 +79,14 @@ mvn clean verify
 opentools-app/target/opentools.jar
 opentools-app/target/dist/
 target/release/opentools-<version>-windows-x64.zip
+target/release/opentools-<version>-linux-x64.tar.gz
+target/release/opentools-<version>-macos-x64.zip
+target/release/opentools-<version>-macos-arm64.zip
 ```
 
 Windows 便携包需要 JDK 21 的 `jpackage`。维护者可先运行
 `scripts/package-windows.ps1`；下载和第三方构建只在构建阶段发生。
+带标签发布会在 GitHub Actions 的原生 runner 上构建四种归档。
 
 ## 升级
 

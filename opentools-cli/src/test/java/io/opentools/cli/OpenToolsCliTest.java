@@ -1,6 +1,7 @@
 package io.opentools.cli;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.opentools.core.runtime.AppVersion;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -24,7 +25,7 @@ final class OpenToolsCliTest {
         Outcome outcome = execute("--version");
 
         assertEquals(0, outcome.code());
-        assertTrue(outcome.out().contains("OpenTools 0.8.0-SNAPSHOT"));
+        assertTrue(outcome.out().contains("OpenTools " + AppVersion.current()));
     }
 
     @Test

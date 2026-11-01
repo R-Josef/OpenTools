@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.1-SNAPSHOT
+
+### Added
+
+- Linux x64 and macOS x64/arm64 portable release packaging.
+- GitHub Actions release matrix that builds and validates all platform
+  artifacts before publishing a tagged GitHub Release.
+
 ## 0.8.0-SNAPSHOT
 
 ### Added

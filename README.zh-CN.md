@@ -43,18 +43,27 @@ OpenTools 采用分层发布：
    `tools/`、显式路径、环境变量或 `PATH` 发现，不包含任何平台二进制。
 2. **Windows x64 便携整合包**：解压后通过 `OpenTools.exe` 启动，自带运行时和
    固定版本的 Windows 工具。目标是无需安装 Java、conda 或 MSYS2。
+3. **Linux x64 便携包**：解压到自包含目录，自带 Java 运行时和固定版本的
+   Linux 工具。
+4. **macOS 便携包**：分别提供 Intel x64 和 Apple Silicon arm64 ZIP。
 
-当前只正式构建 Windows x64 便携包。Linux 和 macOS 需要独立 CI、独立工具集和
-独立验证，不能把其他平台二进制混入 Windows 包。签名、安装器和自动更新尚未包含。
+Windows x64、Linux x64、macOS x64 和 macOS arm64 由
+`.github/workflows/release.yml` 的平台矩阵构建。安装器、自动更新和 macOS
+Developer ID 签名尚未包含。
 
 ## 安装与首次运行
 
 ### Windows x64 便携包
 
-1. 下载 `opentools-0.8.0-SNAPSHOT-windows-x64.zip` 并解压到普通用户可写目录。
-2. 双击 `OpenTools.exe`；终端使用 `OpenToolsCLI.exe`。
-3. 首次启动会创建或打开本地项目。可从 Home 打开任务目录或 Docs。
-4. 不要只复制 `OpenTools.exe`；运行时、应用和工具目录必须保持在同一发布目录。
+1. 下载对应 Windows、Linux、macOS Intel 或 macOS Apple Silicon 的发布包。
+2. 完整解压归档。
+3. Windows 双击 `OpenTools.exe`，Linux 运行 `bin/OpenTools`，macOS 打开
+   `OpenTools.app`。
+4. 终端和 MCP 分别使用 `OpenToolsCLI.exe`、`bin/OpenToolsCLI` 或
+   `OpenTools.app/Contents/MacOS/OpenToolsCLI`。
+5. 首次启动会创建或打开本地项目，可从 Home 打开任务目录或 Docs。
+
+不要只复制单个启动器；运行时、应用和工具目录必须保持在同一发布目录。
 
 ### 通用 JAR
 

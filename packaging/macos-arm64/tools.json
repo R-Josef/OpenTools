@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "release": "macos-arm64",
+  "platform": "macos",
+  "architecture": "arm64",
+  "tools": [
+    {
+      "id": "blast",
+      "name": "NCBI BLAST+",
+      "version": "2.17.0+",
+      "archive": {
+        "file": "ncbi-blast-2.17.0+-aarch64-macosx.tar.gz",
+        "url": "https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.17.0/ncbi-blast-2.17.0+-aarch64-macosx.tar.gz",
+        "md5": "8DC685EB284713DB76DE41A4DABF96AD",
+        "type": "tar.gz",
+        "root": "ncbi-blast-2.17.0+"
+      },
+      "destination": "tools/blast",
+      "copy": ["bin/blastn", "bin/blastp", "bin/blastx", "bin/tblastn", "bin/tblastx", "bin/makeblastdb"],
+      "requiredFiles": ["bin/blastn", "bin/blastp", "bin/makeblastdb"],
+      "license": "NCBI Public Domain Notice",
+      "licenseUrl": "https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.17.0/",
+      "sourceUrl": "https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.17.0/ncbi-blast-2.17.0+-src.tar.gz",
+      "licenseFiles": [{"archivePath": "LICENSE", "destination": "LICENSE"}, {"archivePath": "README", "destination": "README"}],
+      "build": "official-macos-arm64-binary"
+    },
+    {
+      "id": "diamond",
+      "name": "DIAMOND",
+      "version": "2.2.8",
+      "archive": {
+        "file": "diamond-macos.tar.gz",
+        "url": "https://github.com/bbuchfink/diamond/releases/download/v2.2.8/diamond-macos.tar.gz",
+        "sha256": "7D17C9C72B927D74AE1E72B4B7CA44F6100AF02E9F753AD1ECDED9ABB30A3B22",
+        "type": "tar.gz",
+        "root": ""
+      },
+      "destination": "tools/diamond",
+      "copy": ["diamond"],
+      "requiredFiles": ["diamond"],
+      "license": "GPL-3.0",
+      "licenseUrl": "https://github.com/bbuchfink/diamond/blob/v2.2.8/LICENSE",
+      "sourceUrl": "https://github.com/bbuchfink/diamond/archive/refs/tags/v2.2.8.zip",
+      "licenseFiles": [],
+      "build": "official-macos-universal-binary"
+    },
+    {
+      "id": "hmmer",
+      "name": "HMMER",
+      "version": "3.4",
+      "archive": {
+        "file": "hmmer-3.4.tar.gz",
+        "url": "https://eddylab.org/software/hmmer/hmmer-3.4.tar.gz",
+        "sha256": "CA70D94FD0CF271BD7063423AABB116D42DE533117343A9B27A65C17FF06FBF3",
+        "type": "tar.gz",
+        "root": "hmmer-3.4"
+      },
+      "destination": "tools/hmmer",
+      "copy": ["native/hmmscan|bin/hmmscan", "native/hmmsearch|bin/hmmsearch", "native/hmmpress|bin/hmmpress", "native/hmmbuild|bin/hmmbuild"],
+      "requiredFiles": ["bin/hmmscan", "bin/hmmsearch"],
+      "license": "BSD-3-Clause",
+      "licenseUrl": "https://github.com/EddyRivasLab/hmmer/blob/master/LICENSE",
+      "sourceUrl": "https://eddylab.org/software/hmmer/hmmer-3.4.tar.gz",
+      "licenseFiles": [{"archivePath": "LICENSE", "destination": "LICENSE"}, {"archivePath": "easel/LICENSE", "destination": "easel-LICENSE"}],
+      "build": "hmmer",
+      "sourceBuilt": true
+    },
+    {
+      "id": "muscle",
+      "name": "MUSCLE",
+      "version": "5.3",
+      "archive": {
+        "file": "muscle-osx-arm64.v5.3",
+        "url": "https://github.com/rcedgar/muscle/releases/download/v5.3/muscle-osx-arm64.v5.3",
+        "sha256": "18AD328595FFA878C9D87BD9CB007E13C4ADE81D9DAEC656A36D3AE244CB09F1",
+        "type": "binary",
+        "root": ""
+      },
+      "destination": "tools/muscle",
+      "copy": ["muscle-osx-arm64.v5.3|muscle"],
+      "requiredFiles": ["muscle"],
+      "license": "GPL-3.0",
+      "licenseUrl": "https://github.com/rcedgar/muscle/blob/v5.3/LICENSE",
+      "sourceUrl": "https://github.com/rcedgar/muscle/archive/refs/tags/v5.3.zip",
+      "licenseFiles": [],
+      "build": "official-macos-arm64-binary"
+    },
+    {
+      "id": "trimal",
+      "name": "trimAl",
+      "version": "1.5.1",
+      "archive": {
+        "file": "trimal-1.5.1-source.tar.gz",
+        "url": "https://github.com/inab/trimal/archive/refs/tags/v1.5.1.tar.gz",
+        "sha256": "58751054861B152E92214FF8C01A132071230614E8E777A7C9280D03648CDE3B",
+        "type": "tar.gz",
+        "root": "trimal-1.5.1"
+      },
+      "destination": "tools/trimal",
+      "copy": ["native/trimal|trimal", "native/readal|readal", "native/statal|statal"],
+      "requiredFiles": ["trimal"],
+      "license": "GPL-3.0",
+      "licenseUrl": "https://github.com/inab/trimal/blob/v1.5.1/LICENSE",
+      "sourceUrl": "https://github.com/inab/trimal/archive/refs/tags/v1.5.1.tar.gz",
+      "licenseFiles": [{"archivePath": "LICENSE", "destination": "LICENSE"}],
+      "build": "trimal",
+      "sourceBuilt": true
+    },
+    {
+      "id": "iqtree",
+      "name": "IQ-TREE",
+      "version": "2.4.0",
+      "archive": {
+        "file": "iqtree-2.4.0-macOS-arm.zip",
+        "url": "https://github.com/iqtree/iqtree2/releases/download/v2.4.0/iqtree-2.4.0-macOS-arm.zip",
+        "sha256": "E3A2CC1F11EA61B4508B8F6BEE7BEA78186CE27864F7924AF3FCBBDDA76E0B81",
+        "type": "zip",
+        "root": "iqtree-2.4.0-macOS-arm"
+      },
+      "destination": "tools/iqtree",
+      "copy": ["bin/iqtree2"],
+      "requiredFiles": ["bin/iqtree2"],
+      "license": "GPL-2.0",
+      "licenseUrl": "https://github.com/iqtree/iqtree2/blob/v2.4.0/LICENSE",
+      "sourceUrl": "https://github.com/iqtree/iqtree2/archive/refs/tags/v2.4.0.zip",
+      "licenseFiles": [],
+      "build": "official-macos-arm64-binary"
+    },
+    {
+      "id": "mcscanx",
+      "name": "MCScanX",
+      "version": "1.0.0",
+      "archive": {
+        "file": "mcscanx-source.zip",
+        "url": "https://github.com/wyp1125/MCScanX/archive/refs/tags/v1.0.0.zip",
+        "sha256": "34C44BF2929008784459C27A695C4D8B9E7540E4BC4D52DEB464DCA1246BE86A",
+        "type": "zip",
+        "root": "MCScanX-1.0.0"
+      },
+      "destination": "tools/mcscanx",
+      "copy": ["native/MCScanX|MCScanX", "native/MCScanX_h|MCScanX_h", "native/duplicate_gene_classifier|duplicate_gene_classifier"],
+      "requiredFiles": ["MCScanX"],
+      "license": "BSD-2-Clause",
+      "licenseUrl": "https://github.com/wyp1125/MCScanX/blob/v1.0.0/LICENSE",
+      "sourceUrl": "https://github.com/wyp1125/MCScanX/archive/refs/tags/v1.0.0.zip",
+      "licenseFiles": [{"archivePath": "LICENSE", "destination": "LICENSE"}],
+      "build": "mcscanx",
+      "sourceBuilt": true
+    }
+  ]
+}

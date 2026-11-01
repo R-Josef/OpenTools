@@ -45,20 +45,27 @@ GPL-3.0-or-later; bundled third-party programs retain their own licenses.
 2. **Windows x64 portable package**: starts from `OpenTools.exe`, includes a
    private Java runtime and pinned Windows tools, and does not require conda or
    MSYS2 for end users.
+3. **Linux x64 portable package**: extracts to a self-contained directory with
+   a private Java runtime and pinned Linux tools.
+4. **macOS portable packages**: separate Intel x64 and Apple Silicon arm64 ZIPs,
+   each containing a self-contained application bundle.
 
 If an external program is available on `PATH`, OpenTools can use it. Restart
 Explorer or sign out after changing PATH so newly launched processes inherit it.
 
-Only Windows x64 is packaged in this repository today. Linux and macOS require
-their own CI jobs, tool sets, and platform verification. Signing, installers,
-and automatic updates are not included yet.
+Windows x64, Linux x64, macOS x64, and macOS arm64 releases are built by the
+platform matrix in `.github/workflows/release.yml`. Installers, automatic
+updates, and macOS Developer ID signing are not included yet.
 
 ## First run
 
-1. Extract `opentools-0.8.0-SNAPSHOT-windows-x64.zip`.
-2. Start the GUI with `OpenTools.exe`.
-3. Use `OpenToolsCLI.exe` for terminals, scripts, or MCP.
-4. Open **Docs** from the main navigation at any time.
+1. Download the package matching Windows, Linux, macOS Intel, or macOS Apple
+   Silicon.
+2. Extract the complete archive.
+3. Start the GUI with `OpenTools.exe`, `bin/OpenTools`, or `OpenTools.app`.
+4. Use `OpenToolsCLI.exe`, `bin/OpenToolsCLI`, or
+   `OpenTools.app/Contents/MacOS/OpenToolsCLI` for terminals and MCP.
+5. Open **Docs** from the main navigation at any time.
 
 Building from source:
 
@@ -73,10 +80,10 @@ See [Installation](docs/en_US/installation.md) and
 
 ## External tools
 
-Bundled Windows tools are discovered from the package first. Developer builds may
-also use explicit paths, `OPENTOOLS_*` variables, or `PATH`. Exact versions,
-official URLs, SHA-256 values, licenses, source URLs, and build recipes are in
-[tools.json](packaging/windows/tools.json).
+Bundled tools are discovered from the package first. Developer builds may also
+use explicit paths, `OPENTOOLS_*` variables, or `PATH`. Exact versions, official
+URLs, checksums, licenses, source URLs, and build recipes are in the platform
+manifests under [packaging](packaging/).
 
 Third-party executables are independent programs and are not relicensed as
 OpenTools. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and the package

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -63,6 +64,43 @@ final class ReleaseManifestTest {
             sizes.add(width == 0 ? 256 : width);
         }
         assertEquals(Set.of(16, 20, 24, 32, 40, 48, 64, 128, 256), sizes);
+    }
+
+    @Test
+    void allPlatformManifestsPinSupportedArchitecturesAndTools() throws Exception {
+        Map<String, String> manifests = Map.of(
+                "packaging/windows/tools.json", "windows-x64",
+                "packaging/linux/tools.json", "linux-x64",
+                "packaging/macos-x64/tools.json", "macos-x64",
+                "packaging/macos-arm64/tools.json", "macos-arm64"
+        );
+        Set<String> toolIds = Set.of(
+                "blast", "diamond", "hmmer", "muscle", "trimal", "iqtree", "mcscanx"
+        );
+
+        for (var entry : manifests.entrySet()) {
+            JsonNode manifest = new ObjectMapper().readTree(
+                    Files.readString(findProjectRoot().resolve(entry.getKey()))
+            );
+            assertEquals(entry.getValue(), manifest.path("release").asText(), entry.getKey());
+            assertEquals(1, manifest.path("schemaVersion").asInt(), entry.getKey());
+            Set<String> ids = new HashSet<>();
+            for (JsonNode tool : manifest.path("tools")) {
+                ids.add(tool.path("id").asText());
+                JsonNode archive = tool.path("archive");
+                assertTrue(archive.path("url").asText().startsWith("https://"), entry.getKey());
+                String sha256 = archive.path("sha256").asText();
+                String md5 = archive.path("md5").asText();
+                assertTrue(
+                        sha256.matches("[0-9A-F]{64}") || md5.matches("[0-9A-F]{32}"),
+                        "missing pinned checksum in " + entry.getKey()
+                );
+            }
+            assertEquals(toolIds, ids, entry.getKey());
+        }
+        assertTrue(Files.isRegularFile(
+                findProjectRoot().resolve(".github/workflows/release.yml")
+        ));
     }
 
     private static Path findProjectRoot() {

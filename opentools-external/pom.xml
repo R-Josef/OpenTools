@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.opentools</groupId>
         <artifactId>opentools-parent</artifactId>
-        <version>0.8.0-SNAPSHOT</version>
+        <version>0.8.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>opentools-external</artifactId>

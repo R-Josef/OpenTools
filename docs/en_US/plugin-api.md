@@ -39,7 +39,7 @@ Maven plugin projects should use:
 <dependency>
   <groupId>io.opentools</groupId>
   <artifactId>opentools-plugin-api</artifactId>
-  <version>0.8.0-SNAPSHOT</version>
+  <version>0.8.1-SNAPSHOT</version>
   <scope>provided</scope>
 </dependency>
 ```
@@ -48,7 +48,7 @@ For a direct compiler invocation:
 
 ```powershell
 javac --release 21 `
-  -cp "plugin-sdk\opentools-plugin-api-0.8.0-SNAPSHOT.jar" `
+  -cp "plugin-sdk\opentools-plugin-api-0.8.1-SNAPSHOT.jar" `
   -d build\classes `
   src\main\java\example\ExamplePlugin.java
 ```

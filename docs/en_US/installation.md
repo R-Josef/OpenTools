@@ -27,6 +27,33 @@ Do not start the package directly from a ZIP viewer and do not copy
 `OpenTools.exe` by itself. The current portable ZIP is unsigned and has no
 installer or automatic updater.
 
+## Linux x64 portable package
+
+Extract the complete `opentools-<version>-linux-x64.tar.gz` archive. Start the
+GUI with `bin/OpenTools`, or use `bin/OpenToolsCLI` in a terminal:
+
+```bash
+tar -xzf opentools-<version>-linux-x64.tar.gz
+cd opentools-<version>-linux-x64
+bin/OpenToolsCLI --version
+bin/OpenTools
+```
+
+The archive includes its own Java runtime and Linux tools. Keep `app/`, `lib/`,
+`tools/`, `docs/`, and `licenses/` together.
+
+## macOS portable packages
+
+Choose `macos-x64` for Intel Macs and `macos-arm64` for Apple Silicon. Extract
+the ZIP and open `OpenTools.app`. For terminal or MCP use:
+
+```bash
+OpenTools.app/Contents/MacOS/OpenToolsCLI --version
+```
+
+Current snapshot packages are not notarized. Gatekeeper policy may require a
+signed and notarized organizational build.
+
 ## General JAR
 
 The general JAR requires Java 21. Keep the application, language, documentation,
@@ -57,11 +84,15 @@ Important outputs:
 opentools-app/target/opentools.jar
 opentools-app/target/dist/
 target/release/opentools-<version>-windows-x64.zip
+target/release/opentools-<version>-linux-x64.tar.gz
+target/release/opentools-<version>-macos-x64.zip
+target/release/opentools-<version>-macos-arm64.zip
 ```
 
 The Windows portable package uses JDK 21 `jpackage`. Maintainers can run
 `scripts/package-windows.ps1`; downloads and native builds happen only at build
 time and can be reused from the verified cache.
+Tagged releases build all four archives on native GitHub Actions runners.
 
 ## Updating
 
