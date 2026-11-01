@@ -39,7 +39,6 @@ done
 
 (
     cd "$TRIMAL_SOURCE_DIR"
-    make clean
     make -j"$job_count" CC=c++ CXX=c++
 )
 for program in trimal readal statal; do
