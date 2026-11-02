@@ -31,9 +31,24 @@ META-INF/opentools/i18n/zh_CN.properties   # 可选
 }
 ```
 
-只需声明实际使用的能力：`tool`、`page` 和 `data`。`nameKey` 与
-`descriptionKey` 是可选的清单本地化键，描述文件中的 `name` 和
-`description` 是对应后备文本。
+### Manifest 字段
+
+| 字段 | 必需 | 含义 |
+| --- | --- | --- |
+| `id` | 是 | 插件 ID。只能使用 `A-Z`、`a-z`、`0-9`、`.`、`_`、`-`。 |
+| `name` | 是 | 后备显示名称。 |
+| `version` | 是 | 插件版本，与 OpenTools 版本无关。 |
+| `apiVersion` | 是 | 插件使用的 API 版本，当前为 `2.1`。 |
+| `mainClass` | 是 | 实现 `io.opentools.plugin.OpenToolsPlugin` 的类。 |
+| `description` | 否 | 后备描述。 |
+| `nameKey` | 否 | 插件名称本地化资源键，可自由命名。 |
+| `descriptionKey` | 否 | 插件描述本地化资源键，可自由命名。 |
+| `author` | 否 | 作者或维护者信息。 |
+| `dependencies` | 否 | 其他 OpenTools 插件 ID，不是 Maven 坐标。 |
+| `requestedCapabilities` | 否 | 可包含 `tool`、`page`、`data`；省略时三个能力全部启用。 |
+
+`nameKey` 和 `descriptionKey` 可以使用任意资源键。`plugin.name` 与
+`plugin.description` 只是示例名称，不是强制值。
 
 ## 最小可用插件
 
@@ -86,6 +101,26 @@ settings -> page.settings.title
 `context.registerTool(new MyTool())` 单独注册。工具契约见
 [Plugin API 2.1](plugin-api.md)。
 
+## ID 规则
+
+ID 是运行时契约和资源键契约的一部分。发布插件前应确定，之后尽量保持稳定。
+
+| ID | 作用域 | 用途 |
+| --- | --- | --- |
+| 插件 ID | 所有已安装插件中唯一 | Manifest、私有数据目录、插件依赖 |
+| Tool ID | 宿主工具注册表中唯一 | 注册工具及标准工具文本键 |
+| 参数 ID | 单个工具内唯一 | 请求参数表和参数文本键 |
+| 页面 ID | 单个插件内唯一 | 注册页面及默认页面标题键 |
+
+重要说明：
+
+- Tool ID 不会自动添加插件 ID 前缀。
+- Tool ID 也不会自动添加 `plugin.` 前缀。
+- 两个插件不能注册相同 Tool ID，因为宿主工具注册表是全局的。
+- 宿主内部会把页面 ID 限定为 `<插件ID>.<页面ID>`，但这个限定值不会自动作为
+  页面标题资源键。
+- 参数 ID 会成为 JSON 字段名，不应用作可翻译文本，也不要为了本地化重命名。
+
 ## 本地化
 
 插件本地化采用固定目录和约定式查找。把 UTF-8 `.properties` 文件放在插件 JAR
@@ -120,6 +155,43 @@ game.start=开始
 
 隔离来自 localizer，而不是字符串改写。每个插件可以使用相同的 `game.start`，
 因为它的 localizer 只能读取自己 JAR 中的资源。
+
+### 键构造总表
+
+| 宿主显示的内容 | 资源键 | 谁构造 |
+| --- | --- | --- |
+| 工具名称 | `tool.<Tool ID>.name` | 宿主 |
+| 工具描述 | `tool.<Tool ID>.description` | 宿主 |
+| 参数标题 | `tool.<Tool ID>.param.<参数 ID>.title` | 宿主 |
+| 参数描述 | `tool.<Tool ID>.param.<参数 ID>.description` | 宿主 |
+| 三参数页面标题 | `page.<页面 ID>.title` | 宿主 |
+| 四参数页面标题 | 插件传入的键 | 插件 |
+| 工具分类 | `category.<分类小写>` | 宿主语言文件 |
+| 结果表格列名 | `result.<Tool ID>.column.<规范化列名>` | 宿主 |
+| 结果表格值 | `result.<Tool ID>.value.<规范化值>` | 宿主 |
+| 结果摘要/详情 | `ToolResult.summaryKey` / `detailKey` | 插件 |
+| 自定义页面文字 | 传给 `context.text(...)` 的键 | 插件 |
+
+分类本地化属于宿主应用。插件工具通常使用 descriptor 分类 `Plugin`，它对应宿主
+键 `category.plugin`。把 `category.plugin` 放进插件 JAR 不会改变宿主显示的分类。
+
+结果表格的列名和值会先经过显示用规范化：
+
+```text
+转小写
+% 变成 " percent"
+所有连续的非 a-z/0-9 字符变成 "_"
+去掉首尾 "_"
+```
+
+例如：
+
+```text
+"Distance (m)" -> distance_m
+"SECOND_CLICK" -> second_click
+```
+
+这只影响显示文本，不会修改结果 JSON 或导出的数据。
 
 ### 推荐键结构
 
@@ -174,11 +246,44 @@ String message = context.text(
 没有语言文件时插件仍会加载并显示 fallback。直接写死文本也不会报错，只是不会
 随界面语言切换。
 
+### 不会自动本地化的数据
+
+标准文本解析器不会翻译具有执行语义的 descriptor 数据：
+
+- `ToolParameter.options`，因为这些值会用于提交和校验；
+- 具有执行语义的 `ToolParameter.defaultValue`；
+- `ToolDescriptor.aliases`、输入格式和输出格式；
+- JSON 结果和导出文件中的表格行数据。
+
+这些值应保持稳定并使用语言中立的表示。例如执行值继续使用 `SECOND_CLICK`，
+只在界面上通过规范化后的结果值键显示本地化文本。
+
 不要把插件私有的 `tool.*`、`result.*` 或 `page.*` 键加入宿主
 `lang/` 文件。`category.plugin` 是宿主分类键，不属于插件资源。
 
 非法 UTF-8、重复键、损坏的 Properties 或超限文件会产生插件诊断。宿主跳过
 受影响的文件并回退，不会因此停止整个程序。
+
+### 资源文件限制与校验
+
+| 规则 | 限制或格式 |
+| --- | --- |
+| 编码 | 严格 UTF-8 |
+| 位置 | 直接位于 `META-INF/opentools/i18n/` 下 |
+| 语言文件名 | `[A-Za-z]{2,8}(?:_[A-Za-z0-9]{2,8})?.properties` |
+| 每个插件的语言文件数 | 最多 64 |
+| 单个文件 | 最多 256 KiB |
+| 全部语言文件 | 最多 1 MiB |
+| 单文件键数 | 最多 5,000 |
+| 单个键 | 最多 256 个字符 |
+| 单个值 | 最多 16,384 个字符 |
+
+推荐提供 `en_US.properties` 作为插件后备语言，但缺少它不影响插件加载。重复键和
+损坏的 Properties 会使受影响的整个语言文件被跳过。嵌套语言目录会被忽略并生成
+诊断。
+
+提供参数时使用 `MessageFormat`。资源加载阶段不会校验每个消息模板，因此非法模板
+可能在该文本实际显示时抛出异常。
 
 ## Maven 项目结构
 

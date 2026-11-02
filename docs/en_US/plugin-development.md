@@ -32,9 +32,24 @@ The manifest describes the plugin. A page-only plugin can start with:
 }
 ```
 
-Declare only the capabilities you use: `tool`, `page`, and `data`.
-`nameKey` and `descriptionKey` are optional keys for the manifest fallback
-text.
+### Manifest fields
+
+| Field | Required | Meaning |
+| --- | --- | --- |
+| `id` | yes | Plugin ID. Use only `A-Z`, `a-z`, `0-9`, `.`, `_`, and `-`. |
+| `name` | yes | Fallback display name. |
+| `version` | yes | Plugin version, independent of the OpenTools version. |
+| `apiVersion` | yes | Plugin API used by the plugin. Current value: `2.1`. |
+| `mainClass` | yes | Class implementing `io.opentools.plugin.OpenToolsPlugin`. |
+| `description` | no | Fallback description. |
+| `nameKey` | no | Any resource key for the localized plugin name. |
+| `descriptionKey` | no | Any resource key for the localized description. |
+| `author` | no | Author or maintainer text. |
+| `dependencies` | no | Other OpenTools plugin IDs, not Maven coordinates. |
+| `requestedCapabilities` | no | Any of `tool`, `page`, and `data`. Omitted means all three. |
+
+`nameKey` and `descriptionKey` may use any keys. The names `plugin.name` and
+`plugin.description` are examples, not required field values.
 
 ## Smallest working plugin
 
@@ -87,6 +102,28 @@ Use the four-argument `registerPage` method only when you need a custom key.
 Tools are registered separately with `context.registerTool(new MyTool())`.
 See [Plugin API 2.1](plugin-api.md) for the tool contracts.
 
+## ID rules
+
+IDs are part of the runtime and resource-key contract. Choose them before
+releasing a plugin and keep them stable.
+
+| ID | Scope | Used for |
+| --- | --- | --- |
+| Plugin ID | Unique across installed plugins | Manifest, data directory, plugin dependencies |
+| Tool ID | Unique across the host tool registry | Tool registration and standard tool text keys |
+| Parameter ID | Unique inside one tool | Request map and parameter text keys |
+| Page ID | Unique inside one plugin | Plugin page registration and default page title key |
+
+Important details:
+
+- A Tool ID is not automatically prefixed with the plugin ID.
+- A Tool ID is also not automatically prefixed with `plugin.`.
+- Two plugins cannot register the same Tool ID because the host tool registry is global.
+- The host qualifies a page ID internally as `<plugin-id>.<page-id>`, but this
+  qualified value is not automatically used as the page title resource key.
+- Parameter IDs become JSON field names. Do not translate or rename them for
+  localization.
+
 ## Localization
 
 Plugin localization is a convention-based resource lookup. Put UTF-8
@@ -123,6 +160,46 @@ It does not search for
 Isolation comes from the localizer, not string rewriting. Each plugin can use
 the same key such as `game.start` because its localizer can only see resources
 from its own JAR.
+
+### Key construction at a glance
+
+| Text shown by the host | Resource key | Who constructs it |
+| --- | --- | --- |
+| Tool name | `tool.<Tool ID>.name` | Host |
+| Tool description | `tool.<Tool ID>.description` | Host |
+| Parameter title | `tool.<Tool ID>.param.<Parameter ID>.title` | Host |
+| Parameter description | `tool.<Tool ID>.param.<Parameter ID>.description` | Host |
+| Three-argument page title | `page.<Page ID>.title` | Host |
+| Four-argument page title | Key passed by the plugin | Plugin |
+| Tool category | `category.<lowercase category>` | Host language files |
+| Result table column | `result.<Tool ID>.column.<normalized column>` | Host |
+| Result table value | `result.<Tool ID>.value.<normalized value>` | Host |
+| Result summary/detail | `ToolResult.summaryKey` / `detailKey` | Plugin |
+| Custom panel text | Key passed to `context.text(...)` | Plugin |
+
+Category localization is application-owned. A plugin tool normally uses the
+descriptor category `Plugin`, which maps to the host key `category.plugin`.
+Putting `category.plugin` in a plugin JAR does not localize the category shown
+by the host.
+
+For result tables, the host normalizes the displayed column or cell text:
+
+```text
+lowercase
+% becomes " percent"
+every run of non a-z/0-9 characters becomes "_"
+leading and trailing "_" are removed
+```
+
+For example:
+
+```text
+"Distance (m)" -> distance_m
+"SECOND_CLICK" -> second_click
+```
+
+This changes display text only. Stored result JSON and exported data remain
+unchanged.
 
 ### Recommended key conventions
 
@@ -181,12 +258,48 @@ active full language -> active language -> en_US -> caller fallback
 Without language files, the plugin still loads and displays the fallback text.
 Hard-coded plugin text also does not fail; it simply does not translate.
 
+### Values that are not automatically localized
+
+The standard text resolver does not translate functional descriptor data:
+
+- `ToolParameter.options`, because these values are submitted and validated;
+- `ToolParameter.defaultValue`, when it has execution semantics;
+- `ToolDescriptor.aliases`, input formats, and output formats;
+- result rows stored in JSON or exported files.
+
+Keep these values stable and language-neutral. For example, use
+`SECOND_CLICK` as an execution value and localize only its displayed table text
+with the normalized result value key.
+
 Do not put plugin-private `tool.*`, `result.*`, or `page.*` keys into the host
 `lang/` directory. The host category `category.plugin` is application-owned.
 
 Malformed UTF-8, duplicate keys, broken Properties, and oversized resources
 produce plugin diagnostics. The affected file is skipped and the plugin falls
 back instead of stopping the whole application.
+
+### Resource file limits and validation
+
+| Rule | Limit or format |
+| --- | --- |
+| Encoding | Strict UTF-8 |
+| Location | Directly under `META-INF/opentools/i18n/` |
+| Language file name | `[A-Za-z]{2,8}(?:_[A-Za-z0-9]{2,8})?.properties` |
+| Language files per plugin | At most 64 |
+| One file | At most 256 KiB |
+| All language files | At most 1 MiB |
+| Keys in one file | At most 5,000 |
+| One key | At most 256 characters |
+| One value | At most 16,384 characters |
+
+`en_US.properties` is the recommended plugin fallback file, but it is not
+required to load the plugin. Duplicate keys and malformed Properties cause the
+affected language file to be skipped. Nested language directories are ignored
+with a diagnostic.
+
+When arguments are supplied, message patterns use `MessageFormat`. Resource
+loading does not validate every message pattern, so an invalid pattern can
+throw when that text is rendered.
 
 ## Maven project layout
 

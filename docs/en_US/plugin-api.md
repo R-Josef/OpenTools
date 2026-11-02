@@ -68,6 +68,34 @@ String summary = context.text(
 The three-argument overload derives `page.<id>.title`, so `"main"` above uses
 `page.main.title`. Use the four-argument form when a page needs a custom key.
 
+### Key construction
+
+The localizer searches exact keys. It does not automatically prepend the plugin
+ID. The standard tool UI constructs these keys from descriptor IDs:
+
+| UI text | Key |
+| --- | --- |
+| Tool name | `tool.<Tool ID>.name` |
+| Tool description | `tool.<Tool ID>.description` |
+| Parameter title | `tool.<Tool ID>.param.<Parameter ID>.title` |
+| Parameter description | `tool.<Tool ID>.param.<Parameter ID>.description` |
+| Three-argument page title | `page.<Page ID>.title` |
+| Tool category | Host-owned `category.<lowercase category>` |
+| Result table column | `result.<Tool ID>.column.<normalized column>` |
+| Result table value | `result.<Tool ID>.value.<normalized value>` |
+
+`ToolResult.summaryKey` and `detailKey` are supplied explicitly by the plugin;
+the host does not derive them. Keys passed to `context.text(...)` and custom
+four-argument page titles are also used exactly as supplied.
+
+Isolation comes from the plugin-owned localizer, not from adding a textual
+prefix to every key. Identical keys in different plugins resolve against
+different resource sets.
+
+Result table display names normalize `%` to `" percent"`, lowercase the text,
+replace runs of characters outside `a-z` and `0-9` with `_`, and trim
+underscores. This affects display only, not stored result data.
+
 Lookup order is:
 
 1. the complete active code, such as `zh_CN`;
@@ -103,6 +131,21 @@ structured plugin diagnostics, skip the affected resource, and keep startup
 and unrelated plugins running. Resource lookup is limited to one level under
 `META-INF/opentools/i18n/` in the owning plugin JAR and cannot address files
 outside that JAR.
+
+Current resource limits are:
+
+| Item | Limit |
+| --- | --- |
+| Language files | 64 |
+| One file | 256 KiB |
+| Total resources | 1 MiB |
+| Keys per file | 5,000 |
+| Key length | 256 characters |
+| Value length | 16,384 characters |
+
+Language file names use `[A-Za-z]{2,8}(?:_[A-Za-z0-9]{2,8})?.properties`.
+`en_US.properties` is the recommended fallback but is not required to load the
+plugin.
 
 ## Interactive tools
 

@@ -64,6 +64,31 @@ String summary = context.text(
 三参数重载会把页面 ID `"main"` 自动映射到 `page.main.title`。需要自定义资源键时，
 继续使用四参数方法。
 
+### 键构造
+
+localizer 始终执行精确键查找，不会自动添加插件 ID 前缀。标准工具界面会根据
+descriptor ID 构造以下键：
+
+| 界面文本 | 资源键 |
+| --- | --- |
+| 工具名称 | `tool.<Tool ID>.name` |
+| 工具描述 | `tool.<Tool ID>.description` |
+| 参数标题 | `tool.<Tool ID>.param.<参数 ID>.title` |
+| 参数描述 | `tool.<Tool ID>.param.<参数 ID>.description` |
+| 三参数页面标题 | `page.<页面 ID>.title` |
+| 工具分类 | 宿主拥有的 `category.<分类小写>` |
+| 结果表格列名 | `result.<Tool ID>.column.<规范化列名>` |
+| 结果表格值 | `result.<Tool ID>.value.<规范化值>` |
+
+`ToolResult.summaryKey` 与 `detailKey` 由插件显式提供，宿主不会推导。传给
+`context.text(...)` 的键和四参数页面标题也始终原样使用。
+
+隔离来自插件专属 localizer，而不是给所有键添加文本前缀。不同插件中的相同键会
+分别在自己的资源集合中解析。
+
+结果表格显示名称会转为小写，把 `%` 变成 `" percent"`，把连续的 `a-z`/`0-9`
+以外字符变成 `_`，并去除首尾下划线。这只影响显示，不修改存储的结果数据。
+
 查找顺序为：
 
 1. 当前完整语言代码，例如 `zh_CN`；
@@ -94,6 +119,21 @@ String summary = context.text(
 键数量以及键值长度。问题会生成结构化插件诊断，跳过有问题的资源，同时保持启动
 和其他插件可用。资源查找只能访问所属插件 JAR 中
 `META-INF/opentools/i18n/` 下一层的文件，不能访问 JAR 外文件。
+
+当前资源限制为：
+
+| 项目 | 上限 |
+| --- | --- |
+| 语言文件数 | 64 |
+| 单个文件 | 256 KiB |
+| 资源总计 | 1 MiB |
+| 单文件键数 | 5,000 |
+| 单个键长度 | 256 个字符 |
+| 单个值长度 | 16,384 个字符 |
+
+语言文件名格式为
+`[A-Za-z]{2,8}(?:_[A-Za-z0-9]{2,8})?.properties`。推荐提供
+`en_US.properties` 作为后备语言，但缺少它不影响插件加载。
 
 ## 交互工具
 

@@ -25,7 +25,20 @@ Use String PluginContext.text(String key, String fallback, Object... args)
 and ToolUiContext.text(...). The host maps each registered Tool ID to the
 plugin that owns it. Language lookup uses the full active code, the language
 code, en_US, then the fallback. Values support java.text.MessageFormat.
-ToolDescriptor and ToolParameter English text remain the final fallback.
+ToolDescriptor and ToolParameter fallback text remains the final fallback.
+
+Keys passed to context.text(...) are exact and are not automatically prefixed
+with a plugin ID. Standard tool UI constructs these full keys:
+
+  tool.<Tool ID>.name
+  tool.<Tool ID>.description
+  tool.<Tool ID>.param.<Parameter ID>.title
+  tool.<Tool ID>.param.<Parameter ID>.description
+
+The three-argument registerPage(id, fallbackTitle, panelFactory) overload
+derives page.<Page ID>.title. Manifest nameKey and descriptionKey may use any
+resource keys. See docs/en_US/plugin-development.md or
+docs/zh_CN/plugin-development.md for the complete naming and packaging guide.
 
 Do not put plugin-private tool, result, or page keys in the host lang/
 directory. Host category keys such as category.plugin remain application-owned.
@@ -34,4 +47,6 @@ Open javadoc/index.html for offline API documentation. The javadoc JAR contains
 the same HTML for IDEs and Maven-compatible artifact repositories.
 
 Maven plugins should use the opentools-plugin-api dependency with provided
-scope. See the bundled reference plugin in plugins/.
+scope. Third-party runtime libraries must be unpacked into the plugin JAR by
+shading or provided by another declared OpenTools plugin JAR; nested JAR files
+are not loaded automatically. See the bundled reference plugin in plugins/.

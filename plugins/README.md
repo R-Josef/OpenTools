@@ -50,8 +50,15 @@ META-INF/opentools/i18n/zh_CN.properties
 The host binds one localizer per plugin and maps every registered Tool ID to
 that owner. Plugins with identical keys remain isolated. Use
 `PluginContext.text(...)` and `ToolUiContext.text(...)` for plugin text;
-`ToolDescriptor` and `ToolParameter` English values remain the final fallback.
+`ToolDescriptor` and `ToolParameter` fallback values remain the final fallback.
 The host `lang/` files contain only application-wide UI and category keys.
+
+Keys passed to `context.text(...)` are exact and are not automatically prefixed
+with the plugin ID. Standard tool UI constructs `tool.<Tool ID>.name` and the
+corresponding description and parameter keys. The three-argument `registerPage`
+overload derives `page.<Page ID>.title`. See
+`docs/<language>/plugin-development.md` for the complete ID, resource, result
+table, and packaging contract.
 
 Supported capabilities:
 
