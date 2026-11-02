@@ -4,6 +4,7 @@ import io.opentools.api.tool.OpenTool;
 
 import javax.swing.JPanel;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -52,6 +53,29 @@ public interface PluginContext {
      * @throws SecurityException if the plugin did not request the {@code tool} capability
      */
     void registerTool(OpenTool tool);
+
+    /**
+     * Registers a page using the conventional title key
+     * {@code page.<id>.title}.
+     *
+     * @param id page identifier unique within the plugin
+     * @param fallbackTitle fallback page title
+     * @param panelFactory factory creating the page component
+     * @throws SecurityException if the plugin did not request the {@code page} capability
+     */
+    default void registerPage(
+            String id,
+            String fallbackTitle,
+            Supplier<JPanel> panelFactory
+    ) {
+        String pageId = Objects.requireNonNull(id, "id");
+        registerPage(
+                pageId,
+                "page." + pageId + ".title",
+                Objects.requireNonNull(fallbackTitle, "fallbackTitle"),
+                Objects.requireNonNull(panelFactory, "panelFactory")
+        );
+    }
 
     /**
      * Registers a page shown in the desktop workbench.

@@ -49,7 +49,6 @@ META-INF/opentools/i18n/zh_CN.properties
 ```java
 context.registerPage(
         "main",
-        "page.main.title",
         "示例插件",
         () -> page(context)
 );
@@ -61,6 +60,9 @@ String summary = context.text(
         42
 );
 ```
+
+三参数重载会把页面 ID `"main"` 自动映射到 `page.main.title`。需要自定义资源键时，
+继续使用四参数方法。
 
 查找顺序为：
 

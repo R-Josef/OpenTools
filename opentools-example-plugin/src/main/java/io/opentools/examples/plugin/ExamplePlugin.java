@@ -14,7 +14,7 @@ public final class ExamplePlugin implements OpenToolsPlugin {
         context.log("Registering example plugin tools and page");
         context.registerTool(new CoinRunnerTool());
         context.registerTool(new HelloTool());
-        context.registerPage("main", "page.main.title", "Example Plugin", () -> page(context));
+        context.registerPage("main", "Example Plugin", () -> page(context));
     }
 
     private static JPanel page(PluginContext context) {

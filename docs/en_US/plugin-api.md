@@ -53,7 +53,6 @@ Resolve page and interactive-panel text through the host context:
 ```java
 context.registerPage(
         "main",
-        "page.main.title",
         "Example Plugin",
         () -> page(context)
 );
@@ -65,6 +64,9 @@ String summary = context.text(
         42
 );
 ```
+
+The three-argument overload derives `page.<id>.title`, so `"main"` above uses
+`page.main.title`. Use the four-argument form when a page needs a custom key.
 
 Lookup order is:
 

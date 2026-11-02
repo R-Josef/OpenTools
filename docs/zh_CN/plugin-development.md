@@ -56,11 +56,13 @@ result.plugin.example.coin-runner.summary=金币跑酷完成：{0}，{1} 米，{
 ```java
 context.registerPage(
         "main",
-        "page.main.title",
         "Example Plugin",
         () -> page(context)
 );
 ```
+
+该重载会由页面 ID 自动生成 `page.main.title`。只有需要非标准资源键时，才使用
+四参数重载。
 
 非法 Properties、重复键或超出限制的资源会生成结构化插件诊断。宿主跳过受影响
 资源，但插件和宿主继续加载。

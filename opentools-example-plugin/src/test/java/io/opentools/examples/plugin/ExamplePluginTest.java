@@ -31,6 +31,8 @@ final class ExamplePluginTest {
                 context.tools.stream().map(tool -> tool.descriptor().id()).toList());
         assertTrue(context.tools.getFirst() instanceof InteractiveOpenTool);
         assertEquals(List.of("main"), context.pages);
+        assertEquals(List.of("page.main.title"), context.pageTitleKeys);
+        assertEquals(List.of("Example Plugin"), context.pageFallbackTitles);
         assertEquals(1, context.logMessages.size());
     }
 
@@ -38,6 +40,8 @@ final class ExamplePluginTest {
         private final Path dataDirectory;
         private final List<OpenTool> tools = new ArrayList<>();
         private final List<String> pages = new ArrayList<>();
+        private final List<String> pageTitleKeys = new ArrayList<>();
+        private final List<String> pageFallbackTitles = new ArrayList<>();
         private final List<String> logMessages = new ArrayList<>();
 
         private TestContext(Path dataDirectory) {
@@ -79,6 +83,8 @@ final class ExamplePluginTest {
                 Supplier<JPanel> panelFactory
         ) {
             pages.add(id);
+            pageTitleKeys.add(titleKey);
+            pageFallbackTitles.add(fallbackTitle);
         }
     }
 }

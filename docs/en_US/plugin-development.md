@@ -58,11 +58,13 @@ Register the page with both its resource key and English fallback:
 ```java
 context.registerPage(
         "main",
-        "page.main.title",
         "Example Plugin",
         () -> page(context)
 );
 ```
+
+The overload derives the `page.main.title` key from the page ID. Use the
+four-argument overload only when the plugin needs a non-standard key.
 
 Malformed properties, duplicate keys, or resources over the documented limits
 appear as structured plugin diagnostics. The affected resource is skipped

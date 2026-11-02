@@ -11,6 +11,8 @@
   live language switching, `MessageFormat` arguments, localized descriptors,
   page titles, tools, parameters, documentation, interactive pages, and result
   summaries.
+- A three-argument `registerPage` convenience overload derives
+  `page.<id>.title` automatically while retaining the custom-key form.
 - Bundled default example plugin with the interactive Coin Runner tool, JSON
   run data, PNG result artwork, English/Chinese JAR resources, and
   default-enabled release packaging.
