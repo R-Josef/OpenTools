@@ -19,6 +19,16 @@ public interface ToolUiContext {
     String languageCode();
 
     /**
+     * Resolves a message using the owning plugin's bundled language resources.
+     *
+     * @param key resource key
+     * @param fallback text used when the resource is missing
+     * @param arguments optional {@link java.text.MessageFormat} arguments
+     * @return localized text
+     */
+    String text(String key, String fallback, Object... arguments);
+
+    /**
      * Submits completed tool data through the normal job pipeline.
      *
      * @param request completed tool request

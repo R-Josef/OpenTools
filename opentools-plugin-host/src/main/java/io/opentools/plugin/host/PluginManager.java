@@ -10,6 +10,7 @@ import io.opentools.plugin.PageContribution;
 import io.opentools.plugin.PluginApi;
 import io.opentools.plugin.PluginContext;
 import io.opentools.plugin.PluginDescriptor;
+import io.opentools.plugin.PluginLocalizer;
 
 import javax.swing.JPanel;
 import java.io.IOException;
@@ -49,13 +50,26 @@ public final class PluginManager implements AutoCloseable {
     private final List<LoadedPlugin> loaded = new ArrayList<>();
     private final List<PageContribution> pages = new ArrayList<>();
     private final Map<String, Candidate> candidates = new LinkedHashMap<>();
+    private final Map<String, PluginLocalizer> pluginLocalizers = new LinkedHashMap<>();
+    private final Map<String, PluginLocalizer> toolLocalizers = new LinkedHashMap<>();
+    private final Map<String, List<PluginDiagnostic>> localizationDiagnostics = new LinkedHashMap<>();
+    private final Supplier<String> languageSupplier;
 
     public PluginManager(Path appRoot, ToolRegistry toolRegistry) {
+        this(appRoot, toolRegistry, () -> "en_US");
+    }
+
+    public PluginManager(
+            Path appRoot,
+            ToolRegistry toolRegistry,
+            Supplier<String> languageSupplier
+    ) {
         this.appRoot = appRoot.toAbsolutePath().normalize();
         this.pluginsDirectory = this.appRoot.resolve("plugins");
         this.pluginDataDirectory = pluginsDirectory.resolve("data");
         this.toolRegistry = toolRegistry;
         this.stateStore = new PluginStateStore(pluginsDirectory);
+        this.languageSupplier = languageSupplier == null ? () -> "en_US" : languageSupplier;
     }
 
     public synchronized List<PluginInfo> scan() {
@@ -101,6 +115,7 @@ public final class PluginManager implements AutoCloseable {
 
     public synchronized List<PluginInfo> list() {
         return discovered.stream()
+                .map(this::visibleInfo)
                 .sorted(Comparator.comparing(PluginInfo::name, String.CASE_INSENSITIVE_ORDER)
                         .thenComparing(PluginInfo::id))
                 .toList();
@@ -108,6 +123,56 @@ public final class PluginManager implements AutoCloseable {
 
     public synchronized List<PageContribution> pages() {
         return List.copyOf(pages);
+    }
+
+    /**
+     * Returns the exact owner binding for a registered tool.
+     *
+     * @param toolId stable tool identifier
+     * @return plugin localizer, or {@code null} for a built-in or unregistered tool
+     */
+    public synchronized PluginLocalizer localizerForTool(String toolId) {
+        return toolId == null ? null : toolLocalizers.get(toolId);
+    }
+
+    /**
+     * Returns the localizer bound to an enabled plugin.
+     *
+     * @param pluginId plugin identifier
+     * @return plugin localizer, or {@code null}
+     */
+    public synchronized PluginLocalizer localizerForPlugin(String pluginId) {
+        return pluginId == null ? null : pluginLocalizers.get(pluginId);
+    }
+
+    /**
+     * Returns structured localization diagnostics for one plugin.
+     *
+     * @param pluginId plugin identifier
+     * @return immutable diagnostic list
+     */
+    public synchronized List<PluginDiagnostic> diagnostics(String pluginId) {
+        return localizationDiagnostics.getOrDefault(pluginId, List.of());
+    }
+
+    /**
+     * Returns the plugin display name in the active language.
+     *
+     * @param info plugin information
+     * @return localized or manifest fallback name
+     */
+    public synchronized String displayName(PluginInfo info) {
+        return visibleInfo(info).name();
+    }
+
+    /**
+     * Returns the plugin description in the active language.
+     *
+     * @param info plugin information
+     * @return localized or manifest fallback description
+     */
+    public synchronized String displayDescription(PluginInfo info) {
+        return visibleInfo(info).metadata().getOrDefault("description", "");
     }
 
     public synchronized void disabledAll() {
@@ -233,6 +298,9 @@ public final class PluginManager implements AutoCloseable {
                     loaded.add(plugin);
                     pages.addAll(plugin.registrations.pages);
                     info = loadedState(info, PluginState.ENABLED, "");
+                    if (!plugin.diagnostics.isEmpty()) {
+                        info = appendDiagnostic(info, diagnosticSummary(plugin.diagnostics));
+                    }
                     progressed = true;
                 } catch (Exception ex) {
                     info = loadedState(info, PluginState.FAILED, rootMessage(ex));
@@ -256,8 +324,10 @@ public final class PluginManager implements AutoCloseable {
         PluginDescriptor descriptor = candidate.descriptor();
         URL[] urls = classpath(candidate);
         PluginClassLoader classLoader = new PluginClassLoader(urls, PluginManager.class.getClassLoader());
+        JarPluginLocalizer.LoadResult localization = null;
         PluginRegistrations registrations = null;
         try {
+            localization = JarPluginLocalizer.load(candidate.source(), languageSupplier);
             Class<?> rawClass = Class.forName(descriptor.mainClass(), true, classLoader);
             if (!OpenToolsPlugin.class.isAssignableFrom(rawClass)) {
                 throw new IllegalArgumentException("Main class does not implement OpenToolsPlugin");
@@ -268,8 +338,14 @@ public final class PluginManager implements AutoCloseable {
             registrations = new PluginRegistrations(
                     descriptor.id(),
                     dataDirectory,
-                    descriptor.requestedCapabilities()
+                    descriptor.requestedCapabilities(),
+                    localization.localizer()
             );
+            pluginLocalizers.put(descriptor.id(), localization.localizer());
+            localizationDiagnostics.put(descriptor.id(), localization.diagnostics());
+            for (PluginDiagnostic diagnostic : localization.diagnostics()) {
+                registrations.log(diagnostic.toString());
+            }
             registrations.log("Enabling " + descriptor.id() + " " + descriptor.version());
             Thread thread = Thread.currentThread();
             ClassLoader previous = thread.getContextClassLoader();
@@ -279,10 +355,20 @@ public final class PluginManager implements AutoCloseable {
             } finally {
                 thread.setContextClassLoader(previous);
             }
-            return new LoadedPlugin(descriptor, candidate.source(), classLoader, plugin, registrations);
+            return new LoadedPlugin(
+                    descriptor,
+                    candidate.source(),
+                    classLoader,
+                    plugin,
+                    registrations,
+                    localization.diagnostics()
+            );
         } catch (Exception ex) {
             if (registrations != null) {
                 registrations.rollback();
+            }
+            if (localization != null) {
+                localization.localizer().close();
             }
             classLoader.close();
             throw ex;
@@ -386,6 +472,9 @@ public final class PluginManager implements AutoCloseable {
             }
         }
         loaded.clear();
+        pluginLocalizers.clear();
+        toolLocalizers.clear();
+        localizationDiagnostics.clear();
     }
 
     private Candidate ensureScanned(String id) {
@@ -436,6 +525,20 @@ public final class PluginManager implements AutoCloseable {
                 info.requestedCapabilities(),
                 info.metadata()
         );
+    }
+
+    private static PluginInfo appendDiagnostic(PluginInfo info, String diagnostic) {
+        String existing = info.diagnostic() == null ? "" : info.diagnostic().trim();
+        String combined = existing.isBlank()
+                ? diagnostic
+                : existing + System.lineSeparator() + diagnostic;
+        return loadedState(info, info.state(), combined);
+    }
+
+    private static String diagnosticSummary(List<PluginDiagnostic> diagnostics) {
+        return diagnostics.stream()
+                .map(PluginDiagnostic::toString)
+                .collect(java.util.stream.Collectors.joining(System.lineSeparator()));
     }
 
     private static PluginInfo info(
@@ -502,7 +605,8 @@ public final class PluginManager implements AutoCloseable {
             Path source,
             PluginClassLoader classLoader,
             OpenToolsPlugin instance,
-            PluginRegistrations registrations
+            PluginRegistrations registrations,
+            List<PluginDiagnostic> diagnostics
     ) {
     }
 
@@ -511,20 +615,32 @@ public final class PluginManager implements AutoCloseable {
         private final Path dataDirectory;
         private final Path logFile;
         private final Set<String> capabilities;
+        private final JarPluginLocalizer localizer;
         private final List<OpenTool> tools = new ArrayList<>();
         private final List<PageContribution> pages = new ArrayList<>();
         private boolean rolledBack;
 
-        private PluginRegistrations(String pluginId, Path dataDirectory, List<String> capabilities) {
+        private PluginRegistrations(
+                String pluginId,
+                Path dataDirectory,
+                List<String> capabilities,
+                JarPluginLocalizer localizer
+        ) {
             this.pluginId = pluginId;
             this.dataDirectory = dataDirectory;
             this.logFile = dataDirectory.resolve("plugin.log");
             this.capabilities = Set.copyOf(capabilities);
+            this.localizer = localizer;
         }
 
         @Override
         public String pluginId() {
             return pluginId;
+        }
+
+        @Override
+        public String text(String key, String fallback, Object... arguments) {
+            return localizer.text(key, fallback, arguments);
         }
 
         @Override
@@ -555,15 +671,27 @@ public final class PluginManager implements AutoCloseable {
             requireCapability("tool");
             toolRegistry.register(tool);
             tools.add(tool);
+            toolLocalizers.put(tool.descriptor().id(), localizer);
         }
 
         @Override
-        public void registerPage(String id, String title, Supplier<JPanel> panelFactory) {
+        public void registerPage(
+                String id,
+                String titleKey,
+                String fallbackTitle,
+                Supplier<JPanel> panelFactory
+        ) {
             if (rolledBack) {
                 throw new IllegalStateException("Plugin context is closed");
             }
             requireCapability("page");
-            pages.add(new PageContribution(pluginId + "." + id, title, panelFactory));
+            pages.add(new PageContribution(
+                    pluginId + "." + id,
+                    titleKey,
+                    fallbackTitle,
+                    localizer,
+                    panelFactory
+            ));
         }
 
         private void requireCapability(String capability) {
@@ -576,9 +704,38 @@ public final class PluginManager implements AutoCloseable {
 
         private void rollback() {
             rolledBack = true;
-            tools.forEach(tool -> toolRegistry.unregister(tool.descriptor().id()));
+            tools.forEach(tool -> {
+                String toolId = tool.descriptor().id();
+                toolRegistry.unregister(toolId);
+                toolLocalizers.remove(toolId, localizer);
+            });
             tools.clear();
             pages.clear();
+            pluginLocalizers.remove(pluginId, localizer);
+            localizationDiagnostics.remove(pluginId);
+            localizer.close();
         }
+    }
+
+    private PluginInfo visibleInfo(PluginInfo info) {
+        Candidate candidate = candidates.get(info.id());
+        PluginLocalizer localizer = pluginLocalizers.get(info.id());
+        if (candidate == null || localizer == null) {
+            return info;
+        }
+        Map<String, String> metadata = new LinkedHashMap<>(info.metadata());
+        metadata.put("description", candidate.descriptor().localizedDescription(localizer));
+        return new PluginInfo(
+                info.id(),
+                candidate.descriptor().localizedName(localizer),
+                info.version(),
+                info.apiVersion(),
+                info.source(),
+                info.state(),
+                info.diagnostic(),
+                info.dependencies(),
+                info.requestedCapabilities(),
+                metadata
+        );
     }
 }

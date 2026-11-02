@@ -7,16 +7,27 @@
 - Linux x64 and macOS x64/arm64 portable release packaging.
 - GitHub Actions release matrix that builds and validates all platform
   artifacts before publishing a tagged GitHub Release.
-- Plugin API 2.0 with `InteractiveOpenTool`, lifecycle-safe `ToolPanel` pages,
-  and standard request submission through `ToolUiContext`.
+- Plugin API 2.1 with plugin-scoped, namespace-isolated UTF-8 localization,
+  live language switching, `MessageFormat` arguments, localized descriptors,
+  page titles, tools, parameters, documentation, interactive pages, and result
+  summaries.
 - Bundled default example plugin with the interactive Coin Runner tool, JSON
-  run data, PNG result artwork, and default-enabled release packaging.
+  run data, PNG result artwork, English/Chinese JAR resources, and
+  default-enabled release packaging.
 
 ### Changed
 
+- Plugin localization now comes from
+  `META-INF/opentools/i18n/<language>.properties` in the owning plugin JAR.
+  Private example-plugin keys were removed from host `lang/` files.
+- Every registered Tool ID is explicitly bound to its plugin localizer.
+  Missing resources fall back to `ToolDescriptor` and `ToolParameter` text.
+  Invalid, duplicate, or oversized resources produce structured diagnostics.
 - Tool terminology is now consistent across the UI, CLI JSON, docs, and public
   execution contracts: `ToolExecutionContext`, `ToolResult`, and
   `ToolExecutionService`.
+- Plugin API docs, the developer guide, release package notes, compile SDK,
+  plugin directory guide, and host language-file guide describe Plugin API 2.1.
 
 ## 0.8.0-SNAPSHOT
 

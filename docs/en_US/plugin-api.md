@@ -1,4 +1,4 @@
-# Plugin API 2.0
+# Plugin API 2.1
 
 OpenTools plugins compile against one self-contained JAR:
 
@@ -32,6 +32,75 @@ During enablement the host creates that class and passes a `PluginContext` to
 - interactive tools by registering an `InteractiveOpenTool`;
 - desktop pages through `registerPage`;
 - private data and logs through the declared `data` capability.
+
+## Plugin localization
+
+Plugin-owned text stays inside the plugin JAR. Use UTF-8 properties files under
+one fixed directory:
+
+```text
+META-INF/opentools/i18n/en_US.properties
+META-INF/opentools/i18n/zh_CN.properties
+```
+
+The host binds one private localizer to each enabled plugin when the JAR loads.
+Every registered Tool ID is mapped to the plugin that registered it; the host
+does not infer plugin ownership from an ID prefix. Identical keys in different
+plugins therefore remain isolated.
+
+Resolve page and interactive-panel text through the host context:
+
+```java
+context.registerPage(
+        "main",
+        "page.main.title",
+        "Example Plugin",
+        () -> page(context)
+);
+String title = context.text("page.main.title", "Example Plugin");
+String label = toolUiContext.text("game.playerName", "Player");
+String summary = context.text(
+        "result.example.summary",
+        "{0} rows completed",
+        42
+);
+```
+
+Lookup order is:
+
+1. the complete active code, such as `zh_CN`;
+2. the language-only code, such as `zh`;
+3. `en_US`;
+4. the fallback passed by the caller.
+
+Values use `java.text.MessageFormat` when arguments are supplied. The localizer
+reads the active language on every lookup, so a language change affects plugin
+metadata, page titles, tool catalogs, forms, documentation, interactive pages,
+and result text without restarting the process.
+
+`ToolDescriptor` and `ToolParameter` continue to carry English display text.
+Those values remain the final fallback when a language file or key is absent.
+The descriptor may localize its own name and description with optional keys:
+
+```json
+{
+  "name": "Example Plugin",
+  "nameKey": "plugin.name",
+  "description": "Example extension",
+  "descriptionKey": "plugin.description"
+}
+```
+
+Do not add plugin-private `tool.*`, `result.*`, or `page.*` keys to the host
+`lang/` directory. The host-owned `category.*` keys, including
+`category.plugin`, remain part of the application language files.
+
+The loader validates UTF-8, duplicate keys, malformed properties, file count,
+file and aggregate size, key count, and key/value length. Problems produce
+structured plugin diagnostics, skip the affected resource, and keep startup
+and unrelated plugins running. Resource lookup is limited to one level under
+`META-INF/opentools/i18n/` in the owning plugin JAR and cannot address files
+outside that JAR.
 
 ## Interactive tools
 
@@ -106,12 +175,12 @@ source, dependencies, requested capabilities, and licenses.
 
 ## Compatibility
 
-Plugin API 2.0 is the current extension contract. The major version must
+Plugin API 2.1 is the current extension contract. The major version must
 match the host. A plugin may request the current minor version or an older minor
 version within the same major version. This release does not support legacy
 Java panel plugins, `.plugin` script packages, or TBtools plugin binaries.
 
-API 2.0 intentionally uses Tool terminology throughout the execution contracts:
+API 2.1 continues the Tool terminology introduced in API 2.0:
 
 | API 1.0 | API 2.0 |
 | --- | --- |
@@ -120,4 +189,6 @@ API 2.0 intentionally uses Tool terminology throughout the execution contracts:
 | `TaskExecutionService` | `ToolExecutionService` |
 | `TaskAutomationService` | `ToolAutomationService` |
 
-Plugins compiled against 1.0 must be rebuilt against 2.0.
+Plugins compiled against an older contract must be rebuilt against 2.1. There
+are no deprecated localization aliases or dual host/plugin resource lookup
+paths.

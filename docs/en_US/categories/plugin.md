@@ -18,3 +18,8 @@ The finished run creates:
 The custom Swing panel does not bypass the normal pipeline. It submits a
 standard `ToolRequest` through `ToolUiContext`, so the run appears in Jobs and
 Results like any other tool execution.
+
+All Coin Runner labels, parameter guidance, page title, and result text come
+from the plugin JAR's `META-INF/opentools/i18n/en_US.properties` and
+`zh_CN.properties`. Switching the interface language updates the plugin views
+without restarting OpenTools.

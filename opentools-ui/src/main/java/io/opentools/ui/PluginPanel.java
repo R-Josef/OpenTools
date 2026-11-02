@@ -297,7 +297,7 @@ final class PluginPanel extends JPanel {
         public Object getValueAt(int rowIndex, int columnIndex) {
             PluginInfo row = rows.get(rowIndex);
             return switch (columnIndex) {
-                case 0 -> row.name();
+                case 0 -> pluginManager.displayName(row);
                 case 1 -> language.text("plugin.state." + row.state().name(), row.state().name());
                 case 2 -> row.version();
                 case 3 -> row.apiVersion();

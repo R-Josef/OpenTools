@@ -9,6 +9,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import javax.swing.JPanel;
 import java.nio.file.Path;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -49,6 +50,13 @@ final class ExamplePluginTest {
         }
 
         @Override
+        public String text(String key, String fallback, Object... arguments) {
+            return arguments == null || arguments.length == 0
+                    ? fallback
+                    : MessageFormat.format(fallback, arguments);
+        }
+
+        @Override
         public Path dataDirectory() {
             return dataDirectory;
         }
@@ -64,7 +72,12 @@ final class ExamplePluginTest {
         }
 
         @Override
-        public void registerPage(String id, String title, Supplier<JPanel> panelFactory) {
+        public void registerPage(
+                String id,
+                String titleKey,
+                String fallbackTitle,
+                Supplier<JPanel> panelFactory
+        ) {
             pages.add(id);
         }
     }

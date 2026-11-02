@@ -10,6 +10,7 @@ import io.opentools.core.workspace.ProjectService;
 import io.opentools.formats.BuiltInTools;
 import io.opentools.external.ExternalTools;
 import io.opentools.plugin.host.PluginManager;
+import io.opentools.plugin.host.ToolTextResolver;
 import io.opentools.visualization.BuiltInVisualizations;
 
 import java.nio.file.Files;
@@ -53,9 +54,9 @@ public final class CliRuntime implements AutoCloseable {
         BuiltInAnalysis.register(registry);
         ExternalTools.register(registry);
         BuiltInVisualizations.register(registry);
-        PluginManager pluginManager = new PluginManager(appHome, registry);
-        pluginManager.scan();
         LanguageManager language = new LanguageManager(appHome, forcedLanguage);
+        PluginManager pluginManager = new PluginManager(appHome, registry, language::activeCode);
+        pluginManager.scan();
         return new CliRuntime(
                 registry,
                 project,
@@ -79,6 +80,10 @@ public final class CliRuntime implements AutoCloseable {
 
     public LanguageManager language() {
         return language;
+    }
+
+    public ToolTextResolver toolText() {
+        return new ToolTextResolver(pluginManager, language);
     }
 
     public synchronized ToolExecutionService execution() {

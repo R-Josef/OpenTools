@@ -1,6 +1,8 @@
 package io.opentools.plugin.host;
 
 import io.opentools.core.tool.ToolRegistry;
+import io.opentools.core.i18n.LanguageManager;
+import io.opentools.api.tool.ToolDescriptor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -9,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import java.util.zip.ZipEntry;
@@ -87,7 +90,8 @@ final class PluginManagerTest {
         );
 
         ToolRegistry registry = new ToolRegistry();
-        PluginManager manager = new PluginManager(tempDir, registry);
+        LanguageManager language = testLanguage("zh_CN");
+        PluginManager manager = new PluginManager(tempDir, registry, language::activeCode);
         PluginInfo initial = manager.scan().getFirst();
 
         assertEquals(PluginState.DISABLED, initial.state());
@@ -95,6 +99,8 @@ final class PluginManagerTest {
         assertEquals(PluginState.ENABLED, info.state());
         assertEquals(1, manager.pages().size());
         assertTrue(registry.find("fixture.plugin.echo").isPresent());
+        ToolDescriptor descriptor = registry.find("fixture.plugin.echo").orElseThrow().descriptor();
+        assertEquals("Plugin Echo", new ToolTextResolver(manager, language).name(descriptor));
         manager.disable("working");
         assertTrue(manager.pages().isEmpty());
         assertTrue(registry.find("fixture.plugin.echo").isEmpty());
@@ -374,6 +380,79 @@ final class PluginManagerTest {
         assertTrue(info(afterEnable, "cycle.a").diagnostic().contains("cycle"));
     }
 
+    @Test
+    void bindsLocalizationToExactToolAndFollowsLanguageChanges() throws Exception {
+        Path plugins = Files.createDirectories(tempDir.resolve("plugins"));
+        writeLocalizedPluginJar(plugins.resolve("localized.jar"), Map.of(
+                "en_US", """
+                        plugin.name=Localized Plugin
+                        plugin.description=English description
+                        page.main.title=Localized Page
+                        tool.fixture.plugin.echo.name=Plugin Echo
+                        tool.fixture.plugin.echo.description=English tool description
+                        formatted=Read {0} rows
+                        """,
+                "zh_CN", """
+                        plugin.name=\u672c\u5730\u5316\u63d2\u4ef6
+                        plugin.description=\u4e2d\u6587\u63cf\u8ff0
+                        page.main.title=\u672c\u5730\u5316\u9875\u9762
+                        tool.fixture.plugin.echo.name=\u63d2\u4ef6\u56de\u58f0
+                        tool.fixture.plugin.echo.description=\u4e2d\u6587\u5de5\u5177\u63cf\u8ff0
+                        formatted=\u5df2\u8bfb\u53d6 {0} \u884c
+                        """
+        ));
+        LanguageManager language = testLanguage("zh_CN");
+        ToolRegistry registry = new ToolRegistry();
+        PluginManager manager = new PluginManager(tempDir, registry, language::activeCode);
+        manager.scan();
+
+        PluginInfo chinese = manager.enable("working").getFirst();
+        ToolDescriptor descriptor = registry.find("fixture.plugin.echo")
+                .orElseThrow()
+                .descriptor();
+        ToolTextResolver resolver = new ToolTextResolver(manager, language);
+
+        assertEquals(PluginState.ENABLED, chinese.state());
+        assertEquals("\u672c\u5730\u5316\u63d2\u4ef6", chinese.name());
+        assertEquals("\u4e2d\u6587\u63cf\u8ff0", manager.displayDescription(chinese));
+        assertEquals("\u672c\u5730\u5316\u9875\u9762", manager.pages().getFirst().title());
+        assertEquals("\u63d2\u4ef6\u56de\u58f0", resolver.name(descriptor));
+        assertEquals("\u5df2\u8bfb\u53d6 3 \u884c",
+                resolver.text("fixture.plugin.echo", "formatted", "fallback", 3));
+        assertTrue(manager.localizerForPlugin("working") != null);
+        assertTrue(manager.localizerForTool("fixture.plugin.echo") != null);
+
+        language.setLanguage("en_US");
+        assertEquals("Localized Plugin", manager.list().getFirst().name());
+        assertEquals("Localized Page", manager.pages().getFirst().title());
+        assertEquals("Plugin Echo", resolver.name(descriptor));
+
+        manager.disable("working");
+        assertTrue(manager.localizerForPlugin("working") == null);
+        assertTrue(manager.localizerForTool("fixture.plugin.echo") == null);
+        assertEquals("Plugin Echo", resolver.name(descriptor));
+    }
+
+    @Test
+    void reportsDuplicatePluginLanguageKeysAndFallsBackToEnglish() throws Exception {
+        Path plugins = Files.createDirectories(tempDir.resolve("plugins"));
+        writeLocalizedPluginJar(plugins.resolve("diagnostic.jar"), Map.of(
+                "en_US", "tool.fixture.plugin.echo.name=English fallback\n",
+                "zh_CN", "duplicate=one\nduplicate=two\n"
+        ));
+        LanguageManager language = testLanguage("zh_CN");
+        ToolRegistry registry = new ToolRegistry();
+        PluginManager manager = new PluginManager(tempDir, registry, language::activeCode);
+        manager.scan();
+        PluginInfo info = manager.enable("working").getFirst();
+
+        assertEquals(PluginState.ENABLED, info.state());
+        assertEquals("I18N_DUPLICATE_KEY", manager.diagnostics("working").getFirst().code());
+        assertTrue(info.diagnostic().contains("I18N_DUPLICATE_KEY"));
+        ToolDescriptor descriptor = registry.find("fixture.plugin.echo").orElseThrow().descriptor();
+        assertEquals("English fallback", new ToolTextResolver(manager, language).name(descriptor));
+    }
+
     private void writePluginJar(
             Path path,
             String id,
@@ -384,6 +463,46 @@ final class PluginManagerTest {
             List<String> dependencies
     ) throws Exception {
         writePluginJar(path, id, name, version, mainClass, apiVersion, dependencies, List.of("tool", "page"));
+    }
+
+    private void writeLocalizedPluginJar(Path path, Map<String, String> resources) throws Exception {
+        String fixture = "io/opentools/plugin/host/fixture/TestPlugin.class";
+        byte[] classBytes;
+        try (var input = getClass().getClassLoader().getResourceAsStream(fixture)) {
+            classBytes = input == null ? new byte[0] : input.readAllBytes();
+        }
+        String json = """
+                {
+                  "id": "working",
+                  "name": "Working Plugin",
+                  "version": "2.0",
+                  "apiVersion": "2.1",
+                  "mainClass": "io.opentools.plugin.host.fixture.TestPlugin",
+                  "description": "Fallback description",
+                  "nameKey": "plugin.name",
+                  "descriptionKey": "plugin.description",
+                  "author": "",
+                  "dependencies": [],
+                  "requestedCapabilities": ["tool", "page"]
+                }
+                """;
+        try (JarWriter jar = new JarWriter(path)) {
+            jar.write("META-INF/opentools-plugin.json", json);
+            jar.write(fixture, classBytes);
+            for (Map.Entry<String, String> resource : resources.entrySet()) {
+                jar.write(
+                        "META-INF/opentools/i18n/" + resource.getKey() + ".properties",
+                        resource.getValue()
+                );
+            }
+        }
+    }
+
+    private LanguageManager testLanguage(String activeCode) throws Exception {
+        Path languages = Files.createDirectories(tempDir.resolve("lang"));
+        Files.writeString(languages.resolve("en_US.properties"), "language.name=English\n");
+        Files.writeString(languages.resolve("zh_CN.properties"), "language.name=Chinese\n");
+        return new LanguageManager(tempDir, tempDir.resolve("user"), activeCode);
     }
 
     private void writePluginJar(
@@ -456,7 +575,7 @@ final class PluginManagerTest {
                 import javax.swing.JPanel;
                 public final class Plugin implements OpenToolsPlugin {
                     public void onEnable(PluginContext context) {
-                        context.registerPage("main", "%s", JPanel::new);
+                        context.registerPage("main", "page.main.title", "%s", JPanel::new);
                     }
                 }
                 """.formatted(pageTitle));

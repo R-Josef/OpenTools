@@ -27,7 +27,7 @@ final class CoinRunnerPanel extends ToolPanel {
     private static final Color MUTED = new Color(99, 112, 118);
 
     private final ToolUiContext context;
-    private final boolean chinese;
+    private final JLabel playerLabel = new JLabel();
     private final JTextField playerName;
     private final JLabel status = new JLabel();
     private final CoinRunnerModel model = new CoinRunnerModel(System.nanoTime());
@@ -39,19 +39,24 @@ final class CoinRunnerPanel extends ToolPanel {
     CoinRunnerPanel(ToolUiContext context) {
         super(new BorderLayout(0, 12));
         this.context = context;
-        this.chinese = context.languageCode().toLowerCase().startsWith("zh");
         setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
 
         JPanel header = new JPanel(new BorderLayout(16, 0));
-        JLabel title = new JLabel(chinese ? "金币跑酷" : "Coin Runner");
+        JLabel title = new JLabel(context.text(
+                "tool.plugin.example.coin-runner.name",
+                "Coin Runner"
+        ));
         title.setFont(title.getFont().deriveFont(Font.BOLD, title.getFont().getSize2D() + 8f));
         header.add(title, BorderLayout.WEST);
 
         JPanel playerRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        JLabel playerLabel = new JLabel(chinese ? "玩家名称" : "Player");
+        playerLabel.setText(context.text("game.playerName", "Player"));
         playerLabel.setForeground(MUTED);
-        playerName = new JTextField(chinese ? "小跑者" : "Runner", 18);
-        playerName.setToolTipText(chinese ? "显示在角色头顶的名称" : "Name shown above the runner");
+        playerName = new JTextField(context.text("game.defaultPlayerName", "Runner"), 18);
+        playerName.setToolTipText(context.text(
+                "game.playerNameTooltip",
+                "Name shown above the runner"
+        ));
         playerRow.add(playerLabel);
         playerRow.add(playerName);
         header.add(playerRow, BorderLayout.EAST);
@@ -59,7 +64,10 @@ final class CoinRunnerPanel extends ToolPanel {
 
         add(new GameViewport(), BorderLayout.CENTER);
         status.setForeground(MUTED);
-        status.setText(chinese ? "点击画面开始；再次点击立即结束" : "Click the scene to start; click again to finish");
+        status.setText(context.text(
+                "game.clickSceneToStart",
+                "Click the scene to start; click again to finish"
+        ));
         add(status, BorderLayout.SOUTH);
 
         timer = new Timer(16, ignored -> tick());
@@ -102,7 +110,10 @@ final class CoinRunnerPanel extends ToolPanel {
         model.start(playerName.getText());
         playerName.setEnabled(false);
         lastTickNanos = System.nanoTime();
-        status.setText(chinese ? "空格跳跃，点击画面立即结束" : "Press Space to jump; click to finish");
+        status.setText(context.text(
+                "game.runningHint",
+                "Press Space to jump; click to finish"
+        ));
         canvas.requestFocusInWindow();
         canvas.repaint();
     }
@@ -128,7 +139,7 @@ final class CoinRunnerPanel extends ToolPanel {
         }
         submitted = true;
         playerName.setEnabled(true);
-        status.setText(chinese ? "正在提交本局结果..." : "Submitting this run...");
+        status.setText(context.text("game.submitting", "Submitting this run..."));
         Map<String, Object> parameters = new LinkedHashMap<>();
         parameters.put("playerName", model.playerName());
         parameters.put("distance", (int) Math.round(model.distanceMeters()));
@@ -142,10 +153,18 @@ final class CoinRunnerPanel extends ToolPanel {
         SwingUtilities.invokeLater(() -> {
             try {
                 String runId = context.submit(new ToolRequest(context.tool().id(), parameters));
-                status.setText((chinese ? "作业已提交：" : "Job submitted: ") + shortId(runId));
+                status.setText(context.text(
+                        "game.submitted",
+                        "Job submitted: {0}",
+                        shortId(runId)
+                ));
             } catch (Exception ex) {
                 submitted = false;
-                status.setText((chinese ? "提交失败：" : "Submission failed: ") + rootMessage(ex));
+                status.setText(context.text(
+                        "game.submitFailed",
+                        "Submission failed: {0}",
+                        rootMessage(ex)
+                ));
             }
             canvas.repaint();
         });
@@ -181,9 +200,9 @@ final class CoinRunnerPanel extends ToolPanel {
         protected void paintComponent(Graphics graphics) {
             super.paintComponent(graphics);
             String overlay = switch (model.state()) {
-                case READY -> chinese ? "点击开始" : "Click to start";
+                case READY -> context.text("game.clickToStart", "Click to start");
                 case RUNNING -> null;
-                case FINISHED -> chinese ? "本局结束" : "Run finished";
+                case FINISHED -> context.text("game.runFinished", "Run finished");
             };
             CoinRunnerRenderer.draw(
                     (java.awt.Graphics2D) graphics,

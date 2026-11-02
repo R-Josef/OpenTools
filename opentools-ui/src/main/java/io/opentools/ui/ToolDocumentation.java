@@ -3,24 +3,29 @@ package io.opentools.ui;
 import io.opentools.core.i18n.LanguageManager;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
+import io.opentools.plugin.host.ToolTextResolver;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 
 final class ToolDocumentation {
     private ToolDocumentation() {
     }
 
     static String render(ToolDescriptor tool, LanguageManager language) {
+        return render(tool, ToolTextResolver.hostOnly(language));
+    }
+
+    static String render(ToolDescriptor tool, ToolTextResolver toolText) {
+        LanguageManager language = toolText.language();
         boolean chinese = language != null && language.activeCode().startsWith("zh");
-        String name = text(language, "tool." + tool.id() + ".name", tool.name());
-        String description = text(language, "tool." + tool.id() + ".description", tool.description());
+        String name = toolText.name(tool);
+        String description = toolText.description(tool);
         StringBuilder markdown = new StringBuilder();
         markdown.append("# ").append(name).append("\n\n");
         markdown.append('`').append(tool.id()).append("` · ")
-                .append(localizedCategory(tool.category(), language)).append(" · v")
+                .append(toolText.category(tool.category())).append(" · v")
                 .append(tool.version()).append("\n\n");
 
         markdown.append(chinese ? "## 用途与适用场景\n\n" : "## Purpose and use cases\n\n");
@@ -41,7 +46,7 @@ final class ToolDocumentation {
         } else {
             for (ToolParameter parameter : tool.parameters()) {
                 markdown.append("### ")
-                        .append(parameterTitle(tool, parameter, language))
+                        .append(toolText.parameterTitle(tool, parameter))
                         .append(" (`").append(parameter.id()).append("`)\n\n");
                 markdown.append("- ").append(chinese ? "类型：" : "Type: ")
                         .append('`').append(parameter.type()).append("`\n");
@@ -53,7 +58,7 @@ final class ToolDocumentation {
                 markdown.append("- ").append(chinese ? "范围/选项：" : "Range/options: ")
                         .append(constraints(parameter, chinese)).append('\n');
                 markdown.append("- ").append(chinese ? "说明：" : "Description: ")
-                        .append(singleLine(parameterDescription(tool, parameter, language))).append("\n\n");
+                        .append(singleLine(toolText.parameterDescription(tool, parameter))).append("\n\n");
             }
         }
 
@@ -188,26 +193,6 @@ final class ToolDocumentation {
                 .orElse(fallback);
     }
 
-    private static String parameterTitle(
-            ToolDescriptor tool,
-            ToolParameter parameter,
-            LanguageManager language
-    ) {
-        return text(language,
-                "tool." + tool.id() + ".param." + parameter.id() + ".title",
-                parameter.title());
-    }
-
-    private static String parameterDescription(
-            ToolDescriptor tool,
-            ToolParameter parameter,
-            LanguageManager language
-    ) {
-        return text(language,
-                "tool." + tool.id() + ".param." + parameter.id() + ".description",
-                parameter.description());
-    }
-
     private static String defaultValue(ToolParameter parameter, boolean chinese) {
         Object value = parameter.defaultValue();
         if (value == null) {
@@ -234,18 +219,6 @@ final class ToolDocumentation {
 
     private static String numeric(Double value) {
         return value == Math.rint(value) ? String.valueOf(value.longValue()) : String.valueOf(value);
-    }
-
-    private static String localizedCategory(String category, LanguageManager language) {
-        return text(language, "category." + category.toLowerCase(Locale.ROOT), category);
-    }
-
-    private static String text(
-            LanguageManager language,
-            String key,
-            String fallback
-    ) {
-        return language == null ? Objects.requireNonNullElse(fallback, "") : language.text(key, fallback);
     }
 
     private static String singleLine(String value) {

@@ -13,7 +13,12 @@ The distribution also includes a self-contained Plugin API JAR under
 compile-only contract and must not be bundled into a plugin.
 
 The trusted example plugin is bundled under `plugins/` and starts enabled by
-default. It contributes the interactive Coin Runner tool.
+default. It contributes the interactive Coin Runner tool with English and
+Chinese resources packaged in its own JAR.
+
+Plugin API 2.1 keeps plugin-localized descriptors, pages, tools, parameters,
+and results inside `META-INF/opentools/i18n/`. Release verification checks the
+default plugin JAR, its language resources, and `plugins/plugin-state.json`.
 
 ## Windows x64 portable package
 

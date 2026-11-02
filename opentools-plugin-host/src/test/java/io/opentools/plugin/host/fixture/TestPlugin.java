@@ -16,7 +16,7 @@ import java.util.List;
 public class TestPlugin implements OpenToolsPlugin {
     @Override
     public void onEnable(PluginContext context) {
-        context.registerPage("main", "Test Page", JPanel::new);
+        context.registerPage("main", "page.main.title", "Test Page", JPanel::new);
         context.registerTool(new PluginEchoTool());
     }
 

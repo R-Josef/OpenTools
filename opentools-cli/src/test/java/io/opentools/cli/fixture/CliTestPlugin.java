@@ -17,7 +17,7 @@ import java.util.List;
 public final class CliTestPlugin implements OpenToolsPlugin {
     @Override
     public void onEnable(PluginContext context) {
-        context.registerPage("main", "CLI Test Page", JPanel::new);
+        context.registerPage("main", "page.main.title", "CLI Test Page", JPanel::new);
         context.registerTool(new CliTestTool());
     }
 

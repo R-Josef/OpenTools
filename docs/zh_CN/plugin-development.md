@@ -1,6 +1,6 @@
 # 插件开发者指南
 
-OpenTools 插件使用 Plugin API 2.0，通过独立类加载器注册工具和页面。插件 JAR
+OpenTools 插件使用 Plugin API 2.1，通过独立类加载器注册工具和页面。插件 JAR
 需要 `META-INF/opentools-plugin.json`。
 
 ## 最小描述
@@ -10,15 +10,60 @@ OpenTools 插件使用 Plugin API 2.0，通过独立类加载器注册工具和�
   "id": "example.plugin",
   "name": "Example Plugin",
   "version": "1.0.0",
-  "apiVersion": "2.0",
+  "apiVersion": "2.1",
   "mainClass": "com.example.ExamplePlugin",
   "description": "Example extension",
+  "nameKey": "plugin.name",
+  "descriptionKey": "plugin.description",
   "dependencies": [],
   "requestedCapabilities": ["tool", "page", "data"]
 }
 ```
 
 省略能力时默认包含全部能力；插件应只声明实际需要的 `tool`、`page` 和 `data`。
+
+## 随插件提供的本地化
+
+插件语言资源保存在插件 JAR 内：
+
+```text
+META-INF/opentools/i18n/en_US.properties
+META-INF/opentools/i18n/zh_CN.properties
+```
+
+文件使用 UTF-8。`en_US` 是插件后备语言；缺少键时继续使用
+`ToolDescriptor` 或 `ToolParameter` 中的英文文本。宿主在加载时一次性绑定插件级
+localizer，并把每个 Tool ID 映射到注册它的插件。
+
+注册页面时调用 `PluginContext.text(...)`，交互面板内调用
+`ToolUiContext.text(...)`。资源值支持 `MessageFormat` 参数。不要从宿主
+`lang/` 目录直接读取插件文件，也不要自行遍历资源路径。
+
+默认示例插件提供：
+
+```ini
+plugin.name=示例插件
+plugin.description=默认 OpenTools 插件
+page.main.title=示例插件
+
+tool.plugin.example.coin-runner.name=金币跑酷
+tool.plugin.example.coin-runner.param.playerName.title=玩家名称
+result.plugin.example.coin-runner.summary=金币跑酷完成：{0}，{1} 米，{2} 分
+```
+
+注册页面时同时提供资源键和英文后备：
+
+```java
+context.registerPage(
+        "main",
+        "page.main.title",
+        "Example Plugin",
+        () -> page(context)
+);
+```
+
+非法 Properties、重复键或超出限制的资源会生成结构化插件诊断。宿主跳过受影响
+资源，但插件和宿主继续加载。
 
 ## 构建
 
@@ -59,7 +104,7 @@ Maven 插件应使用 `provided` scope 依赖 `opentools-plugin-api`。API JAR
 同时包含扩展接口和实现插件工具所需的公共执行契约。
 
 完整编译方式、运行时边界、Javadoc 和兼容策略见
-[Plugin API 2.0](plugin-api.md)。
+[Plugin API 2.1](plugin-api.md)。
 
 ## 安全边界
 
@@ -79,6 +124,8 @@ OpenTools 默认禁用插件，但不把不受信任代码变成安全代码。�
 - 无路径穿越或解压炸弹行为；
 - 工具参数有完整 Schema；
 - 交互页面正确管理生命周期并提交标准请求；
+- 描述、页面、工具、参数和结果使用 UTF-8 插件资源；
+- 语言回退、同键隔离、诊断和禁用释放有测试；
 - 工具、GUI、CLI、MCP 使用同一执行契约；
 - 许可证和第三方声明完整；
 - 有禁用、失败回滚和升级测试。

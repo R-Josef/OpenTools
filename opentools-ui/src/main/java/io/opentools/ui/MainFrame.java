@@ -195,19 +195,24 @@ final class MainFrame extends JFrame {
     private JPanel createContent() {
         cardLayout.setVgap(0);
         cards.add(createHomePanel(), HOME);
-        docsPanel = new DocsPanel(session.registry(), session.language());
+        docsPanel = new DocsPanel(session.registry(), session.language(), session.toolText());
         cards.add(docsPanel, DOCS);
         cards.add(createProjectsPanel(), PROJECTS);
         catalogPanel = new ToolCatalogPanel(
                 session.registry(),
                 session.execution(),
                 session.language(),
+                session.toolText(),
                 request -> session.submit(request),
                 this::refreshJobs
         );
         cards.add(catalogPanel, TOOLS);
         cards.add(createJobsPanel(), JOBS);
-        resultPanel = new ResultInspectorPanel(session.execution(), session.language());
+        resultPanel = new ResultInspectorPanel(
+                session.execution(),
+                session.language(),
+                session.toolText()
+        );
         cards.add(resultPanel, RESULTS);
         pluginPanel = new PluginPanel(session.plugins(), session.language(), this::afterPluginScan);
         cards.add(pluginPanel, PLUGINS);

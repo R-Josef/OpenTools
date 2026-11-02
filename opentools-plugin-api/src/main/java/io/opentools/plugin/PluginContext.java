@@ -21,6 +21,16 @@ public interface PluginContext {
     String pluginId();
 
     /**
+     * Resolves a message using this plugin's bundled language resources.
+     *
+     * @param key resource key
+     * @param fallback text used when the resource is missing
+     * @param arguments optional {@link java.text.MessageFormat} arguments
+     * @return localized text
+     */
+    String text(String key, String fallback, Object... arguments);
+
+    /**
      * Returns the plugin's private data directory.
      *
      * @return writable private directory
@@ -47,9 +57,10 @@ public interface PluginContext {
      * Registers a page shown in the desktop workbench.
      *
      * @param id page identifier unique within the plugin
-     * @param title page title
+     * @param titleKey page title resource key
+     * @param fallbackTitle fallback page title
      * @param panelFactory factory creating the page component
      * @throws SecurityException if the plugin did not request the {@code page} capability
      */
-    void registerPage(String id, String title, Supplier<JPanel> panelFactory);
+    void registerPage(String id, String titleKey, String fallbackTitle, Supplier<JPanel> panelFactory);
 }

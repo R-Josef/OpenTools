@@ -7,8 +7,8 @@ import java.util.Objects;
  * Metadata describing one tool for discovery, forms, and documentation.
  *
  * @param id stable tool identifier
- * @param name display name
- * @param description tool summary
+ * @param name English fallback display name
+ * @param description English fallback tool summary
  * @param category tool category
  * @param aliases alternate search names
  * @param inputFormats accepted input labels

@@ -1,4 +1,4 @@
-# Plugin API 2.0
+# Plugin API 2.1
 
 OpenTools 插件只需要针对一个自包含 JAR 编译：
 
@@ -30,6 +30,68 @@ META-INF/opentools-plugin.json
 - 通过注册 `InteractiveOpenTool` 提供自定义交互页面的工具；
 - 通过 `registerPage` 注册桌面页面；
 - 在声明 `data` 能力后使用插件私有目录和日志。
+
+## 插件本地化
+
+插件私有文案保存在插件 JAR 内，使用 UTF-8 Properties 文件和固定目录：
+
+```text
+META-INF/opentools/i18n/en_US.properties
+META-INF/opentools/i18n/zh_CN.properties
+```
+
+插件 JAR 加载时，宿主一次性为其中每个已启用插件绑定独立 localizer。注册工具时，
+宿主把准确的 Tool ID 映射到注册它的插件，不通过 ID 前缀猜测归属。因此两个插件
+可以使用完全相同的资源键而不会冲突。
+
+页面和交互面板应通过宿主上下文解析文本：
+
+```java
+context.registerPage(
+        "main",
+        "page.main.title",
+        "示例插件",
+        () -> page(context)
+);
+String title = context.text("page.main.title", "示例插件");
+String label = toolUiContext.text("game.playerName", "玩家名称");
+String summary = context.text(
+        "result.example.summary",
+        "已完成 {0} 行",
+        42
+);
+```
+
+查找顺序为：
+
+1. 当前完整语言代码，例如 `zh_CN`；
+2. 当前语言，例如 `zh`；
+3. `en_US`；
+4. 调用点传入的 fallback 文本。
+
+提供参数时使用 `java.text.MessageFormat`。localizer 在每次查找时读取当前语言，
+因此切换语言后，插件名称与描述、页面标题、工具目录、参数表单、工具文档、交互
+页面和结果摘要都会更新，无需重启进程。
+
+`ToolDescriptor` 和 `ToolParameter` 继续保存英文显示文本，在语言文件或键缺失时
+作为最终后备。插件清单可以用可选键本地化名称和描述：
+
+```json
+{
+  "name": "示例插件",
+  "nameKey": "plugin.name",
+  "description": "示例扩展",
+  "descriptionKey": "plugin.description"
+}
+```
+
+不要把插件私有的 `tool.*`、`result.*` 或 `page.*` 键加入宿主 `lang/` 目录。
+宿主分类键仍属于应用语言文件，包括 `category.plugin`。
+
+加载器会检查 UTF-8、重复键、非法 Properties、文件数量、单文件和总计大小、
+键数量以及键值长度。问题会生成结构化插件诊断，跳过有问题的资源，同时保持启动
+和其他插件可用。资源查找只能访问所属插件 JAR 中
+`META-INF/opentools/i18n/` 下一层的文件，不能访问 JAR 外文件。
 
 ## 交互工具
 
@@ -99,11 +161,11 @@ Java 插件运行在 OpenTools JVM 内，类加载隔离不是安全沙箱。只
 
 ## 兼容性
 
-Plugin API 2.0 是当前插件扩展契约。主版本必须与宿主一致；插件可以
+Plugin API 2.1 是当前插件扩展契约。主版本必须与宿主一致；插件可以
 请求同主版本中的当前或较旧次版本。本版本不支持旧 Java 面板插件、`.plugin`
 脚本包或 TBtools 插件二进制。
 
-API 2.0 将执行契约统一为 Tool 语义：
+API 2.1 延续 API 2.0 引入的统一 Tool 语义：
 
 | API 1.0 | API 2.0 |
 | --- | --- |
@@ -112,4 +174,5 @@ API 2.0 将执行契约统一为 Tool 语义：
 | `TaskExecutionService` | `ToolExecutionService` |
 | `TaskAutomationService` | `ToolAutomationService` |
 
-针对 1.0 编译的插件需要使用 2.0 API 重新编译。
+针对旧契约编译的插件需要使用 2.1 API 重新编译。本版本不提供本地化 deprecated
+别名，也不保留宿主与插件双路径语言查找。

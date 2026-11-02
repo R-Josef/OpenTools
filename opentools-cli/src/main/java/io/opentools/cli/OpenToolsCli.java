@@ -229,10 +229,10 @@ public final class OpenToolsCli implements AutoCloseable {
                     return 0;
                 }
                 parent.root.out().printf("%-22s %-12s %s%n", "ID", "CATEGORY", "NAME");
-                var language = parent.root.runtime().language();
+                var toolText = parent.root.runtime().toolText();
                 for (ToolDescriptor tool : tools) {
-                    String category = language.text("category." + tool.category().toLowerCase(), tool.category());
-                    String name = language.text("tool." + tool.id() + ".name", tool.name());
+                    String category = toolText.category(tool.category());
+                    String name = toolText.name(tool);
                     parent.root.out().printf("%-22s %-12s %s%n", tool.id(), category, name);
                 }
                 return 0;
@@ -266,10 +266,10 @@ public final class OpenToolsCli implements AutoCloseable {
                     parent.root.writeJsonSuccess(tool);
                     return 0;
                 }
-                var language = parent.root.runtime().language();
-                String name = language.text("tool." + tool.id() + ".name", tool.name());
-                String description = language.text("tool." + tool.id() + ".description", tool.description());
-                String category = language.text("category." + tool.category().toLowerCase(), tool.category());
+                var toolText = parent.root.runtime().toolText();
+                String name = toolText.name(tool);
+                String description = toolText.description(tool);
+                String category = toolText.category(tool.category());
                 parent.root.out().println(name + " (" + tool.id() + ")");
                 parent.root.out().println(description);
                 parent.root.out().println("Category: " + category);
@@ -278,14 +278,8 @@ public final class OpenToolsCli implements AutoCloseable {
                 parent.root.out().println("Outputs: " + String.join(", ", tool.outputFormats()));
                 parent.root.out().println("Parameters:");
                 for (ToolParameter parameter : tool.parameters()) {
-                    String parameterTitle = language.text(
-                            "tool." + tool.id() + ".param." + parameter.id() + ".title",
-                            parameter.title()
-                    );
-                    String parameterDescription = language.text(
-                            "tool." + tool.id() + ".param." + parameter.id() + ".description",
-                            parameter.description()
-                    );
+                    String parameterTitle = toolText.parameterTitle(tool, parameter);
+                    String parameterDescription = toolText.parameterDescription(tool, parameter);
                     parent.root.out().printf(
                             "  %-14s %-12s %s%s%n",
                             parameter.id(),

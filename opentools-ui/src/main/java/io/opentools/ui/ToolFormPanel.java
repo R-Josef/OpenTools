@@ -12,6 +12,7 @@ import io.opentools.api.tool.ValidationIssue;
 import io.opentools.api.tool.ValidationResult;
 import io.opentools.formats.FormatDetection;
 import io.opentools.formats.FormatDetector;
+import io.opentools.plugin.host.ToolTextResolver;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -55,6 +56,7 @@ import java.util.function.Supplier;
 final class ToolFormPanel extends JPanel {
     private ToolExecutionService executionService;
     private final LanguageManager language;
+    private final ToolTextResolver toolText;
     private final Runnable afterSubmit;
     private final Map<String, Supplier<Object>> valueReaders = new LinkedHashMap<>();
     private final JLabel title = new JLabel();
@@ -67,9 +69,15 @@ final class ToolFormPanel extends JPanel {
     private ToolDescriptor tool;
     private int row;
 
-    ToolFormPanel(ToolExecutionService executionService, LanguageManager language, Runnable afterSubmit) {
+    ToolFormPanel(
+            ToolExecutionService executionService,
+            LanguageManager language,
+            ToolTextResolver toolText,
+            Runnable afterSubmit
+    ) {
         this.executionService = executionService;
         this.language = language;
+        this.toolText = toolText;
         this.afterSubmit = afterSubmit;
         validateButton.setText(language.text("form.validate", "Validate"));
         runButton.setText(language.text("form.run", "Run"));
@@ -154,9 +162,9 @@ final class ToolFormPanel extends JPanel {
             fieldsPanel.repaint();
             return;
         }
-        title.setText(language.text("tool." + tool.id() + ".name", tool.name()));
+        title.setText(toolText.name(tool));
         description.setText(tool.id() + "  · "
-                + language.text("tool." + tool.id() + ".description", tool.description()));
+                + toolText.description(tool));
         validationArea.setText("");
         for (ToolParameter parameter : tool.parameters()) {
             if (!parameter.advanced()) {
@@ -181,14 +189,8 @@ final class ToolFormPanel extends JPanel {
     }
 
     private void addParameter(ToolParameter parameter) {
-        String parameterTitle = language.text(
-                "tool." + tool.id() + ".param." + parameter.id() + ".title",
-                parameter.title()
-        );
-        String parameterDescription = language.text(
-                "tool." + tool.id() + ".param." + parameter.id() + ".description",
-                parameter.description()
-        );
+        String parameterTitle = toolText.parameterTitle(tool, parameter);
+        String parameterDescription = toolText.parameterDescription(tool, parameter);
         JLabel label = new JLabel(parameterTitle + (parameter.required() ? " *" : ""));
         label.setToolTipText(parameterDescription);
         GridBagConstraints labelConstraints = baseConstraints();
@@ -241,10 +243,7 @@ final class ToolFormPanel extends JPanel {
                 String title = language.text(
                         "form.text_editor_title",
                         "Edit input text: {0}",
-                        language.text(
-                                "tool." + tool.id() + ".param." + parameter.id() + ".title",
-                                parameter.title()
-                        )
+                        toolText.parameterTitle(tool, parameter)
                 );
                 MainFrame frame = (MainFrame) SwingUtilities.getWindowAncestor(this);
                 if (frame != null && TextInputEditor.edit(

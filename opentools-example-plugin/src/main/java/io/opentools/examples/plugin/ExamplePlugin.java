@@ -14,16 +14,19 @@ public final class ExamplePlugin implements OpenToolsPlugin {
         context.log("Registering example plugin tools and page");
         context.registerTool(new CoinRunnerTool());
         context.registerTool(new HelloTool());
-        context.registerPage("main", "Example Plugin", () -> page(context));
+        context.registerPage("main", "page.main.title", "Example Plugin", () -> page(context));
     }
 
     private static JPanel page(PluginContext context) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
         panel.add(new JLabel(
-                "<html><b>Example OpenTools plugin</b><br><br>"
-                        + "Plugin ID: " + escape(context.pluginId()) + "<br>"
-                        + "Data directory: " + escape(context.dataDirectory().toAbsolutePath().toString())
+                "<html><b>" + escape(context.text("page.main.heading", "Example OpenTools plugin"))
+                        + "</b><br><br>"
+                        + escape(context.text("page.main.pluginId", "Plugin ID")) + ": "
+                        + escape(context.pluginId()) + "<br>"
+                        + escape(context.text("page.main.dataDirectory", "Data directory")) + ": "
+                        + escape(context.dataDirectory().toAbsolutePath().toString())
                         + "</html>"
         ), BorderLayout.NORTH);
         return panel;

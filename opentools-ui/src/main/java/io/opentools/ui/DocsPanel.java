@@ -3,6 +3,7 @@ package io.opentools.ui;
 import io.opentools.core.i18n.LanguageManager;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.core.tool.ToolRegistry;
+import io.opentools.plugin.host.ToolTextResolver;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -49,6 +50,7 @@ final class DocsPanel extends JPanel {
 
     private final ToolRegistry registry;
     private final LanguageManager language;
+    private final ToolTextResolver toolText;
     private final String docsLanguage;
     private final JEditorPane viewer = new JEditorPane();
     private final JScrollPane viewerScroll = new JScrollPane(viewer);
@@ -58,8 +60,13 @@ final class DocsPanel extends JPanel {
     private String activeDocument = "README.md";
 
     DocsPanel(ToolRegistry registry, LanguageManager language) {
+        this(registry, language, ToolTextResolver.hostOnly(language));
+    }
+
+    DocsPanel(ToolRegistry registry, LanguageManager language, ToolTextResolver toolText) {
         this.registry = registry;
         this.language = language;
+        this.toolText = toolText;
         this.docsLanguage = DocResources.docsLanguage(language.activeCode());
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
@@ -276,7 +283,7 @@ final class DocsPanel extends JPanel {
         try {
             String markdown = DocResources.read(docsLanguage, normalized);
             if (CategoryTools.isCategory(normalized)) {
-                markdown += CategoryTools.render(normalized, registry, language);
+                markdown += CategoryTools.render(normalized, registry, language, toolText);
             }
             String html = MarkdownRenderer.render(markdown, normalized);
             setDocument(html, DocResources.url(docsLanguage, normalized), normalized);
@@ -290,7 +297,7 @@ final class DocsPanel extends JPanel {
     void openTool(String toolId) {
         registry.find(toolId).ifPresentOrElse(tool -> {
             activeDocument = "tool:" + toolId;
-            String markdown = ToolDocumentation.render(tool.descriptor(), language);
+            String markdown = ToolDocumentation.render(tool.descriptor(), toolText);
             setDocument(
                     MarkdownRenderer.render(markdown, "README.md"),
                     null,
@@ -344,7 +351,7 @@ final class DocsPanel extends JPanel {
     }
 
     private String localizedName(ToolDescriptor tool) {
-        return language.text("tool." + tool.id() + ".name", tool.name());
+        return toolText.name(tool);
     }
 
     private String groupLabel(DocGroup group) {
@@ -427,12 +434,17 @@ final class DocsPanel extends JPanel {
             return route.startsWith("categories/");
         }
 
-        static String render(String route, ToolRegistry registry, LanguageManager language) {
+        static String render(
+                String route,
+                ToolRegistry registry,
+                LanguageManager language,
+                ToolTextResolver toolText
+        ) {
             List<String> categories = categories(route);
             List<ToolDescriptor> tools = registry.list().stream()
                     .filter(tool -> categories.contains(tool.category()))
                     .sorted(java.util.Comparator.comparing(
-                            tool -> language.text("tool." + tool.id() + ".name", tool.name()),
+                            toolText::name,
                             String.CASE_INSENSITIVE_ORDER))
                     .toList();
             StringBuilder markdown = new StringBuilder("\n## ")
@@ -440,7 +452,7 @@ final class DocsPanel extends JPanel {
                     .append("\n\n");
             for (ToolDescriptor tool : tools) {
                 markdown.append("- [")
-                        .append(language.text("tool." + tool.id() + ".name", tool.name())
+                        .append(toolText.name(tool)
                                 .replace("[", "\\[").replace("]", "\\]"))
                         .append("](tool:").append(tool.id()).append(") `")
                         .append(tool.id()).append("`\n");

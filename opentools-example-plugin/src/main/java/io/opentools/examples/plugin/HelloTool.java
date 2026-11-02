@@ -49,7 +49,7 @@ public final class HelloTool extends AbstractOpenTool {
                 "result.plugin.example.hello.summary",
                 List.of(),
                 message,
-                null,
+                "result.plugin.example.hello.detail",
                 List.of(),
                 new ResultTable(List.of("Message"), List.of(List.of(message))),
                 List.of(new OutputArtifact(output, "Plugin message", "text/plain")),

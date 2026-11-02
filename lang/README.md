@@ -3,6 +3,11 @@
 OpenTools loads interface text from this directory at startup. Language files
 are external files and are not packaged into the application JAR.
 
+This directory contains host-owned application text only. Plugins must package
+their own UTF-8 resources under `META-INF/opentools/i18n/` inside the plugin
+JAR. Plugin-private `tool.*`, `result.*`, and `page.*` keys must not be added
+here. Host categories such as `category.plugin` remain in these files.
+
 File naming:
 
 ```text

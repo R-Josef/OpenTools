@@ -8,6 +8,6 @@ import javax.swing.JPanel;
 public class DependentPlugin implements OpenToolsPlugin {
     @Override
     public void onEnable(PluginContext context) {
-        context.registerPage("main", "Dependent Page", JPanel::new);
+        context.registerPage("main", "page.main.title", "Dependent Page", JPanel::new);
     }
 }

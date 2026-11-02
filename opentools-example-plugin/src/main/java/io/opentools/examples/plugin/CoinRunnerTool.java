@@ -111,7 +111,7 @@ public final class CoinRunnerTool extends AbstractOpenTool implements Interactiv
                 "result.plugin.example.coin-runner.summary",
                 List.of(player, distance, score),
                 "Recorded one interactive Coin Runner run.",
-                null,
+                "result.plugin.example.coin-runner.detail",
                 List.of(),
                 table,
                 List.of(

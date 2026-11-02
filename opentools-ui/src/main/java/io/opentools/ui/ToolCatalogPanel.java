@@ -8,6 +8,7 @@ import io.opentools.api.tool.ToolPanel;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ToolUiContext;
 import io.opentools.core.tool.ToolRegistry;
+import io.opentools.plugin.host.ToolTextResolver;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
@@ -30,7 +31,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -51,6 +51,7 @@ final class ToolCatalogPanel extends JPanel {
     );
     private final ToolRegistry registry;
     private final LanguageManager language;
+    private final ToolTextResolver toolText;
     private final DefaultListModel<CatalogRow> model = new DefaultListModel<>();
     private final JList<CatalogRow> list = new JList<>(model);
     private final JTextField filter = new JTextField();
@@ -71,16 +72,18 @@ final class ToolCatalogPanel extends JPanel {
             ToolRegistry registry,
             ToolExecutionService executionService,
             LanguageManager language,
+            ToolTextResolver toolText,
             ToolRunSubmitter submitter,
             Runnable afterSubmit
     ) {
         this.registry = registry;
         this.language = language;
+        this.toolText = toolText;
         this.submitter = submitter;
         this.afterSubmit = afterSubmit;
         setLayout(new BorderLayout(12, 0));
         setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
-        this.form = new ToolFormPanel(executionService, language, afterSubmit);
+        this.form = new ToolFormPanel(executionService, language, toolText, afterSubmit);
         editorPanel.setLayout(editorCards);
         editorPanel.add(form, "form");
         UiAccessibility.name(filter, language.text("tools.search_placeholder", "Search tools"));
@@ -169,7 +172,7 @@ final class ToolCatalogPanel extends JPanel {
             row.setOpaque(true);
             row.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
             ToolDescriptor tool = value.tool();
-            JLabel name = new JLabel(language.text("tool." + tool.id() + ".name", tool.name()));
+            JLabel name = new JLabel(toolText.name(tool));
             JLabel meta = new JLabel(localizedCategory(tool.category()) + " · " + tool.id());
             meta.setForeground(new Color(105, 111, 116));
             meta.setFont(meta.getFont().deriveFont(meta.getFont().getSize2D() - 1f));
@@ -222,7 +225,7 @@ final class ToolCatalogPanel extends JPanel {
                     .toList();
             List<ToolDescriptor> tools = orderedTools(
                     visible,
-                    tool -> language.text("tool." + tool.id() + ".name", tool.name())
+                    toolText::name
             );
             model.clear();
             Map<String, List<ToolDescriptor>> grouped = new LinkedHashMap<>();
@@ -350,6 +353,11 @@ final class ToolCatalogPanel extends JPanel {
         }
 
         @Override
+        public String text(String key, String fallback, Object... arguments) {
+            return toolText.text(tool, key, fallback, arguments);
+        }
+
+        @Override
         public String submit(ToolRequest request) throws Exception {
             String runId = submitter.submit(request);
             SwingUtilities.invokeLater(afterSubmit);
@@ -445,8 +453,7 @@ final class ToolCatalogPanel extends JPanel {
     }
 
     private String localizedCategory(String category) {
-        String key = "category." + category.toLowerCase(Locale.ROOT);
-        return language.text(key, category);
+        return toolText.category(category);
     }
 
     private String toolCount(int count) {

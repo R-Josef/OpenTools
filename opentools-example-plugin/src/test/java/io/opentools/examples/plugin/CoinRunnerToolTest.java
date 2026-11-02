@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class CoinRunnerToolTest {
@@ -47,7 +48,9 @@ final class CoinRunnerToolTest {
 
         assertTrue(Files.isRegularFile(output.resolve("coin-runner-result.json")));
         assertTrue(Files.isRegularFile(output.resolve("coin-runner-result.png")));
-        assertTrue(ImageIO.read(output.resolve("coin-runner-result.png").toFile()).getWidth() >= 1000);
+        var image = ImageIO.read(output.resolve("coin-runner-result.png").toFile());
+        assertTrue(image.getWidth() >= 1000);
+        assertEquals(1000L * image.getHeight(), 460L * image.getWidth());
         assertFalse(result.table().rows().isEmpty());
         assertTrue(result.metrics().containsKey("distance"));
     }

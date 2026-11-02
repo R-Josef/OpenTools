@@ -16,6 +16,11 @@
 JAR 和可直接浏览的 HTML。该 API 只用于编译，不应打包进插件。
 
 受信任的示例插件位于 `plugins/`，默认启用，并提供可交互的“金币跑酷”工具。
+它的中英文资源都打包在自己的 JAR 内。
+
+Plugin API 2.1 将插件描述、页面、工具、参数和结果的本地化资源保存在
+`META-INF/opentools/i18n/`。发布验证会检查默认插件 JAR、语言资源以及
+`plugins/plugin-state.json`。
 
 ## Windows x64 便携包
 

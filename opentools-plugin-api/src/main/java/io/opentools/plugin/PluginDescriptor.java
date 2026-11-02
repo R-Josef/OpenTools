@@ -8,11 +8,13 @@ import java.util.Locale;
  * Metadata read from {@code META-INF/opentools-plugin.json}.
  *
  * @param id unique plugin identifier
- * @param name display name
+ * @param name English fallback display name
  * @param version plugin release version
  * @param apiVersion required Plugin API version
  * @param mainClass class implementing {@link OpenToolsPlugin}
- * @param description optional summary
+ * @param description English fallback summary
+ * @param nameKey optional localization key for the display name
+ * @param descriptionKey optional localization key for the description
  * @param author optional author text
  * @param dependencies required plugin IDs
  * @param requestedCapabilities requested host capabilities
@@ -24,6 +26,8 @@ public record PluginDescriptor(
         String apiVersion,
         String mainClass,
         String description,
+        String nameKey,
+        String descriptionKey,
         String author,
         List<String> dependencies,
         List<String> requestedCapabilities
@@ -35,6 +39,8 @@ public record PluginDescriptor(
         apiVersion = required(apiVersion, "apiVersion");
         mainClass = required(mainClass, "mainClass");
         description = description == null ? "" : description;
+        nameKey = optional(nameKey);
+        descriptionKey = optional(descriptionKey);
         author = author == null ? "" : author;
         dependencies = normalize(dependencies);
         requestedCapabilities = requestedCapabilities == null || requestedCapabilities.isEmpty()
@@ -53,6 +59,32 @@ public record PluginDescriptor(
             throw new IllegalArgumentException("Plugin descriptor field is required: " + field);
         }
         return value.trim();
+    }
+
+    private static String optional(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    /**
+     * Resolves the plugin display name for the active language.
+     *
+     * @param localizer plugin localizer, or {@code null} before resources load
+     * @return localized display name or the manifest fallback
+     */
+    public String localizedName(PluginLocalizer localizer) {
+        return localizer == null || nameKey.isBlank() ? name : localizer.text(nameKey, name);
+    }
+
+    /**
+     * Resolves the plugin description for the active language.
+     *
+     * @param localizer plugin localizer, or {@code null} before resources load
+     * @return localized description or the manifest fallback
+     */
+    public String localizedDescription(PluginLocalizer localizer) {
+        return localizer == null || descriptionKey.isBlank()
+                ? description
+                : localizer.text(descriptionKey, description);
     }
 
     private static List<String> normalize(List<String> values) {

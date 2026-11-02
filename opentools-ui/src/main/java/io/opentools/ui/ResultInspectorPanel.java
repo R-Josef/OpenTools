@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.opentools.core.job.JobRecord;
 import io.opentools.core.job.ToolExecutionService;
 import io.opentools.core.i18n.LanguageManager;
+import io.opentools.plugin.host.ToolTextResolver;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -34,6 +35,7 @@ import java.util.Locale;
 final class ResultInspectorPanel extends JPanel {
     private ToolExecutionService executionService;
     private final LanguageManager language;
+    private final ToolTextResolver toolText;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final JComboBox<JobItem> jobs = new JComboBox<>();
     private final JTextArea summary = new JTextArea(7, 30);
@@ -46,8 +48,17 @@ final class ResultInspectorPanel extends JPanel {
     private JobRecord current;
 
     ResultInspectorPanel(ToolExecutionService executionService, LanguageManager language) {
+        this(executionService, language, ToolTextResolver.hostOnly(language));
+    }
+
+    ResultInspectorPanel(
+            ToolExecutionService executionService,
+            LanguageManager language,
+            ToolTextResolver toolText
+    ) {
         this.executionService = executionService;
         this.language = language;
+        this.toolText = toolText;
         UiAccessibility.name(table, language.text("results.tab.data", "Result data table"));
         setLayout(new BorderLayout(0, 12));
         setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
@@ -132,7 +143,11 @@ final class ResultInspectorPanel extends JPanel {
                     jobs.removeAllItems();
                     recent.forEach(job -> jobs.addItem(new JobItem(
                             job,
-                            job.toolId() + " · "
+                            toolText.text(
+                                    job.toolId(),
+                                    "tool." + job.toolId() + ".name",
+                                    job.toolId()
+                            ) + " · "
                                     + language.text("job.status." + job.status().name(), job.status().name())
                                     + " · " + job.runId().substring(0, 8)
                     )));
@@ -199,14 +214,30 @@ final class ResultInspectorPanel extends JPanel {
             List<String> columns = new ArrayList<>();
             tableNode.path("columns").forEach(node -> {
                 String value = node.asText();
-                columns.add(language.text("table.column." + normalizeKey(value), value));
+                columns.add(toolText.text(
+                        current.toolId(),
+                        "table.column." + normalizeKey(value),
+                        toolText.text(
+                                current.toolId(),
+                                "result." + current.toolId() + ".column." + normalizeKey(value),
+                                value
+                        )
+                ));
             });
             Object[][] rows = new Object[tableNode.path("rows").size()][columns.size()];
             int rowIndex = 0;
             for (JsonNode row : tableNode.path("rows")) {
                 for (int column = 0; column < columns.size(); column++) {
                     String value = row.path(column).asText("");
-                    rows[rowIndex][column] = language.text("table.value." + normalizeKey(value), value);
+                    rows[rowIndex][column] = toolText.text(
+                            current.toolId(),
+                            "table.value." + normalizeKey(value),
+                            toolText.text(
+                                    current.toolId(),
+                                    "result." + current.toolId() + ".value." + normalizeKey(value),
+                                    value
+                            )
+                    );
                 }
                 rowIndex++;
             }
@@ -406,7 +437,12 @@ final class ResultInspectorPanel extends JPanel {
         List<Object> values = arguments.stream()
                 .map(node -> node.isNumber() ? (Object) node.numberValue() : (Object) node.asText())
                 .toList();
-        return language.text(keyNode.asText(), fallback, values.toArray());
+        return toolText.text(
+                current.toolId(),
+                keyNode.asText(),
+                fallback,
+                values.toArray()
+        );
     }
 
     private static String normalizeKey(String value) {

@@ -8,8 +8,10 @@ language:
 | English (`en_US`) | [`en_US/`](en_US/README.md) |
 | Simplified Chinese (`zh_CN`) | [`zh_CN/`](zh_CN/README.md) |
 
-Tool pages are generated from the same `ToolDescriptor` and language files as the
-GUI, CLI, and MCP endpoints. Each language directory contains its own Markdown
+Tool pages are generated from the same `ToolDescriptor` and tool text resolver
+as the GUI, CLI, and MCP endpoints. Built-in tools use host language files;
+plugin tools use their own JAR-localized resources. Each documentation language
+directory contains its own Markdown
 links, screenshots, categories, and image resources so relative navigation stays
 inside a single language root.
 

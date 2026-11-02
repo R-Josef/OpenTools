@@ -16,3 +16,7 @@
 
 自定义 Swing 页面不会绕过正式执行链路。页面通过 `ToolUiContext` 提交标准
 `ToolRequest`，因此作业会像其他工具一样出现在 Jobs 和 Results 中。
+
+金币跑酷的界面、参数说明、页面标题和结果文案都来自插件 JAR 内的
+`META-INF/opentools/i18n/en_US.properties` 与 `zh_CN.properties`。切换界面
+语言后无需重启 OpenTools。

@@ -24,9 +24,11 @@ Example descriptor:
   "id": "example.plugin",
   "name": "Example Plugin",
   "version": "1.1.0",
-  "apiVersion": "2.0",
+  "apiVersion": "2.1",
   "mainClass": "org.example.ExamplePlugin",
   "description": "Example OpenTools plugin",
+  "nameKey": "plugin.name",
+  "descriptionKey": "plugin.description",
   "author": "Example Author",
   "dependencies": ["required.plugin"],
   "requestedCapabilities": ["tool", "page", "data"]
@@ -37,6 +39,19 @@ The main class must implement `io.opentools.plugin.OpenToolsPlugin`. Public tool
 contracts use the `io.opentools.api.tool` package. The plugin context can
 register headless tools, interactive tool pages, and standalone Swing pages.
 Plugin tools become available to the Swing workbench, CLI, and MCP.
+
+Plugin-owned language resources are packaged in the JAR and use UTF-8:
+
+```text
+META-INF/opentools/i18n/en_US.properties
+META-INF/opentools/i18n/zh_CN.properties
+```
+
+The host binds one localizer per plugin and maps every registered Tool ID to
+that owner. Plugins with identical keys remain isolated. Use
+`PluginContext.text(...)` and `ToolUiContext.text(...)` for plugin text;
+`ToolDescriptor` and `ToolParameter` English values remain the final fallback.
+The host `lang/` files contain only application-wide UI and category keys.
 
 Supported capabilities:
 
@@ -88,6 +103,10 @@ reference plugin does.
 - Every plugin uses a separate child-first class loader.
 - A failed plugin is reported in the Plugins page and does not stop the scan.
 - Plugin tools and pages are removed when the plugin is disabled.
+- Tool ID to localizer bindings and language resource data are released when
+  the plugin is disabled.
 - Plugin data is stored under `plugins/data/<plugin-id>/`.
+- Invalid, duplicate, or oversized language resources produce structured
+  diagnostics and fall back without stopping the plugin host.
 - New Java plugins run in the host JVM. Strong sandboxing is not provided. Only load
   plugins from sources you trust.

@@ -83,11 +83,21 @@ final class LanguageFilesTest {
                 "plugins.disable",
                 "plugins.column.api",
                 "plugins.column.dependencies",
-                "category.plugin",
-                "tool.plugin.example.hello.name",
-                "result.plugin.example.hello.summary"
+                "category.plugin"
         )) {
             assertKey(english, chinese, key);
+        }
+    }
+
+    @Test
+    void hostLanguageFilesDoNotContainPluginPrivateKeys() throws Exception {
+        Path languageDirectory = locateLanguageDirectory();
+        for (String language : java.util.List.of("en_US", "zh_CN")) {
+            Properties properties = load(languageDirectory.resolve(language + ".properties"));
+            assertTrue(properties.stringPropertyNames().stream()
+                    .noneMatch(key -> key.startsWith("tool.plugin.")
+                            || key.startsWith("result.plugin.")
+                            || key.startsWith("page.plugin.")));
         }
     }
 

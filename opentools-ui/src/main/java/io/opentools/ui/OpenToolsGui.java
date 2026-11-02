@@ -12,6 +12,7 @@ import io.opentools.core.workspace.Project;
 import io.opentools.formats.BuiltInTools;
 import io.opentools.external.ExternalTools;
 import io.opentools.plugin.host.PluginManager;
+import io.opentools.plugin.host.ToolTextResolver;
 import io.opentools.visualization.BuiltInVisualizations;
 
 import javax.swing.SwingUtilities;
@@ -42,9 +43,9 @@ public final class OpenToolsGui {
             store.initialize();
             ToolExecutionService execution = new ToolExecutionService(registry, store);
             Path appHome = appRoot();
-            PluginManager plugins = new PluginManager(appHome, registry);
             String forcedLanguage = System.getProperty("opentools.language");
             LanguageManager language = new LanguageManager(appHome, forcedLanguage);
+            PluginManager plugins = new PluginManager(appHome, registry, language::activeCode);
             launch(registry, project, execution, plugins, language);
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -109,6 +110,7 @@ public final class OpenToolsGui {
         private final ToolRegistry registry;
         private final PluginManager plugins;
         private final LanguageManager language;
+        private final ToolTextResolver toolText;
         private Project project;
         private ToolExecutionService execution;
 
@@ -124,6 +126,7 @@ public final class OpenToolsGui {
             this.execution = execution;
             this.plugins = plugins;
             this.language = language;
+            this.toolText = new ToolTextResolver(plugins, language);
         }
 
         public ToolRegistry registry() {
@@ -144,6 +147,10 @@ public final class OpenToolsGui {
 
         public LanguageManager language() {
             return language;
+        }
+
+        public ToolTextResolver toolText() {
+            return toolText;
         }
 
         public synchronized String submit(ToolRequest request) throws Exception {
