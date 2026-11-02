@@ -121,10 +121,8 @@ public final class FastaMergeTool extends AbstractOpenTool {
         context.progress(1.0, "Merged " + inputs.size() + " files");
         return new ToolResult(
                 "Merged " + inputs.size() + " files",
-                "result.fasta.merge.summary",
                 List.of(inputs.size()),
                 records + " FASTA records",
-                "result.fasta.merge.detail",
                 List.of(records),
                 table,
                 List.of(new OutputArtifact(output, "Merged FASTA", "text/x-fasta")),

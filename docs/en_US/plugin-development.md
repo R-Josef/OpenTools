@@ -25,8 +25,6 @@ The manifest describes the plugin. A page-only plugin can start with:
   "apiVersion": "2.1",
   "mainClass": "com.example.plugin.MyPlugin",
   "description": "My OpenTools extension",
-  "nameKey": "plugin.name",
-  "descriptionKey": "plugin.description",
   "dependencies": [],
   "requestedCapabilities": ["page"]
 }
@@ -42,14 +40,12 @@ The manifest describes the plugin. A page-only plugin can start with:
 | `apiVersion` | yes | Plugin API used by the plugin. Current value: `2.1`. |
 | `mainClass` | yes | Class implementing `io.opentools.plugin.OpenToolsPlugin`. |
 | `description` | no | Fallback description. |
-| `nameKey` | no | Any resource key for the localized plugin name. |
-| `descriptionKey` | no | Any resource key for the localized description. |
 | `author` | no | Author or maintainer text. |
 | `dependencies` | no | Other OpenTools plugin IDs, not Maven coordinates. |
 | `requestedCapabilities` | no | Any of `tool`, `page`, and `data`. Omitted means all three. |
 
-`nameKey` and `descriptionKey` may use any keys. The names `plugin.name` and
-`plugin.description` are examples, not required field values.
+Plugin display text always uses the fixed keys `plugin.name` and
+`plugin.description`. Manifest `name` and `description` remain the fallbacks.
 
 ## Smallest working plugin
 
@@ -124,6 +120,32 @@ Important details:
 - Parameter IDs become JSON field names. Do not translate or rename them for
   localization.
 
+## Resource discovery contract
+
+This table is the complete naming contract. It intentionally uses placeholders
+instead of example IDs.
+
+| Purpose | Contract path or key | Found in |
+| --- | --- | --- |
+| Plugin manifest | `META-INF/opentools-plugin.json` | Plugin JAR |
+| Localization file | `META-INF/opentools/i18n/<Language>.properties` | Plugin JAR |
+| Tool Guide | `META-INF/opentools/docs/<Language>/tool/<Tool ID>.md` | Plugin JAR |
+| Plugin name | `plugin.name` | Localization file |
+| Plugin description | `plugin.description` | Localization file |
+| Plugin Page title | `page.<Page ID>.title` | Localization file |
+| Tool name | `tool.<Tool ID>.name` | Localization file |
+| Tool description | `tool.<Tool ID>.description` | Localization file |
+| Tool parameter title | `tool.<Tool ID>.parameter.<Parameter ID>.title` | Localization file |
+| Tool parameter description | `tool.<Tool ID>.parameter.<Parameter ID>.description` | Localization file |
+| Result summary | `result.<Tool ID>.summary` | Localization file |
+| Result detail | `result.<Tool ID>.detail` | Localization file |
+| Result table column | `result.<Tool ID>.column.<Normalized Column>` | Localization file |
+| Result table value | `result.<Tool ID>.value.<Normalized Value>` | Localization file |
+| Tool category | `category.<Category>` | Host language file |
+
+Files use `/` because they are resource paths. Localization keys use `.` because
+they are flat key paths. IDs remain opaque even when an ID itself contains dots.
+
 ## Localization
 
 Plugin localization is a convention-based resource lookup. Put UTF-8
@@ -167,15 +189,20 @@ from its own JAR.
 | --- | --- | --- |
 | Tool name | `tool.<Tool ID>.name` | Host |
 | Tool description | `tool.<Tool ID>.description` | Host |
-| Parameter title | `tool.<Tool ID>.param.<Parameter ID>.title` | Host |
-| Parameter description | `tool.<Tool ID>.param.<Parameter ID>.description` | Host |
-| Three-argument page title | `page.<Page ID>.title` | Host |
+| Parameter title | `tool.<Tool ID>.parameter.<Parameter ID>.title` | Host |
+| Parameter description | `tool.<Tool ID>.parameter.<Parameter ID>.description` | Host |
+| Plugin Page title | `page.<Page ID>.title` | Host |
 | Four-argument page title | Key passed by the plugin | Plugin |
 | Tool category | `category.<lowercase category>` | Host language files |
 | Result table column | `result.<Tool ID>.column.<normalized column>` | Host |
 | Result table value | `result.<Tool ID>.value.<normalized value>` | Host |
-| Result summary/detail | `ToolResult.summaryKey` / `detailKey` | Plugin |
+| Result summary/detail | `result.<Tool ID>.summary` / `detail` | Host |
 | Custom panel text | Key passed to `context.text(...)` | Plugin |
+
+`page.*` belongs only to a Plugin Page opened from the Plugins view by "Open
+plugin page". An
+Interactive Tool Page has no separate Page ID: its identity is the Tool ID and
+its title uses `tool.<Tool ID>.name`.
 
 Category localization is application-owned. A plugin tool normally uses the
 descriptor category `Plugin`, which maps to the host key `category.plugin`.
@@ -203,24 +230,28 @@ unchanged.
 
 ### Recommended key conventions
 
-Use complete, readable keys. Tool IDs and their resource keys follow these
-conventions:
+Use complete, readable keys. IDs should identify the data or operation without
+repeating the top-level resource type:
 
 ```text
-ToolDescriptor.id = greeting.tool
+ToolDescriptor.id = greeting
+Parameter ID = recipient
 
-tool.greeting.tool.name
-tool.greeting.tool.description
-tool.greeting.tool.param.name.title
-tool.greeting.tool.param.name.description
-result.greeting.tool.summary
-result.greeting.tool.detail
+tool.greeting.name
+tool.greeting.description
+tool.greeting.parameter.recipient.title
+tool.greeting.parameter.recipient.description
+result.greeting.summary
+result.greeting.detail
 ```
 
-The default example plugin uses a Tool ID of
-`plugin.example.coin-runner`, so its complete keys begin with
-`tool.plugin.example.coin-runner`. The `plugin.example` portion is part of the
-Tool ID, not text automatically added by the host.
+Do not write `greeting.tool`; the leading `tool.` already identifies the
+resource type. Do not use `name`, `title`, or `description` as a parameter ID;
+those values describe UI fields, not the parameter's data.
+
+The default example plugin uses the Tool ID `example.coin-runner`, so its
+complete keys begin with `tool.example.coin-runner`. The `example` portion is
+part of that Tool ID, not text automatically added by the host.
 
 Page titles use:
 
@@ -242,7 +273,7 @@ You may use other keys for your own Swing components. Call
 ```java
 String start = context.text("game.start", "Start");
 String message = context.text(
-        "result.greeting.tool.summary",
+        "result.greeting.summary",
         "Processed {0} rows",
         42
 );
@@ -307,26 +338,16 @@ Plugins can provide richer task documentation without a registration API. The
 host discovers Markdown by convention while loading the plugin JAR:
 
 ```text
-META-INF/opentools/docs/<language>/categories/<category>/<Tool ID>.md
+META-INF/opentools/docs/<language>/tool/<Tool ID>.md
 ```
 
 For example:
 
 ```text
-Tool ID: plugin.example.coin-runner
-Category: Plugin
+Tool ID: example.coin-runner
 
-META-INF/opentools/docs/en_US/categories/plugin/plugin.example.coin-runner.md
-META-INF/opentools/docs/zh_CN/categories/plugin/plugin.example.coin-runner.md
-```
-
-The category directory is lowercase and uses `-` for spaces and punctuation:
-
-```text
-Plugin -> plugin
-Visualization -> visualization
-Genome annotation -> genome-annotation
-Comparative genomics -> comparative-genomics
+META-INF/opentools/docs/en_US/tool/example.coin-runner.md
+META-INF/opentools/docs/zh_CN/tool/example.coin-runner.md
 ```
 
 The file name is the exact Tool ID plus `.md`. Tool IDs supported by this file

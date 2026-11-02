@@ -59,7 +59,7 @@ final class PlotEnrichmentBarTool extends AbstractOpenTool {
         GenericPlotData data = new GenericPlotData("BAR", "Term", "-log10 adjusted P",
                 categories, List.of(series.build()));
         ToolResult result = PlotToolSupport.renderGeneric(this, request, context, data,
-                "enrichment-bar", request.string("title"), "result.plot.enrichment_bar.summary",
+                "enrichment-bar", request.string("title"),
                 categories);
         return EnrichmentPlotSupport.withSelectionMetrics(result, table.rows().size(), selected.size(),
                 request.string("selectionMode"));
@@ -106,7 +106,7 @@ final class PlotEnrichmentBubbleTool extends AbstractOpenTool {
         GenericPlotData data = new GenericPlotData("BUBBLE", "Fold enrichment",
                 "-log10 adjusted P", List.of(), List.of(series.build()));
         ToolResult result = PlotToolSupport.renderGeneric(this, request, context, data,
-                "enrichment-bubble", request.string("title"), "result.plot.enrichment_bubble.summary",
+                "enrichment-bubble", request.string("title"),
                 table.rows().size());
         return EnrichmentPlotSupport.withSelectionMetrics(result, table.rows().size(), selected.size(),
                 request.string("selectionMode"));

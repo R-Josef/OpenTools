@@ -460,9 +460,9 @@ final class PluginManagerTest {
                 plugins.resolve("documented.jar"),
                 Map.of("en_US", "tool.fixture.plugin.echo.name=Plugin Echo\n"),
                 Map.of(
-                        "en_US/categories/plugin/fixture.plugin.echo.md",
+                        "en_US/tool/fixture.plugin.echo.md",
                         "# English guide\n\nEnglish-only documentation.",
-                        "zh_CN/categories/plugin/fixture.plugin.echo.md",
+                        "zh_CN/tool/fixture.plugin.echo.md",
                         "# 中文指南\n\n中文文档。"
                 )
         );
@@ -515,8 +515,6 @@ final class PluginManagerTest {
                   "apiVersion": "2.1",
                   "mainClass": "io.opentools.plugin.host.fixture.TestPlugin",
                   "description": "Fallback description",
-                  "nameKey": "plugin.name",
-                  "descriptionKey": "plugin.description",
                   "author": "",
                   "dependencies": [],
                   "requestedCapabilities": ["tool", "page"]

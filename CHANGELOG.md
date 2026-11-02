@@ -15,6 +15,10 @@
   `page.<id>.title` automatically while retaining the custom-key form.
 - Convention-based tool guides from host docs and plugin JARs, displayed before
   the generated descriptor reference with automatic language fallback.
+- A unified Plugin API 2.1 resource contract keeps dot-separated keys while
+  replacing the `param` node with `parameter`, fixes plugin metadata to
+  `plugin.name/description`, derives result keys from the Tool ID, and locates
+  tool guides at `docs/<language>/tool/<Tool ID>.md`.
 - Bundled default example plugin with the interactive Coin Runner tool, JSON
   run data, PNG result artwork, English/Chinese JAR resources, and
   default-enabled release packaging.

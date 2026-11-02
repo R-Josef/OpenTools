@@ -66,10 +66,8 @@ final class EnrichmentPlotSupport {
         metrics.put("selectedRows", selectedRows);
         return new ToolResult(
                 result.summary(),
-                result.summaryKey(),
                 result.summaryArguments(),
                 result.detail(),
-                result.detailKey(),
                 result.detailArguments(),
                 result.table(),
                 result.artifacts(),

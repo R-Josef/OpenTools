@@ -77,8 +77,8 @@ public final class McscanRunTool extends AbstractOpenTool {
             FormatToolSupport.createParent(output);
             Files.move(collinearity, output, StandardCopyOption.REPLACE_EXISTING);
             context.progress(1.0, "MCScanX completed");
-            return new ToolResult("MCScanX collinearity completed", "result.mcscan.run.summary", List.of(),
-                    "MCScanX " + versionLabel, "result.mcscan.run.detail", List.of(versionLabel),
+            return new ToolResult("MCScanX collinearity completed", List.of(),
+                    "MCScanX " + versionLabel, List.of(versionLabel),
                     io.opentools.api.tool.ResultTable.empty(),
                     List.of(new OutputArtifact(output, "Collinearity blocks", "text/plain")),
                     Map.of("version", versionLabel));

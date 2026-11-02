@@ -140,10 +140,8 @@ public final class GxfCheckRepairTool extends AbstractOpenTool {
         });
         context.progress(1.0, "Annotation check completed");
         return new ToolResult(
-                "Found " + totals[0] + " annotation errors",
-                "result.gxf.check_repair.summary", List.of(totals[0]),
-                totals[1] + " warnings; " + totals[2] + " safe repairs applied.",
-                "result.gxf.check_repair.detail", List.of(totals[1], totals[2]),
+                "Found " + totals[0] + " annotation errors", List.of(totals[0]),
+                totals[1] + " warnings; " + totals[2] + " safe repairs applied.", List.of(totals[1], totals[2]),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Errors", Long.toString(totals[0])),
                         List.of("Warnings", Long.toString(totals[1])),

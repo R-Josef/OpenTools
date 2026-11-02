@@ -181,10 +181,8 @@ public final class FastaRenameTool extends AbstractOpenTool {
         });
         context.progress(1.0, "FASTA rename completed");
         return new ToolResult(
-                "Renamed " + totals[0] + " FASTA records",
-                "result.fasta.rename.summary", List.of(totals[0]),
-                totals[2] + " duplicate IDs adjusted; " + totals[3] + " mappings unused.",
-                "result.fasta.rename.detail", List.of(totals[2], totals[3]),
+                "Renamed " + totals[0] + " FASTA records", List.of(totals[0]),
+                totals[2] + " duplicate IDs adjusted; " + totals[3] + " mappings unused.", List.of(totals[2], totals[3]),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Records", Long.toString(totals[0])),
                         List.of("Duplicate adjustments", Long.toString(totals[2])),

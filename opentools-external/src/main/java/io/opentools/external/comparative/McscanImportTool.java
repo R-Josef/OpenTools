@@ -77,9 +77,8 @@ public final class McscanImportTool extends AbstractOpenTool {
                     "No collinearity pairs were parsed.", "Check MCScanX collinearity format.");
         }
         context.progress(1.0, "MCScanX collinearity import completed");
-        return new ToolResult("Imported " + totals[1] + " collinearity pairs",
-                "result.mcscan.import.summary", List.of(totals[1]),
-                totals[0] + " blocks were parsed.", "result.mcscan.import.detail", List.of(totals[0]),
+        return new ToolResult("Imported " + totals[1] + " collinearity pairs", List.of(totals[1]),
+                totals[0] + " blocks were parsed.", List.of(totals[0]),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Blocks", Long.toString(totals[0])),
                         List.of("Pairs", Long.toString(totals[1])))),

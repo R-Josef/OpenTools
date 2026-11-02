@@ -221,10 +221,8 @@ public final class FastaFilterTool extends AbstractOpenTool {
         context.progress(1.0, "FASTA filter completed");
         return new ToolResult(
                 "Retained " + retained + " of " + inputRecords + " FASTA records",
-                "result.fasta.filter.summary",
                 List.of(retained, inputRecords),
                 "Filtered " + filtered + " records; per-record reasons are in filter-report.tsv.",
-                "result.fasta.filter.detail",
                 List.of(filtered),
                 new ResultTable(List.of("Metric", "Value"), rows),
                 List.of(

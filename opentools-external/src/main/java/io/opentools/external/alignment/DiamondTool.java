@@ -209,10 +209,8 @@ public final class DiamondTool extends AbstractOpenTool {
         context.progress(1.0, "DIAMOND completed");
         return new ToolResult(
                 summary.totalHits() + " hits across " + inputQueries + " queries",
-                "result.diamond.summary",
                 List.of(summary.totalHits(), inputQueries),
                 "DIAMOND " + diamond.version(),
-                "result.diamond.detail",
                 List.of(diamond.version()),
                 summary.resultTable(),
                 List.of(

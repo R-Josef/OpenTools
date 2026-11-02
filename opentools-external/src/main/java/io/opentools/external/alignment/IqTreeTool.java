@@ -82,9 +82,8 @@ public final class IqTreeTool extends AbstractOpenTool {
             FormatToolSupport.createParent(output);
             Files.move(tree, output, StandardCopyOption.REPLACE_EXISTING);
             context.progress(1.0, "IQ-TREE completed");
-            return new ToolResult("IQ-TREE phylogeny completed", "result.iqtree.summary", List.of(),
-                    "Model " + request.string("model") + "; " + tool.version(),
-                    "result.iqtree.detail", List.of(tool.version()),
+            return new ToolResult("IQ-TREE phylogeny completed", List.of(),
+                    "Model " + request.string("model") + "; " + tool.version(), List.of(tool.version()),
                     new ResultTable(List.of("Metric", "Value"), List.of(
                             List.of("Model", request.string("model")), List.of("Version", tool.version()))),
                     List.of(new OutputArtifact(output, "IQ-TREE Newick", "text/plain")),

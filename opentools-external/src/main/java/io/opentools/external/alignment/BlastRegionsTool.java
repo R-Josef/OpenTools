@@ -103,10 +103,8 @@ public final class BlastRegionsTool extends AbstractOpenTool {
             ToolResult delegated = BlastLocalDelegation.run(request, context, query, output);
             context.progress(1.0, "Region BLAST completed");
             return new ToolResult(
-                    delegated.summary(),
-                    "result.blast.regions.summary", List.of(extracted),
-                    extracted + " BED regions were used as BLAST queries.",
-                    "result.blast.regions.detail", List.of(extracted),
+                    delegated.summary(), List.of(extracted),
+                    extracted + " BED regions were used as BLAST queries.", List.of(extracted),
                     new ResultTable(List.of("Metric", "Value"), List.of(
                             List.of("Regions", Long.toString(extracted)),
                             List.of("BLAST hits", String.valueOf(delegated.metrics().get("totalHits")))

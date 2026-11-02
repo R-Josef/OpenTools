@@ -85,9 +85,8 @@ public final class KaksCalculateTool extends AbstractOpenTool {
             );
         });
         context.progress(1.0, "Ka/Ks calculation completed");
-        return new ToolResult("Calculated Ka/Ks for " + pairs[0] + " sequence pairs",
-                "result.kaks.summary", List.of(pairs[0]),
-                "Nei-Gojobori style approximate codon distances.", "result.kaks.detail", List.of(),
+        return new ToolResult("Calculated Ka/Ks for " + pairs[0] + " sequence pairs", List.of(pairs[0]),
+                "Nei-Gojobori style approximate codon distances.", List.of(),
                 new ResultTable(List.of("Metric", "Value"), List.of(List.of("Pairs", Long.toString(pairs[0])))),
                 List.of(new OutputArtifact(output, "Ka/Ks results", "text/tab-separated-values")),
                 Map.of("pairs", pairs[0], "threads", threads,

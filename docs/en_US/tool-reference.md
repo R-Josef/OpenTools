@@ -14,13 +14,13 @@ then continues with a generated reference from the active language files and
 Host guide path:
 
 ```text
-docs/<language>/categories/<category>/<Tool ID>.md
+docs/<language>/tool/<Tool ID>.md
 ```
 
 Plugin guide path:
 
 ```text
-META-INF/opentools/docs/<language>/categories/<category>/<Tool ID>.md
+META-INF/opentools/docs/<language>/tool/<Tool ID>.md
 ```
 
 Guides are discovered automatically. No documentation registration API is

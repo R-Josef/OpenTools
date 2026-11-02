@@ -76,7 +76,7 @@ final class DocumentationCoverageTest {
         assertTrue(DocResources.readToolDocumentation("zh_CN", descriptor).isPresent());
         SwingUtilities.invokeAndWait(() -> panel.openTool("fasta.stats"));
         assertEquals("tool:fasta.stats", panel.activeDocument());
-        assertTrue(panel.viewerText().contains("CUSTOM-DOC: fasta.stats"), panel.viewerText());
+        assertTrue(panel.viewerText().contains(htmlEntities("新组装的基因组")), panel.viewerText());
         assertTrue(panel.viewerText().contains("<hr>"));
         assertTrue(panel.viewerText().contains("opentools-doc:README.md"));
     }
@@ -105,7 +105,7 @@ final class DocumentationCoverageTest {
                 "categories/hts.md",
                 "categories/visualization.md",
                 "categories/plugin.md",
-                "categories/sequence/fasta.stats.md"
+                "tool/fasta.stats.md"
         );
         for (String languageCode : List.of("en_US", "zh_CN")) {
             for (String document : documents) {
@@ -129,7 +129,7 @@ final class DocumentationCoverageTest {
                 "categories/sequence.md", "categories/annotation-bed.md", "categories/table.md",
                 "categories/alignment-phylogeny.md", "categories/expression-enrichment.md",
                 "categories/hts.md", "categories/visualization.md", "categories/plugin.md",
-                "categories/sequence/fasta.stats.md"
+                "tool/fasta.stats.md"
         );
         Pattern links = Pattern.compile("!?\\[[^]]*]\\(([^)]+)\\)");
         for (String languageCode : List.of("en_US", "zh_CN")) {
@@ -218,5 +218,11 @@ final class DocumentationCoverageTest {
             current = current.getParent();
         }
         throw new IllegalStateException("Could not locate project root");
+    }
+
+    private static String htmlEntities(String value) {
+        return value.codePoints()
+                .mapToObj(codePoint -> "&#" + codePoint + ";")
+                .collect(java.util.stream.Collectors.joining());
     }
 }

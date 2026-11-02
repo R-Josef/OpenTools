@@ -127,10 +127,8 @@ public final class EggnogImportTool extends AbstractOpenTool {
         }
         context.progress(1.0, "eggNOG import completed");
         return new ToolResult(
-                "Imported " + totals[0] + " eggNOG rows",
-                "result.eggnog.import.summary", List.of(totals[0]),
-                totals[1] + " rows have GO terms; " + totals[2] + " rows have KEGG KO terms.",
-                "result.eggnog.import.detail", List.of(totals[1], totals[2]),
+                "Imported " + totals[0] + " eggNOG rows", List.of(totals[0]),
+                totals[1] + " rows have GO terms; " + totals[2] + " rows have KEGG KO terms.", List.of(totals[1], totals[2]),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Rows", Long.toString(totals[0])),
                         List.of("GO rows", Long.toString(totals[1])),

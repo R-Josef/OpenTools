@@ -154,12 +154,8 @@ public final class FastaExtractTool extends AbstractOpenTool {
         context.progress(1.0, summary);
         return new ToolResult(
                 summary,
-                "result.fasta.extract.summary",
                 List.of(found.size(), requested.size()),
                 detail,
-                remaining.isEmpty()
-                        ? "result.fasta.extract.detail.all"
-                        : "result.fasta.extract.detail.missing",
                 List.of(),
                 table,
                 artifacts,

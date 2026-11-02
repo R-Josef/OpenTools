@@ -85,10 +85,8 @@ public final class ExpressionDifferentialInputTool extends AbstractOpenTool {
         context.progress(1.0, "Differential input preparation completed");
         long values = (long) matrix.rowNames().size() * matrix.columnNames().size();
         return new ToolResult(
-                "Prepared " + values + " expression observations",
-                "result.expression.differential.summary", List.of(values),
-                matrix.rowNames().size() + " genes across " + groups.values().stream().distinct().count() + " groups.",
-                "result.expression.differential.detail", List.of(matrix.rowNames().size()),
+                "Prepared " + values + " expression observations", List.of(values),
+                matrix.rowNames().size() + " genes across " + groups.values().stream().distinct().count() + " groups.", List.of(matrix.rowNames().size()),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Genes", Integer.toString(matrix.rowNames().size())),
                         List.of("Samples", Integer.toString(matrix.columnNames().size())),

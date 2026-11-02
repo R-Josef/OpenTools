@@ -62,10 +62,8 @@ public final class GoEnrichTool extends AbstractOpenTool {
     private static ToolResult result(ToolRequest request, Path output,
                                      List<EnrichmentEngine.Result> results, String key) {
         return new ToolResult(
-                "GO enrichment found " + results.size() + " terms",
-                key + ".summary", List.of(results.size()),
-                "Hypergeometric P-values with Benjamini-Hochberg correction.",
-                key + ".detail", List.of(),
+                "GO enrichment found " + results.size() + " terms", List.of(results.size()),
+                "Hypergeometric P-values with Benjamini-Hochberg correction.", List.of(),
                 new ResultTable(List.of("Term", "Adjusted P", "Hits"),
                         results.stream().limit(50).map(r -> List.of(r.term(),
                                 Double.toString(r.adjustedP()), Integer.toString(r.hitCount()))).toList()),

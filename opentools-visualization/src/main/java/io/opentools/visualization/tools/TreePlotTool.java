@@ -49,7 +49,7 @@ public final class TreePlotTool extends AbstractOpenTool {
         GenericPlotData data = new GenericPlotData("LINE", "Branch depth", "Taxon position",
                 List.of(), edges);
         return PlotToolSupport.renderGeneric(this, request, context, data,
-                "tree", request.string("title"), "result.tree.render.summary", edges.size());
+                "tree", request.string("title"), edges.size());
     }
 
     private static double position(

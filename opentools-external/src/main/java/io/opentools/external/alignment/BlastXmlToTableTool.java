@@ -73,10 +73,8 @@ public final class BlastXmlToTableTool extends AbstractOpenTool {
         int metricHits = Math.toIntExact(hits[0]);
         context.progress(1.0, "BLAST XML conversion completed");
         return new ToolResult(
-                "Converted " + hits[0] + " BLAST HSP records",
-                "result.blast.xml.summary", List.of(metricHits),
-                "Output uses 12 columns compatible with BLAST outfmt 6.",
-                "result.blast.xml.detail", List.of(),
+                "Converted " + hits[0] + " BLAST HSP records", List.of(metricHits),
+                "Output uses 12 columns compatible with BLAST outfmt 6.", List.of(),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("HSP records", Long.toString(metricHits))
                 )),

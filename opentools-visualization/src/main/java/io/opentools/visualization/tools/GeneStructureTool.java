@@ -277,10 +277,8 @@ public final class GeneStructureTool extends AbstractOpenTool {
         context.progress(1.0, "Gene-structure plot completed");
         return new ToolResult(
                 "Rendered " + loci.size() + " gene structures",
-                "result.visual.gene.summary",
                 List.of(loci.size()),
                 renderedFeatures + " transcript features across " + loci.size() + " genes",
-                "result.visual.gene.detail",
                 List.of(renderedFeatures, loci.size()),
                 table,
                 artifacts,

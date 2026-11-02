@@ -183,12 +183,13 @@ public final class ToolExecutionService implements AutoCloseable {
                 cancellation.throwIfCancelled();
 
                 List<Map<String, Object>> artifacts = describeArtifacts(result.artifacts());
+                String toolId = tool.descriptor().id();
                 Map<String, Object> resultDocument = new LinkedHashMap<>();
                 resultDocument.put("summary", result.summary());
-                resultDocument.put("summaryKey", result.summaryKey());
+                resultDocument.put("summaryKey", "result." + toolId + ".summary");
                 resultDocument.put("summaryArguments", result.summaryArguments());
                 resultDocument.put("detail", result.detail());
-                resultDocument.put("detailKey", result.detailKey());
+                resultDocument.put("detailKey", "result." + toolId + ".detail");
                 resultDocument.put("detailArguments", result.detailArguments());
                 resultDocument.put("metrics", result.metrics());
                 resultDocument.put("table", result.table());
@@ -198,7 +199,7 @@ public final class ToolExecutionService implements AutoCloseable {
                 manifest.put("finishedAt", Instant.now().toString());
                 manifest.put("result", Map.of(
                         "summary", result.summary(),
-                        "summaryKey", result.summaryKey() == null ? "" : result.summaryKey(),
+                        "summaryKey", "result." + toolId + ".summary",
                         "metrics", result.metrics(),
                         "artifacts", artifacts
                 ));

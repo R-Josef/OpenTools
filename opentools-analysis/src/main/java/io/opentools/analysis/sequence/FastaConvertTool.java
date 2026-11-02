@@ -77,10 +77,8 @@ public final class FastaConvertTool extends AbstractOpenTool {
         });
         context.progress(1.0, "Sequence conversion completed");
         return new ToolResult(
-                "Converted " + totals[0] + " sequence records",
-                "result.fasta.convert.summary", List.of(totals[0], mode),
-                "Output format: " + outputFormat(mode) + ".",
-                "result.fasta.convert.detail", List.of(),
+                "Converted " + totals[0] + " sequence records", List.of(totals[0], mode),
+                "Output format: " + outputFormat(mode) + ".", List.of(),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Records", Long.toString(totals[0])),
                         List.of("Mode", mode)

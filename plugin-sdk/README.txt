@@ -32,21 +32,21 @@ with a plugin ID. Standard tool UI constructs these full keys:
 
   tool.<Tool ID>.name
   tool.<Tool ID>.description
-  tool.<Tool ID>.param.<Parameter ID>.title
-  tool.<Tool ID>.param.<Parameter ID>.description
+  tool.<Tool ID>.parameter.<Parameter ID>.title
+  tool.<Tool ID>.parameter.<Parameter ID>.description
 
 The three-argument registerPage(id, fallbackTitle, panelFactory) overload
-derives page.<Page ID>.title. Manifest nameKey and descriptionKey may use any
-resource keys. See docs/en_US/plugin-development.md or
+derives page.<Page ID>.title. Plugin metadata localization always uses
+plugin.name and plugin.description; the manifest name and description are
+fallbacks. See docs/en_US/plugin-development.md or
 docs/zh_CN/plugin-development.md for the complete naming and packaging guide.
 
 Optional tool Markdown is discovered without registration:
 
-  META-INF/opentools/docs/<language>/categories/<category>/<Tool ID>.md
+  META-INF/opentools/docs/<language>/tool/<Tool ID>.md
 
-The category is lowercase with punctuation replaced by "-". When a guide is
-found, OpenTools shows the custom Markdown followed by a separator and the
-generated descriptor reference. Missing guides are allowed.
+When a guide is found, OpenTools shows the custom Markdown followed by a
+separator and the generated descriptor reference. Missing guides are allowed.
 
 Do not put plugin-private tool, result, or page keys in the host lang/
 directory. Host category keys such as category.plugin remain application-owned.

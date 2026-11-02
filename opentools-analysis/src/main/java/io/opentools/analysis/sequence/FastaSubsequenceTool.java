@@ -253,10 +253,8 @@ public final class FastaSubsequenceTool extends AbstractOpenTool {
         context.progress(1.0, "FASTA subsequence extraction completed");
         return new ToolResult(
                 "Extracted " + totals[1] + " of " + totals[0] + " requested subsequences",
-                "result.fasta.subsequence.summary",
                 List.of(totals[1], totals[0]),
                 totals[2] + " diagnostics were written to subsequence-diagnostics.tsv.",
-                "result.fasta.subsequence.detail",
                 List.of(totals[2]),
                 table,
                 List.of(

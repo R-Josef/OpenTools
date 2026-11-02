@@ -24,8 +24,6 @@ META-INF/opentools/i18n/zh_CN.properties   # 可选
   "apiVersion": "2.1",
   "mainClass": "com.example.plugin.MyPlugin",
   "description": "我的 OpenTools 扩展",
-  "nameKey": "plugin.name",
-  "descriptionKey": "plugin.description",
   "dependencies": [],
   "requestedCapabilities": ["page"]
 }
@@ -41,14 +39,12 @@ META-INF/opentools/i18n/zh_CN.properties   # 可选
 | `apiVersion` | 是 | 插件使用的 API 版本，当前为 `2.1`。 |
 | `mainClass` | 是 | 实现 `io.opentools.plugin.OpenToolsPlugin` 的类。 |
 | `description` | 否 | 后备描述。 |
-| `nameKey` | 否 | 插件名称本地化资源键，可自由命名。 |
-| `descriptionKey` | 否 | 插件描述本地化资源键，可自由命名。 |
 | `author` | 否 | 作者或维护者信息。 |
 | `dependencies` | 否 | 其他 OpenTools 插件 ID，不是 Maven 坐标。 |
 | `requestedCapabilities` | 否 | 可包含 `tool`、`page`、`data`；省略时三个能力全部启用。 |
 
-`nameKey` 和 `descriptionKey` 可以使用任意资源键。`plugin.name` 与
-`plugin.description` 只是示例名称，不是强制值。
+插件显示文本固定使用 `plugin.name` 和 `plugin.description`。Manifest 中的
+`name` 与 `description` 仍然是后备文本。
 
 ## 最小可用插件
 
@@ -121,6 +117,31 @@ ID 是运行时契约和资源键契约的一部分。发布插件前应确定�
   页面标题资源键。
 - 参数 ID 会成为 JSON 字段名，不应用作可翻译文本，也不要为了本地化重命名。
 
+## 资源发现契约
+
+下表是完整的命名契约。表中只使用占位符，不混入具体 ID 示例。
+
+| 用途 | 契约路径或键 | 所在位置 |
+| --- | --- | --- |
+| 插件清单 | `META-INF/opentools-plugin.json` | 插件 JAR |
+| 本地化文件 | `META-INF/opentools/i18n/<Language>.properties` | 插件 JAR |
+| 工具指南 | `META-INF/opentools/docs/<Language>/tool/<Tool ID>.md` | 插件 JAR |
+| 插件名称 | `plugin.name` | 本地化文件 |
+| 插件描述 | `plugin.description` | 本地化文件 |
+| 插件页面标题 | `page.<Page ID>.title` | 本地化文件 |
+| 工具名称 | `tool.<Tool ID>.name` | 本地化文件 |
+| 工具描述 | `tool.<Tool ID>.description` | 本地化文件 |
+| 工具参数标题 | `tool.<Tool ID>.parameter.<Parameter ID>.title` | 本地化文件 |
+| 工具参数描述 | `tool.<Tool ID>.parameter.<Parameter ID>.description` | 本地化文件 |
+| 结果摘要 | `result.<Tool ID>.summary` | 本地化文件 |
+| 结果详情 | `result.<Tool ID>.detail` | 本地化文件 |
+| 结果表格列名 | `result.<Tool ID>.column.<Normalized Column>` | 本地化文件 |
+| 结果表格值 | `result.<Tool ID>.value.<Normalized Value>` | 本地化文件 |
+| 工具分类 | `category.<Category>` | 宿主语言文件 |
+
+文件路径使用 `/`，因为它们是资源路径；本地化键使用 `.`，因为它们是扁平的键
+路径。即使 ID 自身包含点号，ID 仍作为一个完整、不可拆分的身份使用。
+
 ## 本地化
 
 插件本地化采用固定目录和约定式查找。把 UTF-8 `.properties` 文件放在插件 JAR
@@ -162,15 +183,18 @@ game.start=开始
 | --- | --- | --- |
 | 工具名称 | `tool.<Tool ID>.name` | 宿主 |
 | 工具描述 | `tool.<Tool ID>.description` | 宿主 |
-| 参数标题 | `tool.<Tool ID>.param.<参数 ID>.title` | 宿主 |
-| 参数描述 | `tool.<Tool ID>.param.<参数 ID>.description` | 宿主 |
-| 三参数页面标题 | `page.<页面 ID>.title` | 宿主 |
+| 参数标题 | `tool.<Tool ID>.parameter.<参数 ID>.title` | 宿主 |
+| 参数描述 | `tool.<Tool ID>.parameter.<参数 ID>.description` | 宿主 |
+| 插件页面标题 | `page.<页面 ID>.title` | 宿主 |
 | 四参数页面标题 | 插件传入的键 | 插件 |
 | 工具分类 | `category.<分类小写>` | 宿主语言文件 |
 | 结果表格列名 | `result.<Tool ID>.column.<规范化列名>` | 宿主 |
 | 结果表格值 | `result.<Tool ID>.value.<规范化值>` | 宿主 |
-| 结果摘要/详情 | `ToolResult.summaryKey` / `detailKey` | 插件 |
+| 结果摘要/详情 | `result.<Tool ID>.summary` / `detail` | 宿主 |
 | 自定义页面文字 | 传给 `context.text(...)` 的键 | 插件 |
+
+`page.*` 只属于从 Plugins 页面通过“打开插件页面”打开的 Plugin Page。交互工具
+页面没有独立页面 ID，其身份就是 Tool ID，标题使用 `tool.<Tool ID>.name`。
 
 分类本地化属于宿主应用。插件工具通常使用 descriptor 分类 `Plugin`，它对应宿主
 键 `category.plugin`。把 `category.plugin` 放进插件 JAR 不会改变宿主显示的分类。
@@ -195,22 +219,26 @@ game.start=开始
 
 ### 推荐键结构
 
-建议使用完整、可读的键。工具 ID 和资源键按以下结构约定：
+建议使用完整、可读的键。ID 应表达数据或操作，不要重复顶层资源类型：
 
 ```text
-ToolDescriptor.id = greeting.tool
+ToolDescriptor.id = greeting
+参数 ID = recipient
 
-tool.greeting.tool.name
-tool.greeting.tool.description
-tool.greeting.tool.param.name.title
-tool.greeting.tool.param.name.description
-result.greeting.tool.summary
-result.greeting.tool.detail
+tool.greeting.name
+tool.greeting.description
+tool.greeting.parameter.recipient.title
+tool.greeting.parameter.recipient.description
+result.greeting.summary
+result.greeting.detail
 ```
 
-默认示例插件的 Tool ID 是 `plugin.example.coin-runner`，所以完整键以
-`tool.plugin.example.coin-runner` 开头。这里的 `plugin.example` 是 Tool ID
-本身的一部分，不是宿主自动添加的文本。
+不要写成 `greeting.tool`；开头的 `tool.` 已经表达了资源类型。参数 ID 不应使用
+`name`、`title` 或 `description`，这些是界面字段，不是参数所表达的数据。
+
+默认示例插件使用 Tool ID `example.coin-runner`，所以完整键以
+`tool.example.coin-runner` 开头。这里的 `example` 是该 Tool ID 本身的一部分，
+不是宿主自动添加的文本。
 
 页面标题使用：
 
@@ -231,7 +259,7 @@ plugin.description=我的 OpenTools 扩展
 ```java
 String start = context.text("game.start", "开始");
 String message = context.text(
-        "result.greeting.tool.summary",
+        "result.greeting.summary",
         "已处理 {0} 行",
         42
 );
@@ -290,26 +318,16 @@ String message = context.text(
 插件可以补充更完整的任务文档，不需要注册 API。宿主在加载插件 JAR 时按约定发现：
 
 ```text
-META-INF/opentools/docs/<语言>/categories/<分类目录>/<Tool ID>.md
+META-INF/opentools/docs/<语言>/tool/<Tool ID>.md
 ```
 
 例如：
 
 ```text
-Tool ID: plugin.example.coin-runner
-分类: Plugin
+Tool ID: example.coin-runner
 
-META-INF/opentools/docs/en_US/categories/plugin/plugin.example.coin-runner.md
-META-INF/opentools/docs/zh_CN/categories/plugin/plugin.example.coin-runner.md
-```
-
-分类目录会转为小写，空格和标点转为 `-`：
-
-```text
-Plugin -> plugin
-Visualization -> visualization
-Genome annotation -> genome-annotation
-Comparative genomics -> comparative-genomics
+META-INF/opentools/docs/en_US/tool/example.coin-runner.md
+META-INF/opentools/docs/zh_CN/tool/example.coin-runner.md
 ```
 
 文件名是完整 Tool ID 加 `.md`。参与文档文件查找的 Tool ID 只能使用

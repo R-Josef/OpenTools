@@ -28,7 +28,7 @@ rebuilds the main window in the same process. The process is not restarted.
 - Heading IDs provide anchors and duplicate headings get stable suffixes.
 - Tool parameter tables come from `ToolDescriptor` and active language keys.
 - Tool guides can be discovered from
-  `categories/<category>/<Tool ID>.md`; plugin guides use the same layout under
+  `tool/<Tool ID>.md`; plugin guides use the same layout under
   `META-INF/opentools/docs/<language>/` in the plugin JAR.
 - A discovered guide is shown first, followed by a separator and the generated
   descriptor reference.

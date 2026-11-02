@@ -108,10 +108,8 @@ public final class GxfRepresentativeTool extends AbstractOpenTool {
 
         context.progress(1.0, "Representative transcript selection completed");
         return new ToolResult(
-                "Selected " + totals[0] + " representative transcripts",
-                "result.gxf.representative.summary", List.of(totals[0]),
-                totals[1] + " annotation records were written.",
-                "result.gxf.representative.detail", List.of(totals[1]),
+                "Selected " + totals[0] + " representative transcripts", List.of(totals[0]),
+                totals[1] + " annotation records were written.", List.of(totals[1]),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Candidate transcripts", Integer.toString(candidates.size())),
                         List.of("Representative transcripts", Long.toString(totals[0])),

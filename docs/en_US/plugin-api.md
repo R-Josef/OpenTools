@@ -77,16 +77,21 @@ ID. The standard tool UI constructs these keys from descriptor IDs:
 | --- | --- |
 | Tool name | `tool.<Tool ID>.name` |
 | Tool description | `tool.<Tool ID>.description` |
-| Parameter title | `tool.<Tool ID>.param.<Parameter ID>.title` |
-| Parameter description | `tool.<Tool ID>.param.<Parameter ID>.description` |
-| Three-argument page title | `page.<Page ID>.title` |
-| Tool category | Host-owned `category.<lowercase category>` |
-| Result table column | `result.<Tool ID>.column.<normalized column>` |
-| Result table value | `result.<Tool ID>.value.<normalized value>` |
+| Parameter title | `tool.<Tool ID>.parameter.<Parameter ID>.title` |
+| Parameter description | `tool.<Tool ID>.parameter.<Parameter ID>.description` |
+| Plugin Page title | `page.<Page ID>.title` |
+| Tool category | Host-owned `category.<Category>` |
+| Result table column | `result.<Tool ID>.column.<Normalized Column>` |
+| Result table value | `result.<Tool ID>.value.<Normalized Value>` |
 
-`ToolResult.summaryKey` and `detailKey` are supplied explicitly by the plugin;
-the host does not derive them. Keys passed to `context.text(...)` and custom
-four-argument page titles are also used exactly as supplied.
+Plugin Pages and Interactive Tool Pages share the term "page" but not an
+identity: a Plugin Page has a Page ID, while an Interactive Tool Page uses its
+Tool ID and `tool.<Tool ID>.name`.
+
+`ToolResult` supplies fallback text and message arguments. The host derives the
+summary and detail keys from the current Tool ID. Keys passed to
+`context.text(...)` and custom four-argument page titles are used exactly as
+supplied.
 
 Isolation comes from the plugin-owned localizer, not from adding a textual
 prefix to every key. Identical keys in different plugins resolve against
@@ -110,14 +115,14 @@ and result text without restarting the process.
 
 `ToolDescriptor` and `ToolParameter` carry fallback display text, usually in
 English. Those values remain the final fallback when a language file or key is absent.
-The descriptor may localize its own name and description with optional keys:
+The manifest `name` and `description` are fallbacks. When localization is
+present, the plugin files always use the fixed keys `plugin.name` and
+`plugin.description`:
 
 ```json
 {
   "name": "Example Plugin",
-  "nameKey": "plugin.name",
-  "description": "Example extension",
-  "descriptionKey": "plugin.description"
+  "description": "Example extension"
 }
 ```
 
@@ -152,12 +157,11 @@ plugin.
 Plugin tool guides use a discoverable resource path rather than an API call:
 
 ```text
-META-INF/opentools/docs/<language>/categories/<category>/<Tool ID>.md
+META-INF/opentools/docs/<language>/tool/<Tool ID>.md
 ```
 
-The category is lowercase with punctuation replaced by `-`; the file name is
-the exact Tool ID plus `.md`. The host tries the full active language, the
-language-only code, and finally `en_US`.
+The file name is the exact Tool ID plus `.md`. The host tries the full active
+language, the language-only code, and finally `en_US`.
 
 If a guide exists, OpenTools displays the custom Markdown, a horizontal
 separator, and then the generated descriptor reference. Without a guide, only
@@ -165,6 +169,9 @@ the generated reference is shown. Missing guides do not fail plugin loading.
 
 Tool links use `tool:<Tool ID>`. Links to the application documentation root use
 `opentools-doc:<path>`. Plugin-relative images are not yet supported.
+
+The complete resource discovery table is in the
+[plugin development guide](plugin-development.md#resource-discovery-contract).
 
 ## Interactive tools
 

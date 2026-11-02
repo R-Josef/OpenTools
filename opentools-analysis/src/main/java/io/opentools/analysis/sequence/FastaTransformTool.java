@@ -222,10 +222,8 @@ public final class FastaTransformTool extends AbstractOpenTool {
         context.progress(1.0, "FASTA transform completed");
         return new ToolResult(
                 "Transformed " + totals[0] + " FASTA records",
-                "result.fasta.transform.summary",
                 List.of(totals[0]),
                 "Removed " + totals[3] + " invalid characters; details are in transform-report.tsv.",
-                "result.fasta.transform.detail",
                 List.of(totals[3]),
                 table,
                 List.of(

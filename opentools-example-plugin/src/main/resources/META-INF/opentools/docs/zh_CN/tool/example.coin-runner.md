@@ -1,7 +1,5 @@
 # 金币跑酷：可复现的交互示例
 
-CUSTOM-DOC: plugin.example.coin-runner
-
 金币跑酷用于演示 `InteractiveOpenTool`。它使用正式的请求、校验、作业、结果和
 产物链路，不会绕过 OpenTools 标准执行服务。
 

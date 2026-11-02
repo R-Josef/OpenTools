@@ -85,10 +85,8 @@ public final class PfamImportTool extends AbstractOpenTool {
         long queries = hits.stream().map(HmmerDomainHit::queryName).distinct().count();
         context.progress(1.0, "Pfam import completed");
         return new ToolResult(
-                "Imported " + hits.size() + " Pfam domain hits",
-                "result.pfam.import.summary", List.of(hits.size()),
-                queries + " query sequences contain domain hits.",
-                "result.pfam.import.detail", List.of(queries),
+                "Imported " + hits.size() + " Pfam domain hits", List.of(hits.size()),
+                queries + " query sequences contain domain hits.", List.of(queries),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Domain hits", Integer.toString(hits.size())),
                         List.of("Queries", Long.toString(queries))

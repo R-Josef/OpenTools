@@ -120,10 +120,8 @@ public final class FastaSplitTool extends AbstractOpenTool {
         context.progress(1.0, "Split into " + artifacts.size() + " files");
         return new ToolResult(
                 "Split " + totalRecords + " records",
-                "result.fasta.split.summary",
                 List.of(totalRecords),
                 "Created " + artifacts.size() + " FASTA files.",
-                "result.fasta.split.detail",
                 List.of(artifacts.size()),
                 table,
                 artifacts,

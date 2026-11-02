@@ -118,10 +118,8 @@ public final class GxfGenomeMatchTool extends AbstractOpenTool {
                 "Found " + issues.size() + " compatibility issues";
         return new ToolResult(
                 summary,
-                issues.isEmpty() ? "result.gxf.match.summary.ok" : "result.gxf.match.summary.issues",
                 List.of(issues.size()),
                 "Matched " + matchedSeqIds + " of " + annotationSeqIds.size() + " sequence IDs",
-                "result.gxf.match.detail",
                 List.of(matchedSeqIds, annotationSeqIds.size()),
                 table,
                 List.of(new OutputArtifact(report, "Compatibility report", "text/tab-separated-values")),

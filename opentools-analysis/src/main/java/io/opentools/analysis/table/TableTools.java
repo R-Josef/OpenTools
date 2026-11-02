@@ -681,9 +681,8 @@ public final class TableTools {
 
     private static ToolResult tableResult(String prefix, Path output, long input, long outputRows) {
         return new ToolResult(
-                "Processed " + input + " rows; wrote " + outputRows,
-                "result." + prefix.replace('.', '_') + ".summary", List.of(input, outputRows),
-                "Table operation completed.", "result." + prefix.replace('.', '_') + ".detail", List.of(),
+                "Processed " + input + " rows; wrote " + outputRows, List.of(input, outputRows),
+                "Table operation completed.", List.of(),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Input rows", Long.toString(input)),
                         List.of("Output rows", Long.toString(outputRows)))),
@@ -769,8 +768,8 @@ public final class TableTools {
     private static ToolResult withMetric(ToolResult result, String key, Object value) {
         Map<String, Object> metrics = new LinkedHashMap<>(result.metrics());
         metrics.put(key, value);
-        return new ToolResult(result.summary(), result.summaryKey(), result.summaryArguments(),
-                result.detail(), result.detailKey(), result.detailArguments(),
+        return new ToolResult(result.summary(), result.summaryArguments(),
+                result.detail(), result.detailArguments(),
                 result.table(), result.artifacts(), metrics);
     }
 

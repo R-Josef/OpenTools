@@ -136,10 +136,8 @@ public final class TablePreviewTool extends AbstractOpenTool {
         context.progress(1.0, "Table preview completed");
         return new ToolResult(
                 "Previewed " + preview.size() + " of " + totalRows + " rows",
-                "result.table.preview.summary",
                 List.of(preview.size(), totalRows),
                 columns.size() + " columns included",
-                "result.table.preview.detail",
                 List.of(columns.size()),
                 table,
                 List.of(new OutputArtifact(output, "Bounded table preview", "text/tab-separated-values")),

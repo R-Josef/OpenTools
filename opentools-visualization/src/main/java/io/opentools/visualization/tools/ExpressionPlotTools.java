@@ -86,7 +86,7 @@ final class PlotPcaTool extends AbstractOpenTool {
                 request.string("xColumn"), request.string("yColumn"), List.of(),
                 series.values().stream().map(GenericPlotData.GenericSeries.Builder::build).toList());
         return PlotToolSupport.renderGeneric(this, request, context, data,
-                "pca", request.string("title"), "result.plot.pca.summary",
+                "pca", request.string("title"),
                 table.rows().size(), series.size());
     }
 
@@ -132,10 +132,8 @@ final class PlotCorrelationTool extends AbstractOpenTool {
         Map<String, Object> parameters = PlotToolSupport.heatmapParameters(request);
         ToolResult delegated = new HeatmapTool().execute(new ToolRequest("visual.heatmap", parameters), context);
         return new ToolResult(
-                "Rendered correlation heatmap",
-                "result.plot.correlation.summary", List.of(),
-                "Square correlation matrix rendered with the shared heatmap engine.",
-                "result.plot.correlation.detail", List.of(),
+                "Rendered correlation heatmap", List.of(),
+                "Square correlation matrix rendered with the shared heatmap engine.", List.of(),
                 delegated.table(), delegated.artifacts(), delegated.metrics()
         );
     }
@@ -197,7 +195,7 @@ final class PlotVolcanoTool extends AbstractOpenTool {
                 "log2 fold change", "-log10(p-value)", List.of(),
                 groups.values().stream().map(GenericPlotData.GenericSeries.Builder::build).toList());
         return PlotToolSupport.renderGenericWithData(this, request, context, data,
-                "volcano", request.string("title"), "result.plot.volcano.summary",
+                "volcano", request.string("title"),
                 classified, List.of("gene", "log2_fold_change", "neg_log10_p", "class"));
     }
 
@@ -227,7 +225,7 @@ final class PlotBoxTool extends AbstractOpenTool {
 
     @Override
     public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
-        return PlotToolSupport.groupedDistribution(this, request, context, "BOX", "box", "result.plot.box.summary");
+        return PlotToolSupport.groupedDistribution(this, request, context, "BOX", "box");
     }
 
     private static List<ToolParameter> groupValueParameters() {
@@ -264,7 +262,7 @@ final class PlotViolinTool extends AbstractOpenTool {
 
     @Override
     public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
-        return PlotToolSupport.groupedDistribution(this, request, context, "VIOLIN", "violin", "result.plot.violin.summary");
+        return PlotToolSupport.groupedDistribution(this, request, context, "VIOLIN", "violin");
     }
 }
 
@@ -305,7 +303,7 @@ final class PlotBarTool extends AbstractOpenTool {
         GenericPlotData data = new GenericPlotData("BAR", "", request.string("valueLabel"),
                 categories, List.of(series.build()));
         return PlotToolSupport.renderGeneric(this, request, context, data,
-                "bar", request.string("title"), "result.plot.bar.summary", categories);
+                "bar", request.string("title"), categories);
     }
 }
 
@@ -355,15 +353,15 @@ final class PlotToolSupport {
 
     static ToolResult renderGeneric(
             AbstractOpenTool tool, ToolRequest request, ToolExecutionContext context, GenericPlotData data,
-            String defaultName, String title, String summaryKey, Object... summaryArguments
+            String defaultName, String title, Object... summaryArguments
     ) throws Exception {
         return renderGenericWithData(tool, request, context, data, defaultName, title,
-                summaryKey, List.of(), List.of(), summaryArguments);
+                List.of(), List.of(), summaryArguments);
     }
 
     static ToolResult renderGenericWithData(
             AbstractOpenTool tool, ToolRequest request, ToolExecutionContext context, GenericPlotData data,
-            String defaultName, String title, String summaryKey,
+            String defaultName, String title,
             List<List<String>> processedRows, List<String> processedHeader,
             Object... summaryArguments
     ) throws Exception {
@@ -389,10 +387,8 @@ final class PlotToolSupport {
         }
         context.progress(1.0, tool.descriptor().name() + " completed");
         return new ToolResult(
-                tool.descriptor().name() + " completed",
-                summaryKey, List.of(summaryArguments),
-                data.series().size() + " series rendered.",
-                summaryKey.replace(".summary", ".detail"), List.of(data.series().size()),
+                tool.descriptor().name() + " completed", List.of(summaryArguments),
+                data.series().size() + " series rendered.", List.of(data.series().size()),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Series", Integer.toString(data.series().size())),
                         List.of("Chart", data.chart())
@@ -405,7 +401,7 @@ final class PlotToolSupport {
 
     static ToolResult groupedDistribution(
             AbstractOpenTool tool, ToolRequest request, ToolExecutionContext context,
-            String chart, String defaultName, String summaryKey
+            String chart, String defaultName
     ) throws Exception {
         PlotTable table = readTable(request.path("input"), null);
         int group = table.requiredColumn(request.string("groupColumn"));
@@ -420,7 +416,7 @@ final class PlotToolSupport {
         GenericPlotData data = new GenericPlotData(chart, "Group", request.string("valueLabel"),
                 categories, byGroup.values().stream().map(GenericPlotData.GenericSeries.Builder::build).toList());
         return renderGeneric(tool, request, context, data, defaultName,
-                request.string("title"), summaryKey, categories);
+                request.string("title"), categories);
     }
 
     static PlotTable readTable(Path input, String delimiter) throws Exception {

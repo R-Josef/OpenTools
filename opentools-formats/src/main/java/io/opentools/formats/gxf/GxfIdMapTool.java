@@ -121,10 +121,8 @@ public final class GxfIdMapTool extends AbstractOpenTool {
         long unused = totals[1];
         context.progress(1.0, "Annotation ID mapping completed");
         return new ToolResult(
-                "Applied " + totals[0] + " ID replacements",
-                "result.gxf.id_map.summary", List.of(totals[0]),
-                unused + " mapping keys were unused.",
-                "result.gxf.id_map.detail", List.of(unused),
+                "Applied " + totals[0] + " ID replacements", List.of(totals[0]),
+                unused + " mapping keys were unused.", List.of(unused),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Mappings", Integer.toString(mapping.size())),
                         List.of("Replacements", Long.toString(totals[0])),

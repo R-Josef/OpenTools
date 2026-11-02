@@ -45,6 +45,9 @@ final class ToolExecutionServiceTest {
             assertEquals(JobStatus.SUCCEEDED, job.status());
             assertTrue(Files.isRegularFile(job.runDirectory().resolve("manifest.json")));
             assertTrue(Files.isRegularFile(job.runDirectory().resolve("result.json")));
+            String resultJson = Files.readString(job.runDirectory().resolve("result.json"));
+            assertTrue(resultJson.contains("\"summaryKey\" : \"result.test.echo.summary\""));
+            assertTrue(resultJson.contains("\"detailKey\" : \"result.test.echo.detail\""));
             assertTrue(Files.isRegularFile(job.runDirectory().resolve("outputs/echo.txt")));
             assertTrue(job.manifestJson().contains("sha256"));
             assertEquals(1, service.recentJobs(10).size());

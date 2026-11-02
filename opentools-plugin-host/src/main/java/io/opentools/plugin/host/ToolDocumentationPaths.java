@@ -13,57 +13,39 @@ public final class ToolDocumentationPaths {
     }
 
     /**
-     * Returns the category directory used below {@code categories/}.
-     *
-     * @param category descriptor category
-     * @return lowercase hyphenated directory name
-     */
-    public static String categoryDirectory(String category) {
-        String normalized = category == null ? "" : category.trim().toLowerCase(Locale.ROOT)
-                .replaceAll("[^a-z0-9]+", "-")
-                .replaceAll("^-+|-+$", "");
-        return normalized.isBlank() ? "uncategorized" : normalized;
-    }
-
-    /**
      * Returns a host documentation path relative to one language root.
      *
-     * @param category descriptor category
      * @param toolId tool identifier
-     * @return path such as {@code categories/plugin/my.tool.md}
+     * @return path such as {@code tool/my.tool.md}
      */
-    public static Optional<String> hostRelativePath(String category, String toolId) {
-        return toolFileName(toolId)
-                .map(file -> "categories/" + categoryDirectory(category) + "/" + file);
+    public static Optional<String> hostRelativePath(String toolId) {
+        return toolFileName(toolId).map(file -> "tool/" + file);
     }
 
     /**
      * Returns a plugin documentation path relative to one language directory.
      *
-     * @param category descriptor category
      * @param toolId tool identifier
-     * @return path such as {@code categories/plugin/my.tool.md}
+     * @return path such as {@code tool/my.tool.md}
      */
-    public static Optional<String> pluginRelativePath(String category, String toolId) {
-        return hostRelativePath(category, toolId);
+    public static Optional<String> pluginRelativePath(String toolId) {
+        return hostRelativePath(toolId);
     }
 
     /**
      * Returns the complete JAR entry path for a plugin tool document.
      *
      * @param languageCode language directory
-     * @param category descriptor category
      * @param toolId tool identifier
      * @return JAR entry path, or empty for an unsupported Tool ID
      */
     public static Optional<String> pluginEntry(
             String languageCode,
-            String category,
             String toolId
     ) {
         return toolFileName(toolId).map(file ->
                 PLUGIN_PREFIX + normalizeLanguage(languageCode) + "/"
-                        + "categories/" + categoryDirectory(category) + "/" + file
+                        + "tool/" + file
         );
     }
 

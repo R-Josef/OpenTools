@@ -90,11 +90,9 @@ public final class GoLevelTool extends AbstractOpenTool {
         metrics.put("unresolvedParents", hierarchy.unresolvedParents());
         metrics.put("cycleOrUnreachableTerms", levelResult.unreachableTerms());
         return new ToolResult(
-                "Calculated levels for " + levels.size() + " GO terms",
-                "result.go.level.summary", List.of(levels.size()),
+                "Calculated levels for " + levels.size() + " GO terms", List.of(levels.size()),
                 "Format: " + hierarchy.format()
-                        + "; terms without a reachable root are assigned level 1.",
-                "result.go.level.detail", List.of(),
+                        + "; terms without a reachable root are assigned level 1.", List.of(),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Terms", Integer.toString(levels.size()))
                 )),

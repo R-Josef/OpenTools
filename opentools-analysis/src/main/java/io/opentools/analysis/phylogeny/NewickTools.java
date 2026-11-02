@@ -52,9 +52,8 @@ public final class NewickTools {
                         + "\ntotal_branch_length\t" + stats.branchLength + "\n");
             });
             context.progress(1.0, "Newick summary completed");
-            return new ToolResult("Summarized Newick tree", "result.tree.summary.summary",
-                    List.of(stats.leaves), stats.leaves + " leaves and " + stats.nodes + " nodes.",
-                    "result.tree.summary.detail", List.of(stats.nodes),
+            return new ToolResult("Summarized Newick tree",
+                    List.of(stats.leaves), stats.leaves + " leaves and " + stats.nodes + " nodes.", List.of(stats.nodes),
                     new ResultTable(List.of("Metric", "Value"), List.of(
                             List.of("Leaves", Integer.toString(stats.leaves)),
                             List.of("Nodes", Integer.toString(stats.nodes)),
@@ -91,8 +90,8 @@ public final class NewickTools {
             FormatToolSupport.writeAtomically(output, writer -> writer.write(newick + "\n"));
             long leaves = stats(subset).leaves;
             context.progress(1.0, "Newick subset completed");
-            return new ToolResult("Retained " + leaves + " taxa", "result.tree.subset.summary", List.of(leaves),
-                    "Empty branches were pruned.", "result.tree.subset.detail", List.of(),
+            return new ToolResult("Retained " + leaves + " taxa", List.of(leaves),
+                    "Empty branches were pruned.", List.of(),
                     new ResultTable(List.of("Metric", "Value"), List.of(List.of("Leaves", Long.toString(leaves)))),
                     List.of(new OutputArtifact(output, "Subset Newick tree", "text/plain")),
                     Map.of("leaves", leaves));

@@ -33,7 +33,7 @@ final class CoinRunnerToolTest {
                 new CancellationToken()
         );
         ToolRequest request = new ToolRequest(
-                "plugin.example.coin-runner",
+                "example.coin-runner",
                 Map.of(
                         "playerName", "Ada",
                         "distance", 420,

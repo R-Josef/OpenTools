@@ -63,7 +63,7 @@ public final class ToolTextResolver {
     public String parameterTitle(ToolDescriptor tool, ToolParameter parameter) {
         return text(
                 tool,
-                "tool." + tool.id() + ".param." + parameter.id() + ".title",
+                "tool." + tool.id() + ".parameter." + parameter.id() + ".title",
                 parameter.title()
         );
     }
@@ -78,7 +78,7 @@ public final class ToolTextResolver {
     public String parameterDescription(ToolDescriptor tool, ToolParameter parameter) {
         return text(
                 tool,
-                "tool." + tool.id() + ".param." + parameter.id() + ".description",
+                "tool." + tool.id() + ".parameter." + parameter.id() + ".description",
                 parameter.description()
         );
     }

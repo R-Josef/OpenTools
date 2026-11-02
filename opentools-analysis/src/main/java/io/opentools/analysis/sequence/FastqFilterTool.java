@@ -128,10 +128,8 @@ public final class FastqFilterTool extends AbstractOpenTool {
         });
         context.progress(1.0, "FASTQ filtering completed");
         return new ToolResult(
-                "Retained " + totals[1] + " of " + totals[0] + " FASTQ reads",
-                "result.fastq.filter.summary", List.of(totals[1], totals[0]),
-                totals[2] + " reads filtered; per-read reasons are in fastq-filter-report.tsv.",
-                "result.fastq.filter.detail", List.of(totals[2]),
+                "Retained " + totals[1] + " of " + totals[0] + " FASTQ reads", List.of(totals[1], totals[0]),
+                totals[2] + " reads filtered; per-read reasons are in fastq-filter-report.tsv.", List.of(totals[2]),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Input records", Long.toString(totals[0])),
                         List.of("Retained", Long.toString(totals[1])),

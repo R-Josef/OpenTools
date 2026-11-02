@@ -92,10 +92,8 @@ public final class BedToGffTool extends AbstractOpenTool {
         });
         context.progress(1.0, "GFF3 conversion completed");
         return new ToolResult(
-                "Converted " + totals[0] + " BED intervals to GFF3",
-                "result.bed.to_gff.summary", List.of(totals[0]),
-                "Output uses 1-based inclusive coordinates.",
-                "result.bed.to_gff.detail", List.of(),
+                "Converted " + totals[0] + " BED intervals to GFF3", List.of(totals[0]),
+                "Output uses 1-based inclusive coordinates.", List.of(),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Records", Long.toString(totals[0])),
                         List.of("Bases", Long.toString(totals[1]))

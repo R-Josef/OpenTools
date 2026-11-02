@@ -89,10 +89,8 @@ public final class BlastFastqTool extends AbstractOpenTool {
             ToolResult delegated = BlastLocalDelegation.run(request, context, query, output);
             context.progress(1.0, "FASTQ BLAST completed");
             return new ToolResult(
-                    delegated.summary(),
-                    "result.blast.fastq.summary", List.of(records),
-                    records + " FASTQ records were converted to temporary FASTA queries.",
-                    "result.blast.fastq.detail", List.of(records),
+                    delegated.summary(), List.of(records),
+                    records + " FASTQ records were converted to temporary FASTA queries.", List.of(records),
                     new ResultTable(List.of("Metric", "Value"), List.of(
                             List.of("FASTQ records", Long.toString(records)),
                             List.of("BLAST hits", String.valueOf(delegated.metrics().get("totalHits")))

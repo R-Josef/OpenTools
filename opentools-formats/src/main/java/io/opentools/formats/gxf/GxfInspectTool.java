@@ -127,10 +127,8 @@ public final class GxfInspectTool extends AbstractOpenTool {
         context.progress(1.0, "GXF inspection completed");
         return new ToolResult(
                 "Inspected " + records + " annotation records",
-                "result.gxf.inspect.summary",
                 List.of(records),
                 sequenceIds.size() + " sequence IDs; " + featureTypes.size() + " feature types",
-                "result.gxf.inspect.detail",
                 List.of(sequenceIds.size(), featureTypes.size()),
                 new ResultTable(List.of("Metric", "Value"), rows),
                 List.of(

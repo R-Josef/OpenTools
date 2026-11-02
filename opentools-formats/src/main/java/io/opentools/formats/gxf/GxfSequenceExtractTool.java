@@ -196,10 +196,8 @@ public final class GxfSequenceExtractTool extends AbstractOpenTool {
         context.progress(1.0, "Feature extraction completed");
         return new ToolResult(
                 "Extracted " + extracted + " of " + groups.size() + " feature groups",
-                "result.gxf.extract.summary",
                 List.of(extracted, groups.size()),
                 errors.isEmpty() ? "No extraction errors" : errors.size() + " groups failed",
-                errors.isEmpty() ? "result.gxf.extract.detail.ok" : "result.gxf.extract.detail.errors",
                 List.of(errors.size()),
                 table,
                 artifacts,

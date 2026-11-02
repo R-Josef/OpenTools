@@ -27,8 +27,6 @@ Example descriptor:
   "apiVersion": "2.1",
   "mainClass": "org.example.ExamplePlugin",
   "description": "Example OpenTools plugin",
-  "nameKey": "plugin.name",
-  "descriptionKey": "plugin.description",
   "author": "Example Author",
   "dependencies": ["required.plugin"],
   "requestedCapabilities": ["tool", "page", "data"]
@@ -63,7 +61,7 @@ table, and packaging contract.
 Optional tool guides are also discovered from the plugin JAR:
 
 ```text
-META-INF/opentools/docs/<language>/categories/<category>/<Tool ID>.md
+META-INF/opentools/docs/<language>/tool/<Tool ID>.md
 ```
 
 No documentation registration call is required. If a guide is absent, the host

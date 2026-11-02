@@ -182,10 +182,8 @@ public final class FastaStatsTool extends AbstractOpenTool {
         context.progress(1.0, "FASTA statistics completed");
         return new ToolResult(
                 "Processed " + sequenceCount + " sequences",
-                "result.fasta.stats.summary",
                 List.of(sequenceCount),
                 "Total bases: " + totalBases + "; N50: " + n50,
-                "result.fasta.stats.detail",
                 List.of(totalBases, n50),
                 table,
                 List.of(new OutputArtifact(output, "FASTA statistics", "text/tab-separated-values")),

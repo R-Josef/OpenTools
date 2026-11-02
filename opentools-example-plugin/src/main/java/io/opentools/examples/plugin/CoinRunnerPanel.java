@@ -43,7 +43,7 @@ final class CoinRunnerPanel extends ToolPanel {
 
         JPanel header = new JPanel(new BorderLayout(16, 0));
         JLabel title = new JLabel(context.text(
-                "tool.plugin.example.coin-runner.name",
+                "tool.example.coin-runner.name",
                 "Coin Runner"
         ));
         title.setFont(title.getFont().deriveFont(Font.BOLD, title.getFont().getSize2D() + 8f));

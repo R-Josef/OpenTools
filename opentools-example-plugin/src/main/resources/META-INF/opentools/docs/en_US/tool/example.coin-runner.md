@@ -1,7 +1,5 @@
 # Coin Runner: a reproducible demonstration
 
-CUSTOM-DOC: plugin.example.coin-runner
-
 Coin Runner is a deterministic demonstration of an `InteractiveOpenTool`. It
 exercises the normal request, validation, job, result, and artifact pipeline
 without replacing the standard execution service.

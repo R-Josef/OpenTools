@@ -126,10 +126,8 @@ public final class GxfMergeSplitTool extends AbstractOpenTool {
         });
         context.progress(1.0, "Annotation merge completed");
         return new ToolResult(
-                "Merged " + totals[0] + " annotation files",
-                "result.gxf.merge.summary", List.of(totals[0]),
-                totals[1] + " annotation records were written.",
-                "result.gxf.merge.detail", List.of(totals[1]),
+                "Merged " + totals[0] + " annotation files", List.of(totals[0]),
+                totals[1] + " annotation records were written.", List.of(totals[1]),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Files", Long.toString(totals[0])),
                         List.of("Records", Long.toString(totals[1]))
@@ -192,10 +190,8 @@ public final class GxfMergeSplitTool extends AbstractOpenTool {
         context.progress(1.0, "Annotation split completed");
         long records = groups.values().stream().mapToLong(List::size).sum();
         return new ToolResult(
-                "Split annotation into " + groups.size() + " parts",
-                "result.gxf.split.summary", List.of(groups.size()),
-                records + " records were partitioned by " + request.string("splitBy") + ".",
-                "result.gxf.split.detail", List.of(records),
+                "Split annotation into " + groups.size() + " parts", List.of(groups.size()),
+                records + " records were partitioned by " + request.string("splitBy") + ".", List.of(records),
                 new ResultTable(List.of("Key", "Path", "Records"), rows),
                 artifacts,
                 Map.of("parts", groups.size(), "records", records, "splitBy", request.string("splitBy"),

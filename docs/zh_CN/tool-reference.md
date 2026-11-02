@@ -13,13 +13,13 @@ OpenTools `0.8.1-SNAPSHOT` 注册 86 个内置工具。应用内 Docs 的左侧�
 宿主指南路径：
 
 ```text
-docs/<语言>/categories/<分类>/<Tool ID>.md
+docs/<语言>/tool/<Tool ID>.md
 ```
 
 插件指南路径：
 
 ```text
-META-INF/opentools/docs/<语言>/categories/<分类>/<Tool ID>.md
+META-INF/opentools/docs/<语言>/tool/<Tool ID>.md
 ```
 
 指南会自动发现，不需要文档注册 API。没有指南时只显示自动生成的参考。

@@ -23,7 +23,7 @@ docs/en_US/README.md
 - 本地链接在 Docs 页面内切换；HTTP(S) 链接交给系统浏览器。
 - 标题生成锚点，重复标题获得稳定后缀。
 - 工具参数表来自 `ToolDescriptor` 与当前语言键。
-- 工具指南可从 `categories/<分类>/<Tool ID>.md` 发现；插件指南使用插件 JAR 中
+- 工具指南可从 `tool/<Tool ID>.md` 发现；插件指南使用插件 JAR 中
   `META-INF/opentools/docs/<语言>/` 下的相同目录结构。
 - 找到自定义指南时先显示指南内容，再显示分隔线和自动生成的 descriptor 参考。
 - 没有随包指南的自定义语言会明确回退到英文。

@@ -143,10 +143,8 @@ public final class SequenceOrfTool extends AbstractOpenTool {
         }
         context.progress(1.0, "ORF prediction completed");
         return new ToolResult(
-                "Found " + totals[0] + " ORFs",
-                "result.sequence.orf.summary", List.of(totals[0]),
-                totals[3] + " forward ORFs and " + totals[4] + " reverse ORFs.",
-                "result.sequence.orf.detail", List.of(totals[3], totals[4]),
+                "Found " + totals[0] + " ORFs", List.of(totals[0]),
+                totals[3] + " forward ORFs and " + totals[4] + " reverse ORFs.", List.of(totals[3], totals[4]),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("ORFs", Long.toString(totals[0])),
                         List.of("Complete ORFs", Long.toString(totals[1])),

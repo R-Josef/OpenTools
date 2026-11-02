@@ -1,7 +1,5 @@
 # FASTA statistics: example and interpretation
 
-CUSTOM-DOC: fasta.stats
-
 Use FASTA statistics as an initial quality-control step before filtering,
 alignment, or feature extraction.
 

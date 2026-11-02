@@ -84,10 +84,8 @@ public final class GxfToBedTool extends AbstractOpenTool {
         });
         context.progress(1.0, "BED conversion completed");
         return new ToolResult(
-                "Converted " + totals[0] + " annotation records to BED",
-                "result.gxf.to_bed.summary", List.of(totals[0]),
-                "Output uses 0-based start and exclusive end.",
-                "result.gxf.to_bed.detail", List.of(),
+                "Converted " + totals[0] + " annotation records to BED", List.of(totals[0]),
+                "Output uses 0-based start and exclusive end.", List.of(),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Records", Long.toString(totals[0])),
                         List.of("Bases", Long.toString(totals[1]))

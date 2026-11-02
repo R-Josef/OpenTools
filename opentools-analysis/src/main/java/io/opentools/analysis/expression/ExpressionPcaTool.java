@@ -101,11 +101,9 @@ public final class ExpressionPcaTool extends AbstractOpenTool {
         });
         context.progress(1.0, "Expression PCA completed");
         return new ToolResult(
-                "Calculated " + components + " principal components for " + samples + " samples",
-                "result.expression.pca.summary", List.of(samples, components),
+                "Calculated " + components + " principal components for " + samples + " samples", List.of(samples, components),
                 "PC1 explains " + (varianceTotal == 0 ? "0" :
-                        String.format(Locale.ROOT, "%.2f", eigen.values[0] * 100 / varianceTotal)) + "% of variance.",
-                "result.expression.pca.detail", List.of(
+                        String.format(Locale.ROOT, "%.2f", eigen.values[0] * 100 / varianceTotal)) + "% of variance.", List.of(
                         varianceTotal == 0 ? 0.0 : eigen.values[0] * 100 / varianceTotal),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Samples", Integer.toString(samples)),

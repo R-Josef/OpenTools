@@ -125,10 +125,8 @@ final class UiSessionProjectSwitchTest {
             }
             return new ToolResult(
                     "Completed",
-                    null,
                     List.of(),
                     "Completed",
-                    null,
                     List.of(),
                     new ResultTable(List.of(), List.of()),
                     List.of(),

@@ -68,9 +68,8 @@ public final class McscanInputTool extends AbstractOpenTool {
         });
         Files.copy(request.path("blast"), blast, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         context.progress(1.0, "MCScanX input preparation completed");
-        return new ToolResult("Prepared MCScanX inputs", "result.mcscan.input.summary", List.of(count[0]),
-                "Created " + gff.getFileName() + " and " + blast.getFileName() + ".",
-                "result.mcscan.input.detail", List.of(),
+        return new ToolResult("Prepared MCScanX inputs", List.of(count[0]),
+                "Created " + gff.getFileName() + " and " + blast.getFileName() + ".", List.of(),
                 io.opentools.api.tool.ResultTable.empty(),
                 List.of(new OutputArtifact(gff, "MCScanX GFF", "text/plain"),
                         new OutputArtifact(blast, "MCScanX BLAST", "text/plain")),

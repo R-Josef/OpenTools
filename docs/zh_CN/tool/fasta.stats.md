@@ -1,7 +1,5 @@
 # FASTA 统计：示例与结果解释
 
-CUSTOM-DOC: fasta.stats
-
 FASTA 统计适合作为过滤、比对或提取 feature 之前的初步质量控制步骤。
 
 ## 一个实际检查

@@ -118,10 +118,8 @@ public final class MuscleTool extends AbstractOpenTool {
             Files.move(aligned, output, StandardCopyOption.REPLACE_EXISTING);
             context.progress(1.0, "MUSCLE alignment completed");
             return new ToolResult(
-                    "MUSCLE alignment completed",
-                    "result.muscle.summary", List.of(),
-                    "Using " + muscle.version(),
-                    "result.muscle.detail", List.of(muscle.version()),
+                    "MUSCLE alignment completed", List.of(),
+                    "Using " + muscle.version(), List.of(muscle.version()),
                     new ResultTable(List.of("Metric", "Value"), List.of(
                             List.of("Version", muscle.version()),
                             List.of("Syntax", request.string("version"))

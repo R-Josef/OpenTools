@@ -170,10 +170,8 @@ public final class VennTool extends AbstractOpenTool {
         context.progress(1.0, "Set intersection plot completed");
         return new ToolResult(
                 "Rendered " + parsed.setNames().size() + " sets and " + parsed.intersections().size() + " intersections",
-                "result.visual.venn.summary",
                 List.of(parsed.setNames().size(), parsed.intersections().size()),
                 "Union contains " + totalUnion + " identifiers",
-                "result.visual.venn.detail",
                 List.of(totalUnion),
                 table,
                 artifacts,

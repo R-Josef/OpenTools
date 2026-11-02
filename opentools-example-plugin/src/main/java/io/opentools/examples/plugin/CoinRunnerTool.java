@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 public final class CoinRunnerTool extends AbstractOpenTool implements InteractiveOpenTool {
-    private static final String TOOL_ID = "plugin.example.coin-runner";
+    private static final String TOOL_ID = "example.coin-runner";
     private static final ToolDescriptor DESCRIPTOR = new ToolDescriptor(
             TOOL_ID,
             "Coin Runner",
@@ -108,10 +108,8 @@ public final class CoinRunnerTool extends AbstractOpenTool implements Interactiv
         );
         return new ToolResult(
                 "Coin runner completed",
-                "result.plugin.example.coin-runner.summary",
                 List.of(player, distance, score),
                 "Recorded one interactive Coin Runner run.",
-                "result.plugin.example.coin-runner.detail",
                 List.of(),
                 table,
                 List.of(

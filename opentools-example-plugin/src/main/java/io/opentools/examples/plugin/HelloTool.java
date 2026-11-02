@@ -17,7 +17,7 @@ import java.util.Map;
 
 public final class HelloTool extends AbstractOpenTool {
     private static final ToolDescriptor DESCRIPTOR = new ToolDescriptor(
-            "plugin.example.hello",
+            "example.hello",
             "Plugin Hello",
             "Write a user-provided message from the example plugin.",
             "Plugin",
@@ -46,10 +46,8 @@ public final class HelloTool extends AbstractOpenTool {
         context.progress(1.0, "Plugin tool completed");
         return new ToolResult(
                 "Plugin tool completed",
-                "result.plugin.example.hello.summary",
                 List.of(),
                 message,
-                "result.plugin.example.hello.detail",
                 List.of(),
                 new ResultTable(List.of("Message"), List.of(List.of(message))),
                 List.of(new OutputArtifact(output, "Plugin message", "text/plain")),

@@ -69,10 +69,8 @@ public final class BlastReciprocalTool extends AbstractOpenTool {
         FormatToolSupport.writeAtomically(output, writer -> write(writer, reciprocal));
         context.progress(1.0, "Reciprocal BLAST analysis completed");
         return new ToolResult(
-                "Found " + reciprocal.size() + " reciprocal best-hit pairs",
-                "result.blast.reciprocal.summary", List.of(reciprocal.size()),
-                forward.size() + " forward hits and " + reverse.size() + " reverse hits were read.",
-                "result.blast.reciprocal.detail", List.of(forward.size(), reverse.size()),
+                "Found " + reciprocal.size() + " reciprocal best-hit pairs", List.of(reciprocal.size()),
+                forward.size() + " forward hits and " + reverse.size() + " reverse hits were read.", List.of(forward.size(), reverse.size()),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Forward hits", Integer.toString(forward.size())),
                         List.of("Reverse hits", Integer.toString(reverse.size())),

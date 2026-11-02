@@ -130,10 +130,8 @@ public final class HmmerSearchTool extends AbstractOpenTool {
                     List.of(List.of("Domain hits", Integer.toString(hits.size())))
             );
             return new ToolResult(
-                    "HMMER reported " + hits.size() + " domain hits",
-                    "result.hmmer.summary", List.of(hits.size()),
-                    "hmmscan " + hmmscan.version(),
-                    "result.hmmer.detail", List.of(hmmscan.version()),
+                    "HMMER reported " + hits.size() + " domain hits", List.of(hits.size()),
+                    "hmmscan " + hmmscan.version(), List.of(hmmscan.version()),
                     table,
                     List.of(new OutputArtifact(output, "HMMER domtblout", "text/plain")),
                     Map.of("domainHits", hits.size(), "hmmscanVersion", hmmscan.version())

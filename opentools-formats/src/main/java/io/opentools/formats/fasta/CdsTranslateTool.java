@@ -162,10 +162,8 @@ public final class CdsTranslateTool extends AbstractOpenTool {
         context.progress(1.0, "CDS translation completed");
         return new ToolResult(
                 "Translated " + totals[0] + " sequences",
-                "result.fasta.translate.summary",
                 List.of(totals[0]),
                 totals[2] + " incomplete records; " + totals[3] + " ambiguous codons",
-                "result.fasta.translate.detail",
                 List.of(totals[2], totals[3]),
                 table,
                 List.of(new OutputArtifact(output, "Translated protein FASTA", "text/x-fasta")),

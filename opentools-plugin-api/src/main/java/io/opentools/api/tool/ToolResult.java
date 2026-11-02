@@ -8,10 +8,8 @@ import java.util.Map;
  */
 public final class ToolResult {
     private final String summary;
-    private final String summaryKey;
     private final List<Object> summaryArguments;
     private final String detail;
-    private final String detailKey;
     private final List<Object> detailArguments;
     private final ResultTable table;
     private final List<OutputArtifact> artifacts;
@@ -33,17 +31,16 @@ public final class ToolResult {
             List<OutputArtifact> artifacts,
             Map<String, Object> metrics
     ) {
-        this(summary, null, List.of(), detail, null, List.of(), table, artifacts, metrics);
+        this(summary, List.of(), detail, List.of(), table, artifacts, metrics);
     }
 
     /**
-     * Creates a result with optional localization keys and arguments.
+     * Creates a result with message arguments. OpenTools derives localization
+     * keys from the owning Tool ID.
      *
      * @param summary fallback summary
-     * @param summaryKey localization key for the summary
      * @param summaryArguments summary message arguments
      * @param detail fallback detail
-     * @param detailKey localization key for the detail
      * @param detailArguments detail message arguments
      * @param table tabular preview
      * @param artifacts produced files
@@ -51,20 +48,16 @@ public final class ToolResult {
      */
     public ToolResult(
             String summary,
-            String summaryKey,
             List<Object> summaryArguments,
             String detail,
-            String detailKey,
             List<Object> detailArguments,
             ResultTable table,
             List<OutputArtifact> artifacts,
             Map<String, Object> metrics
     ) {
         this.summary = summary == null ? "" : summary;
-        this.summaryKey = summaryKey;
         this.summaryArguments = summaryArguments == null ? List.of() : List.copyOf(summaryArguments);
         this.detail = detail == null ? "" : detail;
-        this.detailKey = detailKey;
         this.detailArguments = detailArguments == null ? List.of() : List.copyOf(detailArguments);
         this.table = table == null ? ResultTable.empty() : table;
         this.artifacts = artifacts == null ? List.of() : List.copyOf(artifacts);
@@ -78,15 +71,6 @@ public final class ToolResult {
      */
     public String summary() {
         return summary;
-    }
-
-    /**
-     * Returns the summary localization key.
-     *
-     * @return key or {@code null}
-     */
-    public String summaryKey() {
-        return summaryKey;
     }
 
     /**
@@ -105,15 +89,6 @@ public final class ToolResult {
      */
     public String detail() {
         return detail;
-    }
-
-    /**
-     * Returns the detail localization key.
-     *
-     * @return key or {@code null}
-     */
-    public String detailKey() {
-        return detailKey;
     }
 
     /**

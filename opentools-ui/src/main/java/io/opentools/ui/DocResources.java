@@ -40,10 +40,7 @@ final class DocResources {
             String languageCode,
             ToolDescriptor tool
     ) throws IOException {
-        Optional<String> relative = ToolDocumentationPaths.hostRelativePath(
-                tool.category(),
-                tool.id()
-        );
+        Optional<String> relative = ToolDocumentationPaths.hostRelativePath(tool.id());
         if (relative.isEmpty()) {
             return Optional.empty();
         }

@@ -13,8 +13,6 @@ import java.util.Locale;
  * @param apiVersion required Plugin API version
  * @param mainClass class implementing {@link OpenToolsPlugin}
  * @param description fallback summary, usually in English
- * @param nameKey optional localization key for the display name
- * @param descriptionKey optional localization key for the description
  * @param author optional author text
  * @param dependencies required plugin IDs
  * @param requestedCapabilities requested host capabilities
@@ -26,8 +24,6 @@ public record PluginDescriptor(
         String apiVersion,
         String mainClass,
         String description,
-        String nameKey,
-        String descriptionKey,
         String author,
         List<String> dependencies,
         List<String> requestedCapabilities
@@ -39,8 +35,6 @@ public record PluginDescriptor(
         apiVersion = required(apiVersion, "apiVersion");
         mainClass = required(mainClass, "mainClass");
         description = description == null ? "" : description;
-        nameKey = optional(nameKey);
-        descriptionKey = optional(descriptionKey);
         author = author == null ? "" : author;
         dependencies = normalize(dependencies);
         requestedCapabilities = requestedCapabilities == null || requestedCapabilities.isEmpty()
@@ -61,10 +55,6 @@ public record PluginDescriptor(
         return value.trim();
     }
 
-    private static String optional(String value) {
-        return value == null ? "" : value.trim();
-    }
-
     /**
      * Resolves the plugin display name for the active language.
      *
@@ -72,7 +62,7 @@ public record PluginDescriptor(
      * @return localized display name or the manifest fallback
      */
     public String localizedName(PluginLocalizer localizer) {
-        return localizer == null || nameKey.isBlank() ? name : localizer.text(nameKey, name);
+        return localizer == null ? name : localizer.text("plugin.name", name);
     }
 
     /**
@@ -82,9 +72,7 @@ public record PluginDescriptor(
      * @return localized description or the manifest fallback
      */
     public String localizedDescription(PluginLocalizer localizer) {
-        return localizer == null || descriptionKey.isBlank()
-                ? description
-                : localizer.text(descriptionKey, description);
+        return localizer == null ? description : localizer.text("plugin.description", description);
     }
 
     private static List<String> normalize(List<String> values) {

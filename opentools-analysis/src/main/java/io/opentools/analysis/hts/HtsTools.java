@@ -150,10 +150,8 @@ public final class HtsTools {
                 }
             });
             context.progress(1.0, "Alignment statistics completed");
-            return new ToolResult("Summarized " + records + " alignment records",
-                    "result.hts.sam.summary", List.of(records),
-                    counts[2] + " mapped and " + counts[1] + " unmapped reads.",
-                    "result.hts.sam.detail", List.of(counts[2], counts[1]),
+            return new ToolResult("Summarized " + records + " alignment records", List.of(records),
+                    counts[2] + " mapped and " + counts[1] + " unmapped reads.", List.of(counts[2], counts[1]),
                     new ResultTable(List.of("Metric", "Value"), List.of(
                             List.of("Records", Long.toString(records)),
                             List.of("Mapped", Long.toString(counts[2])),
@@ -293,11 +291,9 @@ public final class HtsTools {
                 artifacts.add(new OutputArtifact(index, "BAM index", "application/octet-stream"));
             }
             context.progress(1.0, "Alignment subset completed");
-            return new ToolResult("Wrote " + records + " alignment records",
-                    "result.hts.bam_subset.summary", List.of(records),
+            return new ToolResult("Wrote " + records + " alignment records", List.of(records),
                     "Output format: " + (bam ? "BAM" : "SAM")
-                            + (indexed ? "; input index used." : "; input scanned linearly."),
-                    "result.hts.bam_subset.detail", List.of(),
+                            + (indexed ? "; input index used." : "; input scanned linearly."), List.of(),
                     new ResultTable(List.of("Metric", "Value"),
                             List.of(List.of("Records", Long.toString(records)))),
                     artifacts,
@@ -383,12 +379,10 @@ public final class HtsTools {
                 }
             });
             context.progress(1.0, "BAM coverage completed");
-            return new ToolResult("Calculated coverage for " + regions.size() + " BED regions",
-                    "result.hts.bam_coverage.summary", List.of(regions.size()),
+            return new ToolResult("Calculated coverage for " + regions.size() + " BED regions", List.of(regions.size()),
                     bases[0] + " bases searched; mean depth " + String.format(Locale.ROOT, "%.3f",
                             bases[1] / (double) Math.max(1, bases[0]))
-                            + (indexed ? "; input index used." : "; input scanned linearly."),
-                    "result.hts.bam_coverage.detail", List.of(bases[0]),
+                            + (indexed ? "; input index used." : "; input scanned linearly."), List.of(bases[0]),
                     new ResultTable(List.of("Metric", "Value"), List.of(
                             List.of("Regions", Integer.toString(regions.size())),
                             List.of("Bases", Long.toString(bases[0])))),
@@ -465,9 +459,8 @@ public final class HtsTools {
                         : String.format(Locale.ROOT, "%.4f", totals[5] / (double) totals[6])) + "\n");
             });
             context.progress(1.0, "VCF statistics completed");
-            return new ToolResult("Summarized " + totals[0] + " variant records",
-                    "result.hts.vcf.summary", List.of(totals[0]),
-                    totals[1] + " SNPs and " + totals[2] + " indels.", "result.hts.vcf.detail",
+            return new ToolResult("Summarized " + totals[0] + " variant records", List.of(totals[0]),
+                    totals[1] + " SNPs and " + totals[2] + " indels.",
                     List.of(totals[1], totals[2]),
                     new ResultTable(List.of("Metric", "Value"), List.of(
                             List.of("Variants", Long.toString(totals[0])),
@@ -675,10 +668,8 @@ public final class HtsTools {
             if (index != null) {
                 metrics.put("indexPath", index.toString());
             }
-            return new ToolResult("Retained " + totals[1] + " of " + totals[0] + " variants",
-                    "result.hts.vcf_filter.summary", List.of(totals[1], totals[0]),
-                    "Filtered " + (totals[0] - totals[1]) + " variants.",
-                    "result.hts.vcf_filter.detail", List.of(totals[0] - totals[1]),
+            return new ToolResult("Retained " + totals[1] + " of " + totals[0] + " variants", List.of(totals[1], totals[0]),
+                    "Filtered " + (totals[0] - totals[1]) + " variants.", List.of(totals[0] - totals[1]),
                     new ResultTable(List.of("Metric", "Value"), List.of(
                             List.of("Input", Long.toString(totals[0])),
                             List.of("Retained", Long.toString(totals[1])))),
@@ -880,9 +871,7 @@ public final class HtsTools {
                 }
             });
             context.progress(1.0, "BED coverage completed");
-            return new ToolResult("Calculated mean coverage for " + regions.size() + " BED intervals",
-                    "result.bed.coverage.summary", List.of(regions.size()), "Per-interval mean depth reported.",
-                    "result.bed.coverage.detail", List.of(),
+            return new ToolResult("Calculated mean coverage for " + regions.size() + " BED intervals", List.of(regions.size()), "Per-interval mean depth reported.", List.of(),
                     new ResultTable(List.of("Metric", "Value"),
                             List.of(List.of("Regions", Integer.toString(regions.size())))),
                     List.of(new OutputArtifact(output, "BED coverage", "text/tab-separated-values")),

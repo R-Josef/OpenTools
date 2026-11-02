@@ -9,7 +9,7 @@ language:
 | Simplified Chinese (`zh_CN`) | [`zh_CN/`](zh_CN/README.md) |
 
 Tool pages can start with a Markdown guide discovered from
-`<language>/categories/<category>/<Tool ID>.md`. Plugin guides use the same
+`<language>/tool/<Tool ID>.md`. Plugin guides use the same
 layout under `META-INF/opentools/docs/` in the plugin JAR. The custom guide is
 followed by a separator and a reference generated from the same
 `ToolDescriptor` and tool text resolver as the GUI, CLI, and MCP endpoints.

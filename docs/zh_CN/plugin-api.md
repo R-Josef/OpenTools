@@ -73,15 +73,18 @@ descriptor ID 构造以下键：
 | --- | --- |
 | 工具名称 | `tool.<Tool ID>.name` |
 | 工具描述 | `tool.<Tool ID>.description` |
-| 参数标题 | `tool.<Tool ID>.param.<参数 ID>.title` |
-| 参数描述 | `tool.<Tool ID>.param.<参数 ID>.description` |
-| 三参数页面标题 | `page.<页面 ID>.title` |
-| 工具分类 | 宿主拥有的 `category.<分类小写>` |
-| 结果表格列名 | `result.<Tool ID>.column.<规范化列名>` |
-| 结果表格值 | `result.<Tool ID>.value.<规范化值>` |
+| 参数标题 | `tool.<Tool ID>.parameter.<参数 ID>.title` |
+| 参数描述 | `tool.<Tool ID>.parameter.<参数 ID>.description` |
+| 插件页面标题 | `page.<页面 ID>.title` |
+| 工具分类 | 宿主拥有的 `category.<Category>` |
+| 结果表格列名 | `result.<Tool ID>.column.<Normalized Column>` |
+| 结果表格值 | `result.<Tool ID>.value.<Normalized Value>` |
 
-`ToolResult.summaryKey` 与 `detailKey` 由插件显式提供，宿主不会推导。传给
-`context.text(...)` 的键和四参数页面标题也始终原样使用。
+插件页面与交互工具页面都叫 page，但身份不同：插件页面有独立页面 ID；交互工具
+页面使用 Tool ID 和 `tool.<Tool ID>.name`。
+
+`ToolResult` 只提供后备文本和消息参数，摘要与详情键由宿主根据当前 Tool ID
+推导。传给 `context.text(...)` 的键和四参数页面标题始终原样使用。
 
 隔离来自插件专属 localizer，而不是给所有键添加文本前缀。不同插件中的相同键会
 分别在自己的资源集合中解析。
@@ -101,14 +104,14 @@ descriptor ID 构造以下键：
 页面和结果摘要都会更新，无需重启进程。
 
 `ToolDescriptor` 和 `ToolParameter` 保存后备显示文本，通常使用英文。在语言文件
-或键缺失时，这些文本作为最终后备。插件清单可以用可选键本地化名称和描述：
+或键缺失时，这些文本作为最终后备。插件清单中的 `name` 和 `description` 是
+后备文本；存在本地化资源时，插件文件固定使用 `plugin.name` 和
+`plugin.description`：
 
 ```json
 {
   "name": "示例插件",
-  "nameKey": "plugin.name",
-  "description": "示例扩展",
-  "descriptionKey": "plugin.description"
+  "description": "示例扩展"
 }
 ```
 
@@ -140,11 +143,11 @@ descriptor ID 构造以下键：
 插件工具指南通过可发现的资源路径加载，不调用注册 API：
 
 ```text
-META-INF/opentools/docs/<语言>/categories/<分类目录>/<Tool ID>.md
+META-INF/opentools/docs/<语言>/tool/<Tool ID>.md
 ```
 
-分类目录使用小写，标点转为 `-`；文件名是完整 Tool ID 加 `.md`。宿主依次查找
-当前完整语言、当前语言和 `en_US`。
+文件名是完整 Tool ID 加 `.md`。宿主依次查找当前完整语言、当前语言和
+`en_US`。
 
 找到指南时，OpenTools 先显示自定义 Markdown，再显示分隔线，最后显示根据
 descriptor 自动生成的参考。没有指南时只显示自动参考。缺少指南不会导致插件
@@ -152,6 +155,9 @@ descriptor 自动生成的参考。没有指南时只显示自动参考。缺少
 
 跨工具链接使用 `tool:<Tool ID>`，应用文档根目录链接使用
 `opentools-doc:<路径>`。暂不支持插件文档中的相对图片。
+
+完整的资源发现表见
+[插件开发指南](plugin-development.md#资源发现契约)。
 
 ## 交互工具
 

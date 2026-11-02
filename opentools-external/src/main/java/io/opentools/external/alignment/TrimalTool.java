@@ -112,10 +112,8 @@ public final class TrimalTool extends AbstractOpenTool {
         }
         context.progress(1.0, "trimAl completed");
         return new ToolResult(
-                "trimAl alignment trimming completed",
-                "result.trimal.summary", List.of(),
-                "Using " + trimal.version(),
-                "result.trimal.detail", List.of(trimal.version()),
+                "trimAl alignment trimming completed", List.of(),
+                "Using " + trimal.version(), List.of(trimal.version()),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Method", request.string("method")),
                         List.of("Version", trimal.version())

@@ -24,12 +24,12 @@ final class JarPluginDocumentationTest {
         try (ZipOutputStream output = new ZipOutputStream(Files.newOutputStream(jar))) {
             write(
                     output,
-                    "META-INF/opentools/docs/en_US/categories/plugin/example.tool.md",
+                    "META-INF/opentools/docs/en_US/tool/example.tool.md",
                     "# English fallback\n"
             );
             write(
                     output,
-                    "META-INF/opentools/docs/zh_CN/categories/plugin/nested/doc.md",
+                    "META-INF/opentools/docs/zh_CN/tool/nested/doc.md",
                     "# Nested path\n"
             );
         }
@@ -53,8 +53,8 @@ final class JarPluginDocumentationTest {
         assertTrue(loaded.diagnostics().stream()
                 .anyMatch(diagnostic -> diagnostic.code().equals("DOC_RESOURCE_PATH")));
         assertEquals(
-                "categories/genome-annotation/example.tool.md",
-                ToolDocumentationPaths.hostRelativePath("Genome annotation", "example.tool")
+                "tool/example.tool.md",
+                ToolDocumentationPaths.hostRelativePath("example.tool")
                         .orElseThrow()
         );
     }

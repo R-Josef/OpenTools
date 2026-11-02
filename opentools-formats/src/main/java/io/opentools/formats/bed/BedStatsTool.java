@@ -120,10 +120,8 @@ public final class BedStatsTool extends AbstractOpenTool {
         metrics.put("parallelRecords", threads > 1);
         context.progress(1.0, "BED statistics completed");
         return new ToolResult(
-                "Summarized " + totals[0] + " BED intervals",
-                "result.bed.stats.summary", List.of(totals[0]),
-                totals[1] + " bases across " + totals[4] + " sequence IDs.",
-                "result.bed.stats.detail", List.of(totals[1], totals[4]),
+                "Summarized " + totals[0] + " BED intervals", List.of(totals[0]),
+                totals[1] + " bases across " + totals[4] + " sequence IDs.", List.of(totals[1], totals[4]),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Records", Long.toString(totals[0])),
                         List.of("Total bases", Long.toString(totals[1])),

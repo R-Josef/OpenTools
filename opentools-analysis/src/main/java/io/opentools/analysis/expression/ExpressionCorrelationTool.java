@@ -103,10 +103,8 @@ public final class ExpressionCorrelationTool extends AbstractOpenTool {
         FormatToolSupport.writeAtomically(output, writer -> writeMatrix(writer, matrix.columnNames(), correlation));
         context.progress(1.0, "Expression correlation completed");
         return new ToolResult(
-                "Calculated " + count + " x " + count + " sample correlation",
-                "result.expression.correlation.summary", List.of(count, request.string("method")),
-                "Coefficients were calculated from " + matrix.rowNames().size() + " genes.",
-                "result.expression.correlation.detail", List.of(matrix.rowNames().size()),
+                "Calculated " + count + " x " + count + " sample correlation", List.of(count, request.string("method")),
+                "Coefficients were calculated from " + matrix.rowNames().size() + " genes.", List.of(matrix.rowNames().size()),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Method", request.string("method")),
                         List.of("Samples", Integer.toString(count)),

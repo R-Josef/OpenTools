@@ -261,12 +261,10 @@ public final class HeatmapTool extends AbstractOpenTool {
         context.progress(1.0, "Heatmap completed");
         return new ToolResult(
                 "Rendered " + data.rowLabels().size() + " x " + data.columnLabels().size() + " heatmap",
-                "result.visual.heatmap.summary",
                 List.of(data.rowLabels().size(), data.columnLabels().size()),
                 "Source matrix: " + data.sourceRows() + " x " + data.sourceColumns()
                         + "; missing: " + data.missingValues()
                         + "; invalid: " + data.invalidValues(),
-                "result.visual.heatmap.detail",
                 List.of(data.sourceRows(), data.sourceColumns(), data.missingValues(), data.invalidValues()),
                 table,
                 artifacts,

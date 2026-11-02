@@ -151,10 +151,8 @@ public final class GxfFilterTool extends AbstractOpenTool {
         long kept = totals[1];
         context.progress(1.0, "Annotation filter completed");
         return new ToolResult(
-                "Retained " + kept + " of " + inputCount + " annotation records",
-                "result.gxf.filter.summary", List.of(kept, inputCount),
-                "Filtered " + (inputCount - kept) + " records.",
-                "result.gxf.filter.detail", List.of(inputCount - kept),
+                "Retained " + kept + " of " + inputCount + " annotation records", List.of(kept, inputCount),
+                "Filtered " + (inputCount - kept) + " records.", List.of(inputCount - kept),
                 new ResultTable(List.of("Reason", "Count"), reasons.entrySet().stream()
                         .map(entry -> List.of(entry.getKey(), Long.toString(entry.getValue()))).toList()),
                 List.of(new OutputArtifact(output, "Filtered annotation", "text/plain")),

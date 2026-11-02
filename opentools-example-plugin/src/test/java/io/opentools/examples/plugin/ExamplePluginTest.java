@@ -28,7 +28,7 @@ final class ExamplePluginTest {
 
         new ExamplePlugin().onEnable(context);
 
-        assertEquals(List.of("plugin.example.coin-runner", "plugin.example.hello"),
+        assertEquals(List.of("example.coin-runner", "example.hello"),
                 context.tools.stream().map(tool -> tool.descriptor().id()).toList());
         assertTrue(context.tools.getFirst() instanceof InteractiveOpenTool);
         assertEquals(List.of("main"), context.pages);
@@ -42,12 +42,12 @@ final class ExamplePluginTest {
         ClassLoader loader = getClass().getClassLoader();
 
         assertNotNull(loader.getResource(
-                "META-INF/opentools/docs/en_US/categories/plugin/"
-                        + "plugin.example.coin-runner.md"
+                "META-INF/opentools/docs/en_US/tool/"
+                        + "example.coin-runner.md"
         ));
         assertNotNull(loader.getResource(
-                "META-INF/opentools/docs/zh_CN/categories/plugin/"
-                        + "plugin.example.coin-runner.md"
+                "META-INF/opentools/docs/zh_CN/tool/"
+                        + "example.coin-runner.md"
         ));
     }
 

@@ -167,10 +167,8 @@ public final class FastqStatsTool extends AbstractOpenTool {
         metrics.put("threads", threads);
         metrics.put("parallelRecords", threads > 1);
         return new ToolResult(
-                "Summarized " + records + " FASTQ records",
-                "result.fastq.stats.summary", List.of(records),
-                bases + " bases; Q30 " + format(q30) + "%.",
-                "result.fastq.stats.detail", List.of(bases, q30),
+                "Summarized " + records + " FASTQ records", List.of(records),
+                bases + " bases; Q30 " + format(q30) + "%.", List.of(bases, q30),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Records", Long.toString(records)),
                         List.of("Bases", Long.toString(bases)),

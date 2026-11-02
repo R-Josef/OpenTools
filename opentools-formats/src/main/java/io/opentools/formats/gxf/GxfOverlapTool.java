@@ -389,12 +389,8 @@ public final class GxfOverlapTool extends AbstractOpenTool {
         metrics.put("annotationMemory",
                 "IN_MEMORY".equals(stats.mode()) ? "bounded-records" : "disk-interval-index");
         return new ToolResult(
-                "Found " + stats.pairs() + " overlapping record pairs",
-                "result.gxf.overlap.summary", List.of(stats.pairs()),
+                "Found " + stats.pairs() + " overlapping record pairs", List.of(stats.pairs()),
                 stats.truncated() ? "Pair output reached maxPairs." : "All pairs were considered.",
-                stats.truncated()
-                        ? "result.gxf.overlap.detail.truncated"
-                        : "result.gxf.overlap.detail.complete",
                 List.of(),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Annotation records", Long.toString(stats.records())),

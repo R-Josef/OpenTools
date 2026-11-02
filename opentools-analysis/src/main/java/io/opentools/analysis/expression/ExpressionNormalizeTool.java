@@ -82,10 +82,8 @@ public final class ExpressionNormalizeTool extends AbstractOpenTool {
         write(output, matrix, normalized);
         context.progress(1.0, "Expression normalization completed");
         return new ToolResult(
-                "Normalized " + matrix.rowNames().size() + " genes by " + method,
-                "result.expression.normalize.summary", List.of(matrix.rowNames().size(), method),
-                matrix.columnNames().size() + " samples were normalized.",
-                "result.expression.normalize.detail", List.of(matrix.columnNames().size()),
+                "Normalized " + matrix.rowNames().size() + " genes by " + method, List.of(matrix.rowNames().size(), method),
+                matrix.columnNames().size() + " samples were normalized.", List.of(matrix.columnNames().size()),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Method", method),
                         List.of("Genes", Integer.toString(matrix.rowNames().size())),

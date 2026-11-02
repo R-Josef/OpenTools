@@ -49,8 +49,8 @@ final class LanguageFilesTest {
             assertKey(english, chinese, "tool." + tool.id() + ".name");
             assertKey(english, chinese, "tool." + tool.id() + ".description");
             for (ToolParameter parameter : tool.parameters()) {
-                assertKey(english, chinese, "tool." + tool.id() + ".param." + parameter.id() + ".title");
-                assertKey(english, chinese, "tool." + tool.id() + ".param." + parameter.id() + ".description");
+                assertKey(english, chinese, "tool." + tool.id() + ".parameter." + parameter.id() + ".title");
+                assertKey(english, chinese, "tool." + tool.id() + ".parameter." + parameter.id() + ".description");
             }
         }
         for (String key : java.util.List.of(
@@ -114,8 +114,8 @@ final class LanguageFilesTest {
             assertKey(english, chinese, "tool." + tool.id() + ".name");
             assertKey(english, chinese, "tool." + tool.id() + ".description");
             for (ToolParameter parameter : tool.parameters()) {
-                assertKey(english, chinese, "tool." + tool.id() + ".param." + parameter.id() + ".title");
-                assertKey(english, chinese, "tool." + tool.id() + ".param." + parameter.id() + ".description");
+                assertKey(english, chinese, "tool." + tool.id() + ".parameter." + parameter.id() + ".title");
+                assertKey(english, chinese, "tool." + tool.id() + ".parameter." + parameter.id() + ".description");
             }
         }
         for (String key : java.util.List.of(
@@ -170,8 +170,8 @@ final class LanguageFilesTest {
             assertKey(english, chinese, "tool." + tool.id() + ".name");
             assertKey(english, chinese, "tool." + tool.id() + ".description");
             for (ToolParameter parameter : tool.parameters()) {
-                assertKey(english, chinese, "tool." + tool.id() + ".param." + parameter.id() + ".title");
-                assertKey(english, chinese, "tool." + tool.id() + ".param." + parameter.id() + ".description");
+                assertKey(english, chinese, "tool." + tool.id() + ".parameter." + parameter.id() + ".title");
+                assertKey(english, chinese, "tool." + tool.id() + ".parameter." + parameter.id() + ".description");
             }
         }
         for (String key : java.util.List.of(
@@ -204,8 +204,8 @@ final class LanguageFilesTest {
             assertKey(english, chinese, "tool." + tool.id() + ".name");
             assertKey(english, chinese, "tool." + tool.id() + ".description");
             for (ToolParameter parameter : tool.parameters()) {
-                assertKey(english, chinese, "tool." + tool.id() + ".param." + parameter.id() + ".title");
-                assertKey(english, chinese, "tool." + tool.id() + ".param." + parameter.id() + ".description");
+                assertKey(english, chinese, "tool." + tool.id() + ".parameter." + parameter.id() + ".title");
+                assertKey(english, chinese, "tool." + tool.id() + ".parameter." + parameter.id() + ".description");
             }
         }
         for (String key : java.util.List.of(

@@ -306,13 +306,11 @@ final class PlotSeqLogoTool extends AbstractOpenTool {
         metrics.put("bothStrands", pwm.bothStrands());
         metrics.put("ambiguousBases", pwm.ambiguousBases());
         return new ToolResult(
-                "Computed sequence logo from " + pwm.positions() + " positions",
-                "result.plot.seqlogo.summary", List.of(pwm.positions()),
+                "Computed sequence logo from " + pwm.positions() + " positions", List.of(pwm.positions()),
                 pwm.sourceSequences() == 0
                         ? "Input mode: POSITION_TABLE."
                         : pwm.sourceSequences() + " sequences; " + pwm.ambiguousBases()
-                                + " IUPAC ambiguous bases distributed.",
-                "result.plot.seqlogo.detail", List.of(),
+                                + " IUPAC ambiguous bases distributed.", List.of(),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Input mode", mode.name()),
                         List.of("Positions", Integer.toString(pwm.positions())),
@@ -409,7 +407,7 @@ final class PlotGeneLocationTool extends AbstractOpenTool {
         GenericPlotData data = new GenericPlotData("LINE", "Genomic coordinate", "Gene order",
                 List.of(), series);
         return PlotToolSupport.renderGenericWithData(this, request, context, data,
-                "gene-location", request.string("title"), "result.plot.gene_location.summary",
+                "gene-location", request.string("title"),
                 rows, List.of("seq_id", "gene_id", "start", "end", "strand"), rows.size());
     }
 }
@@ -442,7 +440,7 @@ final class PlotDomainTool extends AbstractOpenTool {
         GenericPlotData data = new GenericPlotData("SCATTER", "Protein position", "Protein",
                 List.of(), rows.values().stream().map(GenericPlotData.GenericSeries.Builder::build).toList());
         return PlotToolSupport.renderGeneric(this, request, context, data,
-                "domain", request.string("title"), "result.plot.domain.summary", rows.size());
+                "domain", request.string("title"), rows.size());
     }
 }
 
@@ -472,7 +470,7 @@ final class PlotMotifTool extends AbstractOpenTool {
         GenericPlotData data = new GenericPlotData("SCATTER", "Position", "Motif",
                 List.of(), rows.values().stream().map(GenericPlotData.GenericSeries.Builder::build).toList());
         return PlotToolSupport.renderGeneric(this, request, context, data,
-                "motif", request.string("title"), "result.plot.motif.summary", rows.size());
+                "motif", request.string("title"), rows.size());
     }
 }
 
@@ -504,7 +502,7 @@ final class PlotCircosTool extends AbstractOpenTool {
                 List.copyOf(series.keySet()), series.values().stream()
                 .map(GenericPlotData.GenericSeries.Builder::build).toList());
         return PlotToolSupport.renderGeneric(this, request, context, data,
-                "circos", request.string("title"), "result.plot.circos.summary", series.size());
+                "circos", request.string("title"), series.size());
     }
 }
 
@@ -521,9 +519,7 @@ final class PlotEfpTool extends AbstractOpenTool {
     @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         ToolResult delegated = new HeatmapTool().execute(
                 new ToolRequest("visual.heatmap", PlotToolSupport.heatmapParameters(request)), context);
-        return new ToolResult("Rendered expression eFP heatmap",
-                "result.plot.efp.summary", List.of(), "Tissue/sample matrix rendered as a heatmap.",
-                "result.plot.efp.detail", List.of(), delegated.table(),
+        return new ToolResult("Rendered expression eFP heatmap", List.of(), "Tissue/sample matrix rendered as a heatmap.", List.of(), delegated.table(),
                 delegated.artifacts(), delegated.metrics());
     }
 }

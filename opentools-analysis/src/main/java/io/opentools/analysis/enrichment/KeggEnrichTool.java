@@ -57,10 +57,8 @@ public final class KeggEnrichTool extends AbstractOpenTool {
         FormatToolSupport.writeAtomically(output, writer -> EnrichmentSupport.writeResults(writer, results, "hits"));
         context.progress(1.0, "KEGG enrichment completed");
         return new ToolResult(
-                "KEGG enrichment found " + results.size() + " pathways",
-                "result.kegg.enrich.summary", List.of(results.size()),
-                "Hypergeometric P-values with Benjamini-Hochberg correction.",
-                "result.kegg.enrich.detail", List.of(),
+                "KEGG enrichment found " + results.size() + " pathways", List.of(results.size()),
+                "Hypergeometric P-values with Benjamini-Hochberg correction.", List.of(),
                 new ResultTable(List.of("Term", "Adjusted P", "Hits"),
                         results.stream().limit(50).map(r -> List.of(r.term(),
                                 Double.toString(r.adjustedP()), Integer.toString(r.hitCount()))).toList()),

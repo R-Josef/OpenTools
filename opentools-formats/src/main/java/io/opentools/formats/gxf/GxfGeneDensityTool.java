@@ -111,10 +111,8 @@ public final class GxfGeneDensityTool extends AbstractOpenTool {
         });
         context.progress(1.0, "Gene density calculation completed");
         return new ToolResult(
-                "Calculated gene density for " + totals[1] + " windows",
-                "result.gxf.gene_density.summary", List.of(totals[1]),
-                totals[0] + " genes were assigned by start position.",
-                "result.gxf.gene_density.detail", List.of(totals[0]),
+                "Calculated gene density for " + totals[1] + " windows", List.of(totals[1]),
+                totals[0] + " genes were assigned by start position.", List.of(totals[0]),
                 new ResultTable(List.of("Metric", "Value"), List.of(
                         List.of("Genes", Long.toString(totals[0])),
                         List.of("Windows", Long.toString(totals[1])),

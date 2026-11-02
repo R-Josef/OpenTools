@@ -138,7 +138,6 @@ final class JarPluginDocumentation implements AutoCloseable {
         }
         for (String language : lookupLanguages(languageSupplier.get())) {
             Optional<String> relative = ToolDocumentationPaths.pluginRelativePath(
-                    tool.category(),
                     tool.id()
             );
             if (relative.isEmpty()) {
@@ -159,17 +158,16 @@ final class JarPluginDocumentation implements AutoCloseable {
 
     private static String normalizeEntry(String relative) {
         String[] parts = relative.split("/");
-        if (parts.length != 4 || !parts[1].equals("categories")
-                || !parts[3].endsWith(".md") || parts[3].length() <= 3) {
+        if (parts.length != 3 || !parts[1].equals("tool")
+                || !parts[2].endsWith(".md") || parts[2].length() <= 3) {
             return null;
         }
         String language = ToolDocumentationPaths.normalizeLanguage(parts[0]);
         if (!parts[0].matches("[A-Za-z]{2,8}(?:_[A-Za-z0-9]{2,8})?")
-                || !parts[2].matches("[a-z0-9][a-z0-9-]*")
-                || !parts[3].matches("[A-Za-z0-9._-]+\\.md")) {
+                || !parts[2].matches("[A-Za-z0-9._-]+\\.md")) {
             return null;
         }
-        return language + "/" + parts[1] + "/" + parts[2] + "/" + parts[3];
+        return language + "/" + parts[1] + "/" + parts[2];
     }
 
     private static List<String> lookupLanguages(String active) {

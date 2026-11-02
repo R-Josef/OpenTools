@@ -352,7 +352,6 @@ final class DocsPanel extends JPanel {
             if (markdown.isPresent() && !markdown.get().isBlank()) {
                 String sourcePath = ToolDocumentationPaths.pluginEntry(
                                 language.activeCode(),
-                                descriptor.category(),
                                 descriptor.id()
                         )
                         .orElse("README.md");

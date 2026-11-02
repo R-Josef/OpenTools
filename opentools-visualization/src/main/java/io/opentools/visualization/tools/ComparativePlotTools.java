@@ -52,7 +52,7 @@ final class PlotCollinearityTool extends AbstractOpenTool {
                 "Collinear pair order", List.of(), groups.values().stream()
                 .map(GenericPlotData.GenericSeries.Builder::build).toList());
         return PlotToolSupport.renderGeneric(this, request, context, data,
-                "collinearity", request.string("title"), "result.plot.collinearity.summary", groups.size());
+                "collinearity", request.string("title"), groups.size());
     }
 }
 
@@ -91,6 +91,6 @@ final class PlotDotplotTool extends AbstractOpenTool {
                 request.string("yColumn"), List.of(), groups.values().stream()
                 .map(GenericPlotData.GenericSeries.Builder::build).toList());
         return PlotToolSupport.renderGeneric(this, request, context, data,
-                "dotplot", request.string("title"), "result.plot.dotplot.summary", groups.size());
+                "dotplot", request.string("title"), groups.size());
     }
 }
