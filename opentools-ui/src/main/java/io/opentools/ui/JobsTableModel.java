@@ -21,8 +21,24 @@ final class JobsTableModel extends AbstractTableModel {
     }
 
     public void setJobs(List<JobRecord> jobs) {
-        this.jobs = new ArrayList<>(jobs);
-        fireTableDataChanged();
+        List<JobRecord> updated = new ArrayList<>(jobs);
+        boolean sameRows = this.jobs.size() == updated.size();
+        if (sameRows) {
+            for (int index = 0; index < updated.size(); index++) {
+                if (!this.jobs.get(index).runId().equals(updated.get(index).runId())) {
+                    sameRows = false;
+                    break;
+                }
+            }
+        }
+        this.jobs = updated;
+        if (sameRows) {
+            if (!updated.isEmpty()) {
+                fireTableRowsUpdated(0, updated.size() - 1);
+            }
+        } else {
+            fireTableDataChanged();
+        }
     }
 
     public JobRecord row(int index) {

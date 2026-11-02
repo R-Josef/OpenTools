@@ -43,6 +43,7 @@ import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetAdapter;
 import java.awt.dnd.DropTargetDropEvent;
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.util.LinkedHashMap;
@@ -176,6 +177,7 @@ final class ToolFormPanel extends JPanel {
         }
         fieldsPanel.revalidate();
         fieldsPanel.repaint();
+        TextContextMenus.install(fieldsPanel, language);
     }
 
     private void addParameter(ToolParameter parameter) {
@@ -224,11 +226,41 @@ final class ToolFormPanel extends JPanel {
 
     private void addFileControl(JPanel control, ToolParameter parameter, boolean output) {
         JTextField field = new JTextField(textDefault(parameter.defaultValue()));
+        useAvailableWidth(field);
         JButton browse = new JButton(output
                 ? language.text("form.save_file", "Save to...")
                 : language.text("form.choose_file", "Choose..."));
         control.add(field, BorderLayout.CENTER);
-        control.add(browse, BorderLayout.EAST);
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+        buttons.setOpaque(false);
+        buttons.add(browse);
+        if (!output && TextInputEditor.supports(tool, parameter)) {
+            JButton textInput = new JButton(language.text("form.input_text", "Enter text"));
+            buttons.add(textInput);
+            textInput.addActionListener(ignored -> {
+                String title = language.text(
+                        "form.text_editor_title",
+                        "Edit input text: {0}",
+                        language.text(
+                                "tool." + tool.id() + ".param." + parameter.id() + ".title",
+                                parameter.title()
+                        )
+                );
+                MainFrame frame = (MainFrame) SwingUtilities.getWindowAncestor(this);
+                if (frame != null && TextInputEditor.edit(
+                        this,
+                        language,
+                        frame.session().project(),
+                        field,
+                        tool,
+                        parameter,
+                        title
+                )) {
+                    updateFileHint(field.getText());
+                }
+            });
+        }
+        control.add(buttons, BorderLayout.EAST);
         valueReaders.put(parameter.id(), field::getText);
         browse.addActionListener(ignored -> chooseFile(field, output));
         if (!output) {
@@ -244,6 +276,7 @@ final class ToolFormPanel extends JPanel {
 
     private void addDirectoryControl(JPanel control, ToolParameter parameter) {
         JTextField field = new JTextField(textDefault(parameter.defaultValue()));
+        useAvailableWidth(field);
         JButton browse = new JButton(language.text("form.choose_directory", "Choose directory..."));
         control.add(field, BorderLayout.CENTER);
         control.add(browse, BorderLayout.EAST);
@@ -339,7 +372,7 @@ final class ToolFormPanel extends JPanel {
             return;
         }
         Path path = Path.of(value);
-        if (!java.nio.file.Files.isRegularFile(path)) {
+        if (!Files.isRegularFile(path)) {
             fileHint.setText(language.text("form.file_missing", "File does not exist"));
             return;
         }
@@ -427,6 +460,12 @@ final class ToolFormPanel extends JPanel {
 
     private static String textDefault(Object value) {
         return value == null ? "" : String.valueOf(value);
+    }
+
+    private static void useAvailableWidth(JTextField field) {
+        // Let the form layout consume the remaining width instead of sizing to path length.
+        field.setColumns(1);
+        field.setMinimumSize(new Dimension(0, field.getPreferredSize().height));
     }
 
     private static String rootMessage(Throwable throwable) {

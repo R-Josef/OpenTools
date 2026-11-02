@@ -104,6 +104,7 @@ final class MainFrame extends JFrame {
         body.add(createContent(), BorderLayout.CENTER);
         add(body, BorderLayout.CENTER);
         add(createStatusBar(), BorderLayout.SOUTH);
+        TextContextMenus.install(this, session.language());
         UiAccessibility.name(this, t("app.title", "OpenTools"));
         UiAccessibility.describe(this, t("app.window.accessibility", "OpenTools desktop workspace"));
 
@@ -546,7 +547,11 @@ final class MainFrame extends JFrame {
                     if (execution != session.execution()) {
                         return;
                     }
+                    String selectedRunId = selectedJobId(jobsTable);
+                    String homeSelectedRunId = selectedJobId(homeJobsTable);
                     jobsModel.setJobs(jobs);
+                    restoreJobSelection(jobsTable, selectedRunId);
+                    restoreJobSelection(homeJobsTable, homeSelectedRunId);
                     long running = jobs.stream().filter(job -> job.status().name().equals("RUNNING")).count();
                     String last = jobs.isEmpty()
                             ? t("home.no_jobs", "No jobs yet")
@@ -582,11 +587,7 @@ final class MainFrame extends JFrame {
         }
         Path root = chooser.getSelectedFile().toPath().toAbsolutePath().normalize();
         String folderName = root.getFileName() == null ? "OpenTools Project" : root.getFileName().toString();
-        String name = JOptionPane.showInputDialog(
-                this,
-                t("projects.new_prompt", "Project name"),
-                folderName
-        );
+        String name = askProjectName(folderName);
         if (name == null) {
             return;
         }
@@ -607,6 +608,26 @@ final class MainFrame extends JFrame {
         if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             openProject(chooser.getSelectedFile().toPath());
         }
+    }
+
+    private String askProjectName(String initialName) {
+        JTextField field = new JTextField(initialName);
+        field.selectAll();
+        TextContextMenus.install(field, session.language());
+        int choice = JOptionPane.showOptionDialog(
+                this,
+                field,
+                t("projects.new_prompt", "Project name"),
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                new Object[]{
+                        t("form.text_editor_ok", "OK"),
+                        t("form.text_editor_cancel", "Cancel")
+                },
+                t("form.text_editor_ok", "OK")
+        );
+        return choice == 0 ? field.getText() : null;
     }
 
     private void openProject(Path root) {
@@ -764,7 +785,30 @@ final class MainFrame extends JFrame {
 
     private JobRecord selectedJob() {
         int row = jobsTable.getSelectedRow();
-        return jobsModel.row(jobsTable.convertRowIndexToModel(row));
+        return row < 0 ? null : jobsModel.row(jobsTable.convertRowIndexToModel(row));
+    }
+
+    private String selectedJobId(JTable table) {
+        int row = table.getSelectedRow();
+        if (row < 0) {
+            return null;
+        }
+        JobRecord job = jobsModel.row(table.convertRowIndexToModel(row));
+        return job == null ? null : job.runId();
+    }
+
+    private void restoreJobSelection(JTable table, String runId) {
+        if (runId == null) {
+            return;
+        }
+        for (int row = 0; row < table.getRowCount(); row++) {
+            JobRecord job = jobsModel.row(table.convertRowIndexToModel(row));
+            if (job != null && runId.equals(job.runId())) {
+                table.setRowSelectionInterval(row, row);
+                table.scrollRectToVisible(table.getCellRect(row, 0, true));
+                return;
+            }
+        }
     }
 
     private void openSelectedJobFile(String fileName) {

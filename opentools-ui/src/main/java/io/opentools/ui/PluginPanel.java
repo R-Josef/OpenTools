@@ -226,6 +226,7 @@ final class PluginPanel extends JPanel {
                     rootMessage(ex)
             )));
         }
+        TextContextMenus.install(dialog.getContentPane(), language);
         dialog.setSize(new Dimension(900, 650));
         dialog.setLocationRelativeTo(this);
         dialog.setVisible(true);
