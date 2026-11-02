@@ -135,6 +135,24 @@ descriptor ID 构造以下键：
 `[A-Za-z]{2,8}(?:_[A-Za-z0-9]{2,8})?.properties`。推荐提供
 `en_US.properties` 作为后备语言，但缺少它不影响插件加载。
 
+## 可选的工具 Markdown
+
+插件工具指南通过可发现的资源路径加载，不调用注册 API：
+
+```text
+META-INF/opentools/docs/<语言>/categories/<分类目录>/<Tool ID>.md
+```
+
+分类目录使用小写，标点转为 `-`；文件名是完整 Tool ID 加 `.md`。宿主依次查找
+当前完整语言、当前语言和 `en_US`。
+
+找到指南时，OpenTools 先显示自定义 Markdown，再显示分隔线，最后显示根据
+descriptor 自动生成的参考。没有指南时只显示自动参考。缺少指南不会导致插件
+加载失败。
+
+跨工具链接使用 `tool:<Tool ID>`，应用文档根目录链接使用
+`opentools-doc:<路径>`。暂不支持插件文档中的相对图片。
+
 ## 交互工具
 
 `OpenTool` 始终保持无界面契约。需要自定义 Swing 页面的工具实现

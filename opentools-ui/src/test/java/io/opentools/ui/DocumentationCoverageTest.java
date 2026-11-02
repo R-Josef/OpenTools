@@ -72,8 +72,13 @@ final class DocumentationCoverageTest {
         assertEquals(86, panel.navigationToolCount());
         assertEquals(8, panel.navigationCategoryCount());
         assertEquals(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, panel.horizontalScrollPolicy());
+        ToolDescriptor descriptor = registry.find("fasta.stats").orElseThrow().descriptor();
+        assertTrue(DocResources.readToolDocumentation("zh_CN", descriptor).isPresent());
         SwingUtilities.invokeAndWait(() -> panel.openTool("fasta.stats"));
         assertEquals("tool:fasta.stats", panel.activeDocument());
+        assertTrue(panel.viewerText().contains("CUSTOM-DOC: fasta.stats"), panel.viewerText());
+        assertTrue(panel.viewerText().contains("<hr>"));
+        assertTrue(panel.viewerText().contains("opentools-doc:README.md"));
     }
 
     @Test
@@ -99,7 +104,8 @@ final class DocumentationCoverageTest {
                 "categories/expression-enrichment.md",
                 "categories/hts.md",
                 "categories/visualization.md",
-                "categories/plugin.md"
+                "categories/plugin.md",
+                "categories/sequence/fasta.stats.md"
         );
         for (String languageCode : List.of("en_US", "zh_CN")) {
             for (String document : documents) {
@@ -122,7 +128,8 @@ final class DocumentationCoverageTest {
                 "errors-exit-codes.md", "external-tools.md", "release-packages.md", "ui-and-docs.md",
                 "categories/sequence.md", "categories/annotation-bed.md", "categories/table.md",
                 "categories/alignment-phylogeny.md", "categories/expression-enrichment.md",
-                "categories/hts.md", "categories/visualization.md", "categories/plugin.md"
+                "categories/hts.md", "categories/visualization.md", "categories/plugin.md",
+                "categories/sequence/fasta.stats.md"
         );
         Pattern links = Pattern.compile("!?\\[[^]]*]\\(([^)]+)\\)");
         for (String languageCode : List.of("en_US", "zh_CN")) {
@@ -132,7 +139,8 @@ final class DocumentationCoverageTest {
                 while (matcher.find()) {
                     String target = matcher.group(1).trim();
                     if (target.startsWith("http://") || target.startsWith("https://")
-                            || target.startsWith("#") || target.startsWith("tool:")) {
+                            || target.startsWith("#") || target.startsWith("tool:")
+                            || target.startsWith("opentools-doc:")) {
                         assertFalse(target.contains("]("), document);
                         continue;
                     }

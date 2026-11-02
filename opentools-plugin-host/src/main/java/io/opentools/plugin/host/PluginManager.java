@@ -3,6 +3,7 @@ package io.opentools.plugin.host;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.opentools.api.tool.OpenTool;
+import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.core.tool.ToolRegistry;
 import io.opentools.api.tool.CancellationToken;
 import io.opentools.plugin.OpenToolsPlugin;
@@ -26,6 +27,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
@@ -52,6 +54,8 @@ public final class PluginManager implements AutoCloseable {
     private final Map<String, Candidate> candidates = new LinkedHashMap<>();
     private final Map<String, PluginLocalizer> pluginLocalizers = new LinkedHashMap<>();
     private final Map<String, PluginLocalizer> toolLocalizers = new LinkedHashMap<>();
+    private final Map<String, JarPluginDocumentation> pluginDocumentations = new LinkedHashMap<>();
+    private final Map<String, JarPluginDocumentation> toolDocumentations = new LinkedHashMap<>();
     private final Map<String, List<PluginDiagnostic>> localizationDiagnostics = new LinkedHashMap<>();
     private final Supplier<String> languageSupplier;
 
@@ -143,6 +147,21 @@ public final class PluginManager implements AutoCloseable {
      */
     public synchronized PluginLocalizer localizerForPlugin(String pluginId) {
         return pluginId == null ? null : pluginLocalizers.get(pluginId);
+    }
+
+    /**
+     * Returns optional Markdown documentation bundled by the plugin that owns
+     * the tool.
+     *
+     * @param tool registered tool descriptor
+     * @return Markdown from the convention path, or empty
+     */
+    public synchronized Optional<String> toolDocumentation(ToolDescriptor tool) {
+        if (tool == null) {
+            return Optional.empty();
+        }
+        JarPluginDocumentation documentation = toolDocumentations.get(tool.id());
+        return documentation == null ? Optional.empty() : documentation.find(tool);
     }
 
     /**
@@ -325,9 +344,11 @@ public final class PluginManager implements AutoCloseable {
         URL[] urls = classpath(candidate);
         PluginClassLoader classLoader = new PluginClassLoader(urls, PluginManager.class.getClassLoader());
         JarPluginLocalizer.LoadResult localization = null;
+        JarPluginDocumentation.LoadResult documentation = null;
         PluginRegistrations registrations = null;
         try {
             localization = JarPluginLocalizer.load(candidate.source(), languageSupplier);
+            documentation = JarPluginDocumentation.load(candidate.source(), languageSupplier);
             Class<?> rawClass = Class.forName(descriptor.mainClass(), true, classLoader);
             if (!OpenToolsPlugin.class.isAssignableFrom(rawClass)) {
                 throw new IllegalArgumentException("Main class does not implement OpenToolsPlugin");
@@ -339,11 +360,16 @@ public final class PluginManager implements AutoCloseable {
                     descriptor.id(),
                     dataDirectory,
                     descriptor.requestedCapabilities(),
-                    localization.localizer()
+                    localization.localizer(),
+                    documentation.provider()
             );
             pluginLocalizers.put(descriptor.id(), localization.localizer());
-            localizationDiagnostics.put(descriptor.id(), localization.diagnostics());
-            for (PluginDiagnostic diagnostic : localization.diagnostics()) {
+            pluginDocumentations.put(descriptor.id(), documentation.provider());
+            List<PluginDiagnostic> diagnostics = new ArrayList<>();
+            diagnostics.addAll(localization.diagnostics());
+            diagnostics.addAll(documentation.diagnostics());
+            localizationDiagnostics.put(descriptor.id(), List.copyOf(diagnostics));
+            for (PluginDiagnostic diagnostic : diagnostics) {
                 registrations.log(diagnostic.toString());
             }
             registrations.log("Enabling " + descriptor.id() + " " + descriptor.version());
@@ -361,7 +387,7 @@ public final class PluginManager implements AutoCloseable {
                     classLoader,
                     plugin,
                     registrations,
-                    localization.diagnostics()
+                    List.copyOf(diagnostics)
             );
         } catch (Exception ex) {
             if (registrations != null) {
@@ -369,6 +395,9 @@ public final class PluginManager implements AutoCloseable {
             }
             if (localization != null) {
                 localization.localizer().close();
+            }
+            if (documentation != null) {
+                documentation.provider().close();
             }
             classLoader.close();
             throw ex;
@@ -474,6 +503,8 @@ public final class PluginManager implements AutoCloseable {
         loaded.clear();
         pluginLocalizers.clear();
         toolLocalizers.clear();
+        pluginDocumentations.clear();
+        toolDocumentations.clear();
         localizationDiagnostics.clear();
     }
 
@@ -616,6 +647,7 @@ public final class PluginManager implements AutoCloseable {
         private final Path logFile;
         private final Set<String> capabilities;
         private final JarPluginLocalizer localizer;
+        private final JarPluginDocumentation documentation;
         private final List<OpenTool> tools = new ArrayList<>();
         private final List<PageContribution> pages = new ArrayList<>();
         private boolean rolledBack;
@@ -624,13 +656,15 @@ public final class PluginManager implements AutoCloseable {
                 String pluginId,
                 Path dataDirectory,
                 List<String> capabilities,
-                JarPluginLocalizer localizer
+                JarPluginLocalizer localizer,
+                JarPluginDocumentation documentation
         ) {
             this.pluginId = pluginId;
             this.dataDirectory = dataDirectory;
             this.logFile = dataDirectory.resolve("plugin.log");
             this.capabilities = Set.copyOf(capabilities);
             this.localizer = localizer;
+            this.documentation = documentation;
         }
 
         @Override
@@ -672,6 +706,7 @@ public final class PluginManager implements AutoCloseable {
             toolRegistry.register(tool);
             tools.add(tool);
             toolLocalizers.put(tool.descriptor().id(), localizer);
+            toolDocumentations.put(tool.descriptor().id(), documentation);
         }
 
         @Override
@@ -708,12 +743,15 @@ public final class PluginManager implements AutoCloseable {
                 String toolId = tool.descriptor().id();
                 toolRegistry.unregister(toolId);
                 toolLocalizers.remove(toolId, localizer);
+                toolDocumentations.remove(toolId, documentation);
             });
             tools.clear();
             pages.clear();
             pluginLocalizers.remove(pluginId, localizer);
+            pluginDocumentations.remove(pluginId, documentation);
             localizationDiagnostics.remove(pluginId);
             localizer.close();
+            documentation.close();
         }
     }
 

@@ -81,8 +81,8 @@ final class ToolDocumentation {
                 .append('\n');
         markdown.append('\n');
         markdown.append(chinese
-                ? "[返回文档首页](README.md)"
-                : "[Back to documentation home](README.md)")
+                ? "[返回文档首页](opentools-doc:README.md)"
+                : "[Back to documentation home](opentools-doc:README.md)")
                 .append('\n');
         return markdown.toString();
     }

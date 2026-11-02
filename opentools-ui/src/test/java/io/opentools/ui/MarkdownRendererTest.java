@@ -73,6 +73,7 @@ final class MarkdownRendererTest {
                 ![remote](https://example.org/image.png)
                 [external](https://example.org/help)
                 [tool](tool:fasta.stats)
+                [guide](opentools-doc:README.md)
                 """;
 
         String html = MarkdownRenderer.render(markdown, "README.md");
@@ -81,5 +82,6 @@ final class MarkdownRendererTest {
         assertFalse(html.contains("example.org/image.png"));
         assertTrue(html.contains("href=\"https://example.org/help\""));
         assertTrue(html.contains("href=\"opentools-tool:fasta.stats\""));
+        assertTrue(html.contains("href=\"opentools-doc:README.md\""));
     }
 }

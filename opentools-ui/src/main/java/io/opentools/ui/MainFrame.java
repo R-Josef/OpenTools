@@ -195,7 +195,12 @@ final class MainFrame extends JFrame {
     private JPanel createContent() {
         cardLayout.setVgap(0);
         cards.add(createHomePanel(), HOME);
-        docsPanel = new DocsPanel(session.registry(), session.language(), session.toolText());
+        docsPanel = new DocsPanel(
+                session.registry(),
+                session.language(),
+                session.plugins(),
+                session.toolText()
+        );
         cards.add(docsPanel, DOCS);
         cards.add(createProjectsPanel(), PROJECTS);
         catalogPanel = new ToolCatalogPanel(
@@ -765,6 +770,7 @@ final class MainFrame extends JFrame {
 
     private void afterPluginScan() {
         catalogPanel.reload();
+        docsPanel.refreshNavigation();
         status.setText(t(
                 "status.plugin_scan_complete",
                 "Plugin scan complete: {0} entries, {1} tools",

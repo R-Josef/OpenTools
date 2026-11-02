@@ -60,6 +60,15 @@ overload derives `page.<Page ID>.title`. See
 `docs/<language>/plugin-development.md` for the complete ID, resource, result
 table, and packaging contract.
 
+Optional tool guides are also discovered from the plugin JAR:
+
+```text
+META-INF/opentools/docs/<language>/categories/<category>/<Tool ID>.md
+```
+
+No documentation registration call is required. If a guide is absent, the host
+continues to show the generated descriptor reference.
+
 Supported capabilities:
 
 - `tool`: register `OpenTool` and `InteractiveOpenTool` contributions.

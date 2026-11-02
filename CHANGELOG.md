@@ -13,6 +13,8 @@
   summaries.
 - A three-argument `registerPage` convenience overload derives
   `page.<id>.title` automatically while retaining the custom-key form.
+- Convention-based tool guides from host docs and plugin JARs, displayed before
+  the generated descriptor reference with automatic language fallback.
 - Bundled default example plugin with the interactive Coin Runner tool, JSON
   run data, PNG result artwork, English/Chinese JAR resources, and
   default-enabled release packaging.

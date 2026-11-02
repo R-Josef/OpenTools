@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class ExamplePluginTest {
@@ -34,6 +35,20 @@ final class ExamplePluginTest {
         assertEquals(List.of("page.main.title"), context.pageTitleKeys);
         assertEquals(List.of("Example Plugin"), context.pageFallbackTitles);
         assertEquals(1, context.logMessages.size());
+    }
+
+    @Test
+    void bundlesConventionalToolDocumentation() {
+        ClassLoader loader = getClass().getClassLoader();
+
+        assertNotNull(loader.getResource(
+                "META-INF/opentools/docs/en_US/categories/plugin/"
+                        + "plugin.example.coin-runner.md"
+        ));
+        assertNotNull(loader.getResource(
+                "META-INF/opentools/docs/zh_CN/categories/plugin/"
+                        + "plugin.example.coin-runner.md"
+        ));
     }
 
     private static final class TestContext implements PluginContext {

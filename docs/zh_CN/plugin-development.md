@@ -285,6 +285,69 @@ String message = context.text(
 提供参数时使用 `MessageFormat`。资源加载阶段不会校验每个消息模板，因此非法模板
 可能在该文本实际显示时抛出异常。
 
+## 可选的工具 Markdown
+
+插件可以补充更完整的任务文档，不需要注册 API。宿主在加载插件 JAR 时按约定发现：
+
+```text
+META-INF/opentools/docs/<语言>/categories/<分类目录>/<Tool ID>.md
+```
+
+例如：
+
+```text
+Tool ID: plugin.example.coin-runner
+分类: Plugin
+
+META-INF/opentools/docs/en_US/categories/plugin/plugin.example.coin-runner.md
+META-INF/opentools/docs/zh_CN/categories/plugin/plugin.example.coin-runner.md
+```
+
+分类目录会转为小写，空格和标点转为 `-`：
+
+```text
+Plugin -> plugin
+Visualization -> visualization
+Genome annotation -> genome-annotation
+Comparative genomics -> comparative-genomics
+```
+
+文件名是完整 Tool ID 加 `.md`。参与文档文件查找的 Tool ID 只能使用
+`A-Z`、`a-z`、`0-9`、`.`、`_`、`-`。
+
+语言回退顺序为：
+
+```text
+当前完整语言 -> 当前语言 -> en_US
+```
+
+找到 Markdown 后，页面按以下方式组合：
+
+```text
+自定义 Markdown
+---
+根据 descriptor 自动生成的参考
+```
+
+找不到文件时，页面只显示自动生成的参考。缺少文档不会阻止工具或插件加载。
+
+自定义 Markdown 可以使用跨工具链接：
+
+```markdown
+[相关工具](tool:other.tool)
+```
+
+也可以链接到宿主文档根目录：
+
+```markdown
+[文件格式](opentools-doc:file-formats.md)
+```
+
+当前自定义工具文档支持 Markdown 文本和上述导航链接。插件文档中的内嵌图片还没有
+对应的插件资源 URL，因此暂不支持。文档必须使用 UTF-8，单个文件不超过
+256 KiB；每个插件最多提供 512 个工具文档，总计不超过 16 MiB。非法路径、UTF-8
+或超限文件会生成插件诊断。
+
 ## Maven 项目结构
 
 ```text

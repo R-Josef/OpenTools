@@ -147,6 +147,25 @@ Language file names use `[A-Za-z]{2,8}(?:_[A-Za-z0-9]{2,8})?.properties`.
 `en_US.properties` is the recommended fallback but is not required to load the
 plugin.
 
+## Optional tool Markdown
+
+Plugin tool guides use a discoverable resource path rather than an API call:
+
+```text
+META-INF/opentools/docs/<language>/categories/<category>/<Tool ID>.md
+```
+
+The category is lowercase with punctuation replaced by `-`; the file name is
+the exact Tool ID plus `.md`. The host tries the full active language, the
+language-only code, and finally `en_US`.
+
+If a guide exists, OpenTools displays the custom Markdown, a horizontal
+separator, and then the generated descriptor reference. Without a guide, only
+the generated reference is shown. Missing guides do not fail plugin loading.
+
+Tool links use `tool:<Tool ID>`. Links to the application documentation root use
+`opentools-doc:<path>`. Plugin-relative images are not yet supported.
+
 ## Interactive tools
 
 `OpenTool` remains a headless contract. A tool that needs a custom Swing page

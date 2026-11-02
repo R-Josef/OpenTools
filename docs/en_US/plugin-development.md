@@ -301,6 +301,72 @@ When arguments are supplied, message patterns use `MessageFormat`. Resource
 loading does not validate every message pattern, so an invalid pattern can
 throw when that text is rendered.
 
+## Optional tool Markdown
+
+Plugins can provide richer task documentation without a registration API. The
+host discovers Markdown by convention while loading the plugin JAR:
+
+```text
+META-INF/opentools/docs/<language>/categories/<category>/<Tool ID>.md
+```
+
+For example:
+
+```text
+Tool ID: plugin.example.coin-runner
+Category: Plugin
+
+META-INF/opentools/docs/en_US/categories/plugin/plugin.example.coin-runner.md
+META-INF/opentools/docs/zh_CN/categories/plugin/plugin.example.coin-runner.md
+```
+
+The category directory is lowercase and uses `-` for spaces and punctuation:
+
+```text
+Plugin -> plugin
+Visualization -> visualization
+Genome annotation -> genome-annotation
+Comparative genomics -> comparative-genomics
+```
+
+The file name is the exact Tool ID plus `.md`. Tool IDs supported by this file
+lookup use `A-Z`, `a-z`, `0-9`, `.`, `_`, and `-`.
+
+Language fallback is:
+
+```text
+full active language -> language-only code -> en_US
+```
+
+When a Markdown file is found, the page shows:
+
+```text
+custom Markdown
+---
+automatically generated descriptor reference
+```
+
+When no file is found, the page contains only the automatically generated
+reference. Missing documentation never prevents a tool or plugin from loading.
+
+Custom Markdown can link to another tool with:
+
+```markdown
+[Related tool](tool:other.tool)
+```
+
+It can link to the host documentation root with:
+
+```markdown
+[File formats](opentools-doc:file-formats.md)
+```
+
+Current custom tool documents support Markdown text and these navigation links.
+Images embedded in plugin documentation are not yet exposed through a plugin
+document URL and should not be used. Keep documentation UTF-8 and below 256 KiB
+per file. A plugin may provide at most 512 tool documents and 16 MiB total;
+invalid paths, UTF-8, or oversized files produce plugin diagnostics.
+
 ## Maven project layout
 
 ```text

@@ -48,6 +48,9 @@ final class MarkdownRenderer {
                 || trimmed.regionMatches(true, 0, "http://", 0, 7)) {
             return "external";
         }
+        if (trimmed.startsWith("opentools-doc:")) {
+            return "document";
+        }
         if (isTaskTarget(trimmed)) {
             return "tool";
         }
@@ -252,6 +255,11 @@ final class MarkdownRenderer {
         }
         if ("tool".equals(type)) {
             return "opentools-tool:" + target.substring("tool:".length());
+        }
+        if ("document".equals(type)) {
+            String document = target.substring("opentools-doc:".length()).trim();
+            return document.isBlank() || document.contains("..") ? null
+                    : "opentools-doc:" + document;
         }
         if ("anchor".equals(type)) {
             String anchor = target.substring(1);

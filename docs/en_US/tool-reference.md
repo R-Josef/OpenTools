@@ -1,14 +1,30 @@
 # Tool reference
 
 OpenTools `0.8.1-SNAPSHOT` registers 86 built-in tools. The in-app Docs tree lists
-all of them. Each tool page is generated from the active language files and
-`ToolDescriptor`, including:
+all of them. Each tool page can start with a conventional Markdown guide and
+then continues with a generated reference from the active language files and
+`ToolDescriptor`. The generated section includes:
 
 - purpose and appropriate use cases;
 - input and output formats;
 - parameter title, ID, type, default, options, and range;
 - a PowerShell/CLI example;
 - category-specific cautions and failure boundaries.
+
+Host guide path:
+
+```text
+docs/<language>/categories/<category>/<Tool ID>.md
+```
+
+Plugin guide path:
+
+```text
+META-INF/opentools/docs/<language>/categories/<category>/<Tool ID>.md
+```
+
+Guides are discovered automatically. No documentation registration API is
+required. Without a guide, only the generated reference is shown.
 
 ## Categories
 
@@ -30,5 +46,5 @@ OpenToolsCLI.exe tools list --json
 OpenToolsCLI.exe tools describe <tool-id> --schema
 ```
 
-Plugin-provided tools appear in the catalog but do not count toward the 86
-built-in baseline.
+Plugin-provided tools and their discovered guides appear at runtime but do not
+count toward the 86 built-in baseline.

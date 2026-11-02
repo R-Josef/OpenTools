@@ -3,7 +3,9 @@ package io.opentools.ui;
 import io.opentools.core.i18n.LanguageManager;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.core.tool.ToolRegistry;
+import io.opentools.plugin.host.PluginManager;
 import io.opentools.plugin.host.ToolTextResolver;
+import io.opentools.plugin.host.ToolDocumentationPaths;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -32,6 +34,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 final class DocsPanel extends JPanel {
     private static final List<DocGroup> GROUPS = List.of(
@@ -51,6 +54,7 @@ final class DocsPanel extends JPanel {
     private final ToolRegistry registry;
     private final LanguageManager language;
     private final ToolTextResolver toolText;
+    private final PluginManager plugins;
     private final String docsLanguage;
     private final JEditorPane viewer = new JEditorPane();
     private final JScrollPane viewerScroll = new JScrollPane(viewer);
@@ -60,12 +64,22 @@ final class DocsPanel extends JPanel {
     private String activeDocument = "README.md";
 
     DocsPanel(ToolRegistry registry, LanguageManager language) {
-        this(registry, language, ToolTextResolver.hostOnly(language));
+        this(registry, language, null, ToolTextResolver.hostOnly(language));
     }
 
     DocsPanel(ToolRegistry registry, LanguageManager language, ToolTextResolver toolText) {
+        this(registry, language, null, toolText);
+    }
+
+    DocsPanel(
+            ToolRegistry registry,
+            LanguageManager language,
+            PluginManager plugins,
+            ToolTextResolver toolText
+    ) {
         this.registry = registry;
         this.language = language;
+        this.plugins = plugins;
         this.toolText = toolText;
         this.docsLanguage = DocResources.docsLanguage(language.activeCode());
         setLayout(new BorderLayout());
@@ -297,13 +311,64 @@ final class DocsPanel extends JPanel {
     void openTool(String toolId) {
         registry.find(toolId).ifPresentOrElse(tool -> {
             activeDocument = "tool:" + toolId;
-            String markdown = ToolDocumentation.render(tool.descriptor(), toolText);
+            ToolDescriptor descriptor = tool.descriptor();
+            Optional<DocumentSource> custom = customDocument(descriptor);
+            String generated = ToolDocumentation.render(descriptor, toolText);
+            String markdown = generated;
+            String sourcePath = "README.md";
+            if (custom.isPresent()) {
+                DocumentSource document = custom.get();
+                markdown = document.markdown().stripTrailing()
+                        + "\n\n---\n\n## "
+                        + t(
+                                "docs.generated_reference",
+                                "Automatically generated tool reference"
+                        )
+                        + "\n\n"
+                        + generated;
+                sourcePath = document.sourcePath();
+            }
             setDocument(
-                    MarkdownRenderer.render(markdown, "README.md"),
+                    MarkdownRenderer.render(markdown, sourcePath),
                     null,
                     t("docs.tool_location", "Tool reference · {0}", toolId)
             );
         }, () -> openDocument("tool-reference.md"));
+    }
+
+    void refreshNavigation() {
+        rebuildNavigation();
+        if (activeDocument.startsWith("tool:")) {
+            String toolId = activeDocument.substring("tool:".length());
+            if (registry.find(toolId).isEmpty()) {
+                openDocument("tool-reference.md");
+            }
+        }
+    }
+
+    private Optional<DocumentSource> customDocument(ToolDescriptor descriptor) {
+        if (plugins != null) {
+            Optional<String> markdown = plugins.toolDocumentation(descriptor);
+            if (markdown.isPresent() && !markdown.get().isBlank()) {
+                String sourcePath = ToolDocumentationPaths.pluginEntry(
+                                language.activeCode(),
+                                descriptor.category(),
+                                descriptor.id()
+                        )
+                        .orElse("README.md");
+                return Optional.of(new DocumentSource(markdown.get(), sourcePath));
+            }
+        }
+        try {
+            return DocResources.readToolDocumentation(docsLanguage, descriptor)
+                    .filter(document -> !document.markdown().isBlank())
+                    .map(document -> new DocumentSource(
+                            document.markdown(),
+                            document.sourcePath()
+                    ));
+        } catch (java.io.IOException ex) {
+            return Optional.empty();
+        }
     }
 
     private void setDocument(String html, java.net.URL base, String label) {
@@ -325,6 +390,10 @@ final class DocsPanel extends JPanel {
         if (description.startsWith("opentools-tool:")) {
             String target = description.substring("opentools-tool:".length());
             openTool(target);
+            return;
+        }
+        if (description.startsWith("opentools-doc:")) {
+            openDocument(description.substring("opentools-doc:".length()));
             return;
         }
         if (description.startsWith("#")) {
@@ -424,6 +493,9 @@ final class DocsPanel extends JPanel {
                 default -> List.of(fallback.replace('+', ','));
             };
         }
+    }
+
+    private record DocumentSource(String markdown, String sourcePath) {
     }
 
     private static final class CategoryTools {

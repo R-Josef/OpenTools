@@ -453,6 +453,34 @@ final class PluginManagerTest {
         assertEquals("English fallback", new ToolTextResolver(manager, language).name(descriptor));
     }
 
+    @Test
+    void discoversPluginDocumentationByCategoryAndToolId() throws Exception {
+        Path plugins = Files.createDirectories(tempDir.resolve("plugins"));
+        writeLocalizedPluginJar(
+                plugins.resolve("documented.jar"),
+                Map.of("en_US", "tool.fixture.plugin.echo.name=Plugin Echo\n"),
+                Map.of(
+                        "en_US/categories/plugin/fixture.plugin.echo.md",
+                        "# English guide\n\nEnglish-only documentation.",
+                        "zh_CN/categories/plugin/fixture.plugin.echo.md",
+                        "# 中文指南\n\n中文文档。"
+                )
+        );
+        LanguageManager language = testLanguage("zh_CN");
+        ToolRegistry registry = new ToolRegistry();
+        PluginManager manager = new PluginManager(tempDir, registry, language::activeCode);
+        manager.scan();
+        manager.enable("working");
+        ToolDescriptor descriptor = registry.find("fixture.plugin.echo").orElseThrow().descriptor();
+
+        assertTrue(manager.toolDocumentation(descriptor).orElseThrow().contains("中文指南"));
+        language.setLanguage("en_US");
+        assertTrue(manager.toolDocumentation(descriptor).orElseThrow().contains("English guide"));
+
+        manager.disable("working");
+        assertTrue(manager.toolDocumentation(descriptor).isEmpty());
+    }
+
     private void writePluginJar(
             Path path,
             String id,
@@ -466,6 +494,14 @@ final class PluginManagerTest {
     }
 
     private void writeLocalizedPluginJar(Path path, Map<String, String> resources) throws Exception {
+        writeLocalizedPluginJar(path, resources, Map.of());
+    }
+
+    private void writeLocalizedPluginJar(
+            Path path,
+            Map<String, String> resources,
+            Map<String, String> documentation
+    ) throws Exception {
         String fixture = "io/opentools/plugin/host/fixture/TestPlugin.class";
         byte[] classBytes;
         try (var input = getClass().getClassLoader().getResourceAsStream(fixture)) {
@@ -493,6 +529,12 @@ final class PluginManagerTest {
                 jar.write(
                         "META-INF/opentools/i18n/" + resource.getKey() + ".properties",
                         resource.getValue()
+                );
+            }
+            for (Map.Entry<String, String> document : documentation.entrySet()) {
+                jar.write(
+                        "META-INF/opentools/docs/" + document.getKey(),
+                        document.getValue()
                 );
             }
         }

@@ -27,6 +27,11 @@ rebuilds the main window in the same process. The process is not restarted.
   browser.
 - Heading IDs provide anchors and duplicate headings get stable suffixes.
 - Tool parameter tables come from `ToolDescriptor` and active language keys.
+- Tool guides can be discovered from
+  `categories/<category>/<Tool ID>.md`; plugin guides use the same layout under
+  `META-INF/opentools/docs/<language>/` in the plugin JAR.
+- A discovered guide is shown first, followed by a separator and the generated
+  descriptor reference.
 - A missing custom-language guide falls back explicitly to English.
 
 ## Visual validation
@@ -47,6 +52,8 @@ the article wraps without overlapping controls.
 - every local Markdown link resolves;
 - unsafe links and remote images are rejected;
 - all 86 tools have generated pages;
+- custom host and plugin tool guides are discovered without registration;
+- custom Markdown and generated reference sections render together;
 - navigation counts remain complete;
 - Docs and screenshots exist in the application JAR and portable ZIP;
 - rendering never requires a network connection.

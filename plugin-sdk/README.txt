@@ -40,6 +40,14 @@ derives page.<Page ID>.title. Manifest nameKey and descriptionKey may use any
 resource keys. See docs/en_US/plugin-development.md or
 docs/zh_CN/plugin-development.md for the complete naming and packaging guide.
 
+Optional tool Markdown is discovered without registration:
+
+  META-INF/opentools/docs/<language>/categories/<category>/<Tool ID>.md
+
+The category is lowercase with punctuation replaced by "-". When a guide is
+found, OpenTools shows the custom Markdown followed by a separator and the
+generated descriptor reference. Missing guides are allowed.
+
 Do not put plugin-private tool, result, or page keys in the host lang/
 directory. Host category keys such as category.plugin remain application-owned.
 
