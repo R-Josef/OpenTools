@@ -15,6 +15,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.JScrollPane;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.HashSet;
 import java.util.Set;
@@ -64,6 +65,23 @@ final class DocumentationCoverageTest {
     }
 
     @Test
+    void everyBuiltInTaskHasDetailedGuideInBothLanguages() throws Exception {
+        for (ToolDescriptor tool : registry.list()) {
+            DocResources.ToolDocument chinese = DocResources.readToolDocumentation("zh_CN", tool)
+                    .orElseThrow(() -> new AssertionError("Missing zh_CN guide: " + tool.id()));
+            DocResources.ToolDocument english = DocResources.readToolDocumentation("en_US", tool)
+                    .orElseThrow(() -> new AssertionError("Missing en_US guide: " + tool.id()));
+
+            assertEquals("tool/" + tool.id() + ".md", chinese.sourcePath());
+            assertEquals(chinese.sourcePath(), english.sourcePath());
+            assertGuideSections(chinese.markdown(), tool, true);
+            assertGuideSections(english.markdown(), tool, false);
+            assertFalse(MarkdownRenderer.render(chinese.markdown(), chinese.sourcePath()).isBlank());
+            assertFalse(MarkdownRenderer.render(english.markdown(), english.sourcePath()).isBlank());
+        }
+    }
+
+    @Test
     void docsNavigationContainsAllCategoriesAndTasks() throws Exception {
         AtomicReference<DocsPanel> reference = new AtomicReference<>();
         SwingUtilities.invokeAndWait(() -> reference.set(new DocsPanel(registry, language)));
@@ -76,14 +94,14 @@ final class DocumentationCoverageTest {
         assertTrue(DocResources.readToolDocumentation("zh_CN", descriptor).isPresent());
         SwingUtilities.invokeAndWait(() -> panel.openTool("fasta.stats"));
         assertEquals("tool:fasta.stats", panel.activeDocument());
-        assertTrue(panel.viewerText().contains(htmlEntities("新组装的基因组")), panel.viewerText());
+        assertTrue(panel.viewerText().contains(htmlEntities("先看序列数")), panel.viewerText());
         assertTrue(panel.viewerText().contains("<hr>"));
         assertTrue(panel.viewerText().contains("opentools-doc:README.md"));
     }
 
     @Test
     void allPublicMarkdownAndImagesArePackaged() throws Exception {
-        List<String> documents = List.of(
+        List<String> documents = new ArrayList<>(List.of(
                 "README.md",
                 "quick-start.md",
                 "installation.md",
@@ -104,9 +122,9 @@ final class DocumentationCoverageTest {
                 "categories/expression-enrichment.md",
                 "categories/hts.md",
                 "categories/visualization.md",
-                "categories/plugin.md",
-                "tool/fasta.stats.md"
-        );
+                "categories/plugin.md"
+        ));
+        documents.addAll(toolDocuments());
         for (String languageCode : List.of("en_US", "zh_CN")) {
             for (String document : documents) {
                 assertFalse(DocResources.read(languageCode, document).isBlank(),
@@ -122,15 +140,15 @@ final class DocumentationCoverageTest {
 
     @Test
     void publicMarkdownLocalLinksResolveWithoutTraversalOrNetworkImages() throws Exception {
-        List<String> documents = List.of(
+        List<String> documents = new ArrayList<>(List.of(
                 "README.md", "quick-start.md", "installation.md", "cli.md", "mcp.md",
                 "tool-reference.md", "file-formats.md", "faq.md", "plugin-development.md",
                 "errors-exit-codes.md", "external-tools.md", "release-packages.md", "ui-and-docs.md",
                 "categories/sequence.md", "categories/annotation-bed.md", "categories/table.md",
                 "categories/alignment-phylogeny.md", "categories/expression-enrichment.md",
-                "categories/hts.md", "categories/visualization.md", "categories/plugin.md",
-                "tool/fasta.stats.md"
-        );
+                "categories/hts.md", "categories/visualization.md", "categories/plugin.md"
+        ));
+        documents.addAll(toolDocuments());
         Pattern links = Pattern.compile("!?\\[[^]]*]\\(([^)]+)\\)");
         for (String languageCode : List.of("en_US", "zh_CN")) {
             Set<String> checked = new HashSet<>();
@@ -218,6 +236,53 @@ final class DocumentationCoverageTest {
             current = current.getParent();
         }
         throw new IllegalStateException("Could not locate project root");
+    }
+
+    private static List<String> toolDocuments() {
+        return registry.list().stream()
+                .map(tool -> "tool/" + tool.id() + ".md")
+                .toList();
+    }
+
+    private static void assertGuideSections(
+            String markdown,
+            ToolDescriptor tool,
+            boolean chinese
+    ) {
+        assertTrue(markdown.contains("`" + tool.id() + "`"), tool.id());
+        assertFalse(markdown.contains("null"), tool.id());
+        List<String> headings = chinese
+                ? List.of(
+                        "## 一句话说明",
+                        "## 什么时候使用",
+                        "## 输入准备",
+                        "## 推荐运行步骤",
+                        "## 参数怎么选",
+                        "## 结果怎么读",
+                        "## 最小运行示例",
+                        "## 检查清单与失败边界",
+                        "## 相关下一步"
+                )
+                : List.of(
+                        "## What this tool does",
+                        "## When to use it",
+                        "## Prepare the input",
+                        "## Recommended workflow",
+                        "## How to choose parameters",
+                        "## Read the result",
+                        "## Minimal command example",
+                        "## Checks and failure boundaries",
+                        "## Related next steps"
+                );
+        for (String heading : headings) {
+            assertTrue(markdown.contains(heading), tool.id() + ": " + heading);
+        }
+        for (ToolParameter parameter : tool.parameters()) {
+            assertTrue(
+                    markdown.contains("`" + parameter.id() + "`"),
+                    tool.id() + "/" + parameter.id()
+            );
+        }
     }
 
     private static String htmlEntities(String value) {

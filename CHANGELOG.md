@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.8.1-SNAPSHOT
+## 0.9.0-SNAPSHOT
 
 ### Added
 
@@ -19,6 +19,9 @@
   replacing the `param` node with `parameter`, fixes plugin metadata to
   `plugin.name/description`, derives result keys from the Tool ID, and locates
   tool guides at `docs/<language>/tool/<Tool ID>.md`.
+- Detailed English and Chinese beginner guides now cover all 86 built-in tools,
+  including input sketches, parameter selection, result interpretation,
+  failure boundaries, and related next steps.
 - Bundled default example plugin with the interactive Coin Runner tool, JSON
   run data, PNG result artwork, English/Chinese JAR resources, and
   default-enabled release packaging.

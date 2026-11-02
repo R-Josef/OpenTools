@@ -1,6 +1,6 @@
 # Tool reference
 
-OpenTools `0.8.1-SNAPSHOT` registers 86 built-in tools. The in-app Docs tree lists
+OpenTools `0.9.0-SNAPSHOT` registers 86 built-in tools. The in-app Docs tree lists
 all of them. Each tool page can start with a conventional Markdown guide and
 then continues with a generated reference from the active language files and
 `ToolDescriptor`. The generated section includes:
@@ -23,8 +23,9 @@ Plugin guide path:
 META-INF/opentools/docs/<language>/tool/<Tool ID>.md
 ```
 
-Guides are discovered automatically. No documentation registration API is
-required. Without a guide, only the generated reference is shown.
+All 86 built-in tools ship with English and Chinese guides. Guides are discovered
+automatically and no documentation registration API is required. Without a
+guide, only the generated reference is shown.
 
 ## Categories
 
