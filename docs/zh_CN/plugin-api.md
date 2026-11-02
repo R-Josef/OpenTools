@@ -75,8 +75,8 @@ String summary = context.text(
 因此切换语言后，插件名称与描述、页面标题、工具目录、参数表单、工具文档、交互
 页面和结果摘要都会更新，无需重启进程。
 
-`ToolDescriptor` 和 `ToolParameter` 继续保存英文显示文本，在语言文件或键缺失时
-作为最终后备。插件清单可以用可选键本地化名称和描述：
+`ToolDescriptor` 和 `ToolParameter` 保存后备显示文本，通常使用英文。在语言文件
+或键缺失时，这些文本作为最终后备。插件清单可以用可选键本地化名称和描述：
 
 ```json
 {
@@ -160,21 +160,3 @@ plugin-sdk/
 
 Java 插件运行在 OpenTools JVM 内，类加载隔离不是安全沙箱。只应安装并启用经过
 来源、源码、依赖、能力和许可证审查的可信插件。
-
-## 兼容性
-
-Plugin API 2.1 是当前插件扩展契约。主版本必须与宿主一致；插件可以
-请求同主版本中的当前或较旧次版本。本版本不支持旧 Java 面板插件、`.plugin`
-脚本包或 TBtools 插件二进制。
-
-API 2.1 延续 API 2.0 引入的统一 Tool 语义：
-
-| API 1.0 | API 2.0 |
-| --- | --- |
-| `TaskContext` | `ToolExecutionContext` |
-| `TaskResult` | `ToolResult` |
-| `TaskExecutionService` | `ToolExecutionService` |
-| `TaskAutomationService` | `ToolAutomationService` |
-
-针对旧契约编译的插件需要使用 2.1 API 重新编译。本版本不提供本地化 deprecated
-别名，也不保留宿主与插件双路径语言查找。

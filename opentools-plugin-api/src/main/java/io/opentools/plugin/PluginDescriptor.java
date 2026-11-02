@@ -8,11 +8,11 @@ import java.util.Locale;
  * Metadata read from {@code META-INF/opentools-plugin.json}.
  *
  * @param id unique plugin identifier
- * @param name English fallback display name
+ * @param name fallback display name, usually in English
  * @param version plugin release version
  * @param apiVersion required Plugin API version
  * @param mainClass class implementing {@link OpenToolsPlugin}
- * @param description English fallback summary
+ * @param description fallback summary, usually in English
  * @param nameKey optional localization key for the display name
  * @param descriptionKey optional localization key for the description
  * @param author optional author text

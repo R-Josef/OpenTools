@@ -80,8 +80,8 @@ reads the active language on every lookup, so a language change affects plugin
 metadata, page titles, tool catalogs, forms, documentation, interactive pages,
 and result text without restarting the process.
 
-`ToolDescriptor` and `ToolParameter` continue to carry English display text.
-Those values remain the final fallback when a language file or key is absent.
+`ToolDescriptor` and `ToolParameter` carry fallback display text, usually in
+English. Those values remain the final fallback when a language file or key is absent.
 The descriptor may localize its own name and description with optional keys:
 
 ```json
@@ -174,23 +174,3 @@ provided by the API.
 Java plugins run inside the OpenTools JVM. Class-loader isolation is not a
 security sandbox. Install and enable only trusted plugins after reviewing their
 source, dependencies, requested capabilities, and licenses.
-
-## Compatibility
-
-Plugin API 2.1 is the current extension contract. The major version must
-match the host. A plugin may request the current minor version or an older minor
-version within the same major version. This release does not support legacy
-Java panel plugins, `.plugin` script packages, or TBtools plugin binaries.
-
-API 2.1 continues the Tool terminology introduced in API 2.0:
-
-| API 1.0 | API 2.0 |
-| --- | --- |
-| `TaskContext` | `ToolExecutionContext` |
-| `TaskResult` | `ToolResult` |
-| `TaskExecutionService` | `ToolExecutionService` |
-| `TaskAutomationService` | `ToolAutomationService` |
-
-Plugins compiled against an older contract must be rebuilt against 2.1. There
-are no deprecated localization aliases or dual host/plugin resource lookup
-paths.

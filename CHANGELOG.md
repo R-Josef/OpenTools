@@ -30,6 +30,9 @@
   `ToolExecutionService`.
 - Plugin API docs, the developer guide, release package notes, compile SDK,
   plugin directory guide, and host language-file guide describe Plugin API 2.1.
+- The developer guide now includes a complete Maven layout and packaging walkthrough,
+  clarifies that resource keys are not automatically prefixed, and documents
+  third-party library packaging rules.
 
 ## 0.8.0-SNAPSHOT
 

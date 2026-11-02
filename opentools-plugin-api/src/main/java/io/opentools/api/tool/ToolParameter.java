@@ -7,8 +7,8 @@ import java.util.Objects;
  * Definition of one tool input parameter.
  *
  * @param id parameter identifier used in requests
- * @param title English fallback display title
- * @param description English fallback input guidance
+ * @param title fallback display title, usually in English
+ * @param description fallback input guidance, usually in English
  * @param type input type
  * @param required whether a value is required
  * @param defaultValue default value
