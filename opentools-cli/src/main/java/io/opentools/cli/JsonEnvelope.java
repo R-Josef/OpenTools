@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 public record JsonEnvelope(boolean ok, String apiVersion, Object data, Error error) {
-    public static final String API_VERSION = "1.0";
+    public static final String API_VERSION = "2.0";
 
     public static JsonEnvelope success(Object data) {
         return new JsonEnvelope(true, API_VERSION, data, null);
@@ -69,7 +69,7 @@ public record JsonEnvelope(boolean ok, String apiVersion, Object data, Error err
         if (code == null || code.isBlank()) {
             code = job.status() == JobStatus.CANCELLED ? "CANCELLED"
                     : job.status() == JobStatus.PARTIAL ? "PARTIAL_RESULT"
-                    : "TASK_FAILED";
+                    : "TOOL_FAILED";
         }
         String message = job.errorMessage();
         if (message == null || message.isBlank()) {
@@ -80,7 +80,7 @@ public record JsonEnvelope(boolean ok, String apiVersion, Object data, Error err
                 message,
                 job.status() == JobStatus.CANCELLED
                         ? "Submit the job again when ready."
-                        : "Inspect run.log and correct the task input or dependency.",
+                        : "Inspect run.log and correct the tool input or dependency.",
                 List.of(),
                 Map.of("job", job)
         );

@@ -4,8 +4,8 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
@@ -65,7 +65,7 @@ public final class GxfInspectTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path input = request.path("input");
         Path output = request.path("output");
         if (output == null || output.toString().isBlank()) {
@@ -125,7 +125,7 @@ public final class GxfInspectTool extends AbstractOpenTool {
         metrics.put("threads", threads);
         metrics.put("parallelRecords", threads > 1);
         context.progress(1.0, "GXF inspection completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Inspected " + records + " annotation records",
                 "result.gxf.inspect.summary",
                 List.of(records),

@@ -5,14 +5,14 @@ import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
 import io.opentools.core.util.OrderedParallelProcessor;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 import io.opentools.formats.fasta.FastaReader;
 import io.opentools.formats.fasta.FastaRecord;
 import io.opentools.formats.fasta.FastaWriter;
@@ -66,12 +66,12 @@ public final class SequenceOrfTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         return validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("input")));
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
-        Path output = FormatTaskSupport.outputPath(request, context, "orfs.fa");
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
+        Path output = FormatToolSupport.outputPath(request, context, "orfs.fa");
         String geneticCode = request.string("geneticCode");
         Set<String> stops = GeneticCode.stopCodons(geneticCode);
         Set<String> starts = codons(request.string("startCodons"));
@@ -83,7 +83,7 @@ public final class SequenceOrfTool extends AbstractOpenTool {
         int threads = OrderedParallelProcessor.resolveThreads(
                 request.integer("threads"), Files.size(request.path("input")), 16L * 1024 * 1024);
         long[] totals = new long[5];
-        FormatTaskSupport.writeAtomically(output, writer -> {
+        FormatToolSupport.writeAtomically(output, writer -> {
             try (FastaReader reader = new FastaReader(request.path("input"))) {
                 OrderedParallelProcessor.process(
                         threads,
@@ -142,7 +142,7 @@ public final class SequenceOrfTool extends AbstractOpenTool {
                     "Lower minAminoAcids, add start codons, or include partial ORFs.");
         }
         context.progress(1.0, "ORF prediction completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Found " + totals[0] + " ORFs",
                 "result.sequence.orf.summary", List.of(totals[0]),
                 totals[3] + " forward ORFs and " + totals[4] + " reverse ORFs.",
@@ -172,7 +172,7 @@ public final class SequenceOrfTool extends AbstractOpenTool {
             Set<String> stops,
             int minimum,
             boolean includePartial,
-            TaskContext context
+            ToolExecutionContext context
     ) throws Exception {
         List<OrfHit> hits = new ArrayList<>();
         for (int frame = 0; frame < 3; frame++) {

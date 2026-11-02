@@ -30,7 +30,7 @@ final class McpStdioServerTest {
                     {"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}
                     """;
             ByteArrayOutputStream output = new ByteArrayOutputStream();
-            new McpStdioServer(new McpToolServer(runtime.tasks())).run(
+            new McpStdioServer(new McpToolServer(runtime.toolAutomation())).run(
                     new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)),
                     output
             );

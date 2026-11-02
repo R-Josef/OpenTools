@@ -5,8 +5,8 @@ import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
@@ -21,7 +21,7 @@ import io.opentools.external.process.TemporaryFiles;
 import io.opentools.external.tool.ExecutableLocator;
 import io.opentools.external.tool.ExternalToolSpecs;
 import io.opentools.external.tool.ToolStatus;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -63,7 +63,7 @@ public final class MuscleTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         ValidationResult result = validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("input")));
         try {
             ExternalArguments.parse(request.string("extraArgs"));
         } catch (IllegalArgumentException ex) {
@@ -74,8 +74,8 @@ public final class MuscleTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
-        Path output = FormatTaskSupport.outputPath(request, context, "muscle-alignment.fa");
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
+        Path output = FormatToolSupport.outputPath(request, context, "muscle-alignment.fa");
         ToolStatus muscle = new ExecutableLocator(ExternalRuntime.appHome()).resolve(
                 ExternalToolSpecs.MUSCLE, null, request.path("executablePath"));
         if (!muscle.available() || muscle.executable() == null) {
@@ -114,10 +114,10 @@ public final class MuscleTool extends AbstractOpenTool {
                 throw new ExternalProcessException("MUSCLE_OUTPUT_MISSING",
                         "MUSCLE did not create an alignment.", "Check the output command syntax.");
             }
-            FormatTaskSupport.createParent(output);
+            FormatToolSupport.createParent(output);
             Files.move(aligned, output, StandardCopyOption.REPLACE_EXISTING);
             context.progress(1.0, "MUSCLE alignment completed");
-            return new TaskResult(
+            return new ToolResult(
                     "MUSCLE alignment completed",
                     "result.muscle.summary", List.of(),
                     "Using " + muscle.version(),

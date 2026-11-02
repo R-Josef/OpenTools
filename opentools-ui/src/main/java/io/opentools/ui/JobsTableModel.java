@@ -59,7 +59,7 @@ final class JobsTableModel extends AbstractTableModel {
     public String getColumnName(int column) {
         return switch (column) {
             case 0 -> language.text("jobs.column.run_id", "Run ID");
-            case 1 -> language.text("jobs.column.tool", "Task");
+            case 1 -> language.text("jobs.column.tool", "Tool");
             case 2 -> language.text("jobs.column.status", "Status");
             case 3 -> language.text("jobs.column.started", "Started");
             case 4 -> language.text("jobs.column.finished", "Finished");

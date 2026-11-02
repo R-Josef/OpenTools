@@ -7,16 +7,16 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Immutable parameter map passed to a task.
+ * Immutable parameter map passed to a tool.
  */
 public final class ToolRequest {
     private final String toolId;
     private final Map<String, Object> parameters;
 
     /**
-     * Creates a task request.
+     * Creates a tool request.
      *
-     * @param toolId requested task identifier
+     * @param toolId requested tool identifier
      * @param parameters parameter values
      */
     public ToolRequest(String toolId, Map<String, Object> parameters) {
@@ -25,9 +25,9 @@ public final class ToolRequest {
     }
 
     /**
-     * Returns the requested task identifier.
+     * Returns the requested tool identifier.
      *
-     * @return task identifier
+     * @return tool identifier
      */
     public String toolId() {
         return toolId;

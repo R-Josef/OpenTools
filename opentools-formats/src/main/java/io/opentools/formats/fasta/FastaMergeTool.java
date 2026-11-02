@@ -4,8 +4,8 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
@@ -70,7 +70,7 @@ public final class FastaMergeTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         List<Path> inputs = parsePaths(request.string("inputs")).stream().map(Path::of).toList();
         Path output = request.path("output");
         if (output == null || output.toString().isBlank()) {
@@ -119,7 +119,7 @@ public final class FastaMergeTool extends AbstractOpenTool {
                 )
         );
         context.progress(1.0, "Merged " + inputs.size() + " files");
-        return new TaskResult(
+        return new ToolResult(
                 "Merged " + inputs.size() + " files",
                 "result.fasta.merge.summary",
                 List.of(inputs.size()),

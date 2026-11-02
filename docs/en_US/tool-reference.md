@@ -21,6 +21,7 @@ all of them. Each tool page is generated from the active language files and
 | Expression and enrichment | [Expression / Enrichment](categories/expression-enrichment.md) | 7 |
 | HTS | [HTS](categories/hts.md) | 6 |
 | Visualization | [Visualization](categories/visualization.md) | 20 |
+| Plugin | [Plugin tools](categories/plugin.md) | bundled |
 
 Inspect tools from the terminal with:
 

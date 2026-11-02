@@ -21,9 +21,9 @@ public final class McpToolServer {
             LATEST_PROTOCOL_VERSION
     );
 
-    private final TaskAutomationService automation;
+    private final ToolAutomationService automation;
 
-    public McpToolServer(TaskAutomationService automation) {
+    public McpToolServer(ToolAutomationService automation) {
         this.automation = automation;
     }
 
@@ -109,7 +109,7 @@ public final class McpToolServer {
         addTool(
                 tools,
                 "opentools_validate_inputs",
-                "Validate task parameters and workspace path safety.",
+                "Validate tool parameters and workspace path safety.",
                 taskCallSchema()
         );
         addTool(
@@ -206,7 +206,7 @@ public final class McpToolServer {
                 case "opentools_run_batch" -> automation.runBatch(
                         JsonSupport.MAPPER.treeToValue(
                                 arguments,
-                                TaskAutomationService.BatchSpec.class
+                                ToolAutomationService.BatchSpec.class
                         )
                 );
                 case "opentools_retry_job" -> automation.retry(requiredText(arguments, "runId"));
@@ -317,7 +317,7 @@ public final class McpToolServer {
                         "additionalProperties", false,
                         "properties", Map.of(
                                 "toolId", property("string", "Stable tool ID"),
-                                "parameters", objectProperty("Task parameters"),
+                                "parameters", objectProperty("Tool parameters"),
                                 "dryRun", property("boolean", "Validate without submitting")
                         ),
                         "required", List.of("toolId", "parameters")

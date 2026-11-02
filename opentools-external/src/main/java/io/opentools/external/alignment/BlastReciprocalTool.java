@@ -4,13 +4,13 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.io.BufferedWriter;
 import java.nio.file.Path;
@@ -45,12 +45,12 @@ public final class BlastReciprocalTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         return validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("forward")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("forward")));
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
-        Path output = FormatTaskSupport.outputPath(request, context, "reciprocal-best-hits.tsv");
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
+        Path output = FormatToolSupport.outputPath(request, context, "reciprocal-best-hits.tsv");
         List<BlastTabularHit> forward = new BlastTabularReader().read(request.path("forward"));
         List<BlastTabularHit> reverse = new BlastTabularReader().read(request.path("reverse"));
         Map<String, BlastTabularHit> bestForward = bestByQuery(forward);
@@ -66,9 +66,9 @@ public final class BlastReciprocalTool extends AbstractOpenTool {
             throw new OpenToolException("NO_RECIPROCAL_HITS", "No reciprocal best-hit pairs were found.",
                     "Check that both tables use compatible sequence identifiers and outfmt 6 columns.");
         }
-        FormatTaskSupport.writeAtomically(output, writer -> write(writer, reciprocal));
+        FormatToolSupport.writeAtomically(output, writer -> write(writer, reciprocal));
         context.progress(1.0, "Reciprocal BLAST analysis completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Found " + reciprocal.size() + " reciprocal best-hit pairs",
                 "result.blast.reciprocal.summary", List.of(reciprocal.size()),
                 forward.size() + " forward hits and " + reverse.size() + " reverse hits were read.",

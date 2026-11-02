@@ -43,7 +43,8 @@ final class DocsPanel extends JPanel {
             new DocGroup("expression", "Expression+Enrichment",
                     "categories/expression-enrichment.md"),
             new DocGroup("hts", "HTS", "categories/hts.md"),
-            new DocGroup("visualization", "Visualization", "categories/visualization.md")
+            new DocGroup("visualization", "Visualization", "categories/visualization.md"),
+            new DocGroup("plugin", "Plugin", "categories/plugin.md")
     );
 
     private final ToolRegistry registry;
@@ -459,6 +460,7 @@ final class DocsPanel extends JPanel {
                         List.of("Expression", "Enrichment");
                 case "categories/hts.md" -> List.of("HTS");
                 case "categories/visualization.md" -> List.of("Visualization");
+                case "categories/plugin.md" -> List.of("Plugin");
                 default -> List.of();
             };
         }

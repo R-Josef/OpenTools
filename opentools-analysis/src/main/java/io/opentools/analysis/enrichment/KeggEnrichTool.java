@@ -4,13 +4,13 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -40,11 +40,11 @@ public final class KeggEnrichTool extends AbstractOpenTool {
 
     @Override
     public ValidationResult validate(ToolRequest request) {
-        return validateParameters(request).merge(FormatTaskSupport.validateOutput(request, request.path("annotations")));
+        return validateParameters(request).merge(FormatToolSupport.validateOutput(request, request.path("annotations")));
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Map<String, java.util.Set<String>> annotations = EnrichmentSupport.readAnnotations(request.path("annotations"));
         java.util.Set<String> targets = EnrichmentSupport.readGeneList(request.path("genes"));
         java.util.Set<String> background = request.path("background") == null
@@ -53,10 +53,10 @@ public final class KeggEnrichTool extends AbstractOpenTool {
         if (results.isEmpty()) {
             throw new OpenToolException("NO_ENRICHED_TERMS", "No KEGG pathways were enriched.", "Check gene IDs and annotations.");
         }
-        Path output = FormatTaskSupport.outputPath(request, context, "kegg-enrichment.tsv");
-        FormatTaskSupport.writeAtomically(output, writer -> EnrichmentSupport.writeResults(writer, results, "hits"));
+        Path output = FormatToolSupport.outputPath(request, context, "kegg-enrichment.tsv");
+        FormatToolSupport.writeAtomically(output, writer -> EnrichmentSupport.writeResults(writer, results, "hits"));
         context.progress(1.0, "KEGG enrichment completed");
-        return new TaskResult(
+        return new ToolResult(
                 "KEGG enrichment found " + results.size() + " pathways",
                 "result.kegg.enrich.summary", List.of(results.size()),
                 "Hypergeometric P-values with Benjamini-Hochberg correction.",

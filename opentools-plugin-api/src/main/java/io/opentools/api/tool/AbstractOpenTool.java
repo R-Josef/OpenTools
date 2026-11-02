@@ -13,7 +13,7 @@ public abstract class AbstractOpenTool implements OpenTool {
     /**
      * Validates parameter presence, file paths, ranges, and numeric formats.
      *
-     * @param request task parameters
+     * @param request tool parameters
      * @return accumulated validation issues
      */
     protected ValidationResult validateParameters(ToolRequest request) {

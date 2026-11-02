@@ -11,7 +11,7 @@ import io.opentools.core.automation.ToolContracts;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.OutputArtifact;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
@@ -307,7 +307,7 @@ public final class OpenToolsCli implements AutoCloseable {
         @Parameters(index = "0", paramLabel = "TOOL_ID")
         private String toolId;
 
-        @Option(names = {"-p", "--param"}, paramLabel = "KEY=VALUE", description = "Task parameter")
+        @Option(names = {"-p", "--param"}, paramLabel = "KEY=VALUE", description = "Tool parameter")
         private List<String> parameterValues = new ArrayList<>();
 
         @Option(names = "--dry-run", description = "Validate only")
@@ -1009,7 +1009,7 @@ public final class OpenToolsCli implements AutoCloseable {
                         configuredAppHome,
                         workspaces
                 )) {
-                    McpToolServer protocol = new McpToolServer(runtime.tasks());
+                    McpToolServer protocol = new McpToolServer(runtime.toolAutomation());
                     if (transport.equalsIgnoreCase("stdio")) {
                         parent.root.err().println(
                                 "OpenTools MCP stdio ready (protocol "
@@ -1137,24 +1137,24 @@ public final class OpenToolsCli implements AutoCloseable {
                         }
                         return ExitCodes.INPUT;
                     }
-                    io.opentools.mcp.TaskAutomationService.BatchSpec loaded = JSON.readValue(
+                    io.opentools.mcp.ToolAutomationService.BatchSpec loaded = JSON.readValue(
                             config.toFile(),
-                            io.opentools.mcp.TaskAutomationService.BatchSpec.class
+                            io.opentools.mcp.ToolAutomationService.BatchSpec.class
                     );
                     var items = loaded.jobs();
                     if (dryRun) {
                         items = items.stream().map(item ->
-                                new io.opentools.mcp.TaskAutomationService.BatchItem(
+                                new io.opentools.mcp.ToolAutomationService.BatchItem(
                                         item.toolId(),
                                         item.parameters(),
                                         true
                                 )).toList();
                     }
-                    var effective = new io.opentools.mcp.TaskAutomationService.BatchSpec(
+                    var effective = new io.opentools.mcp.ToolAutomationService.BatchSpec(
                             loaded.continueOnError(),
                             items
                     );
-                    Map<String, Object> result = runtime.tasks().runBatch(effective);
+                    Map<String, Object> result = runtime.toolAutomation().runBatch(effective);
                     boolean failed = ((List<?>) result.get("jobs")).stream()
                             .map(item -> ((Map<?, ?>) item).get("status"))
                             .anyMatch(status -> !"SUCCEEDED".equals(status) && !"VALID".equals(status));

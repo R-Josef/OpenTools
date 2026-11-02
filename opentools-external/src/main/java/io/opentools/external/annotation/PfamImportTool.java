@@ -4,13 +4,13 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -41,18 +41,18 @@ public final class PfamImportTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         return validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("input")));
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
-        Path output = FormatTaskSupport.outputPath(request, context, "pfam-domains.tsv");
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
+        Path output = FormatToolSupport.outputPath(request, context, "pfam-domains.tsv");
         List<HmmerDomainHit> hits = new HmmerDomTableParser().parse(request.path("input"));
         if (hits.isEmpty()) {
             throw new OpenToolException("NO_PFAM_HITS", "No Pfam domain hits were found.",
                     "Check the domtblout file and HMM database.");
         }
-        FormatTaskSupport.writeAtomically(output, writer -> {
+        FormatToolSupport.writeAtomically(output, writer -> {
             writer.write("query\tpfam_id\tpfam_accession\tfull_evalue\tfull_score\tindependent_evalue"
                     + "\tali_from\tali_to\thmm_from\thmm_to\taccuracy\tdescription\n");
             for (HmmerDomainHit hit : hits) {
@@ -84,7 +84,7 @@ public final class PfamImportTool extends AbstractOpenTool {
         });
         long queries = hits.stream().map(HmmerDomainHit::queryName).distinct().count();
         context.progress(1.0, "Pfam import completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Imported " + hits.size() + " Pfam domain hits",
                 "result.pfam.import.summary", List.of(hits.size()),
                 queries + " query sequences contain domain hits.",

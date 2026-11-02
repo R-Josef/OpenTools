@@ -4,13 +4,13 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -43,15 +43,15 @@ public final class BedToGffTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         return validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("input")));
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path input = request.path("input");
-        Path output = FormatTaskSupport.outputPath(request, context, "annotation.gff3");
+        Path output = FormatToolSupport.outputPath(request, context, "annotation.gff3");
         long[] totals = new long[2];
-        FormatTaskSupport.writeAtomically(output, writer -> {
+        FormatToolSupport.writeAtomically(output, writer -> {
             writer.write("##gff-version 3\n");
             long records = 0;
             long bases = 0;
@@ -91,7 +91,7 @@ public final class BedToGffTool extends AbstractOpenTool {
             totals[1] = bases;
         });
         context.progress(1.0, "GFF3 conversion completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Converted " + totals[0] + " BED intervals to GFF3",
                 "result.bed.to_gff.summary", List.of(totals[0]),
                 "Output uses 1-based inclusive coordinates.",

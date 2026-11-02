@@ -19,6 +19,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.ToolTipManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.imageio.ImageIO;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -34,6 +35,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -51,14 +53,16 @@ final class PlotViewerPanel extends JPanel {
     private final JButton zoomIn;
     private final JButton fit;
     private final JButton export;
+    private final ArtifactImageCanvas imageCanvas;
     private PlotSpec spec;
     private PlotScene scene;
 
     PlotViewerPanel(LanguageManager language) {
         super(new BorderLayout(0, 8));
         this.language = language;
+        this.imageCanvas = new ArtifactImageCanvas();
         this.canvas = new PlotCanvas();
-        UiAccessibility.name(this, t("results.tab.plot", "Plot"));
+        UiAccessibility.name(this, t("results.tab.visualization", "Visualization"));
         setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
         JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
@@ -93,6 +97,20 @@ final class PlotViewerPanel extends JPanel {
             loaded = PlotJson.read(path);
         }
         setPlot(loaded, PlotSceneFactory.create(loaded));
+    }
+
+    void loadImage(Path path) throws IOException {
+        BufferedImage image = ImageIO.read(path.toFile());
+        if (image == null) {
+            throw new IOException("Unsupported image: " + path.getFileName());
+        }
+        spec = null;
+        scene = null;
+        imageCanvas.setImage(image);
+        removeAll();
+        add(imageCanvas, BorderLayout.CENTER);
+        revalidate();
+        repaint();
     }
 
     void setPlot(PlotSpec nextSpec, PlotScene nextScene) {
@@ -407,6 +425,49 @@ final class PlotViewerPanel extends JPanel {
             super.doLayout();
             if (autoFit && plot != null) {
                 fitToWindow();
+            }
+        }
+    }
+
+    private final class ArtifactImageCanvas extends JPanel {
+        private BufferedImage image;
+
+        private ArtifactImageCanvas() {
+            setOpaque(true);
+            setBackground(new Color(244, 246, 247));
+            setPreferredSize(new Dimension(900, 520));
+            UiAccessibility.name(this, t("results.tab.visualization", "Visualization"));
+        }
+
+        void setImage(BufferedImage image) {
+            this.image = image;
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics graphics) {
+            super.paintComponent(graphics);
+            if (image == null) {
+                return;
+            }
+            double scale = Math.min(
+                    (getWidth() - 24.0) / image.getWidth(),
+                    (getHeight() - 24.0) / image.getHeight()
+            );
+            scale = Math.max(0.01, scale);
+            int width = (int) Math.round(image.getWidth() * scale);
+            int height = (int) Math.round(image.getHeight() * scale);
+            int x = (getWidth() - width) / 2;
+            int y = (getHeight() - height) / 2;
+            Graphics2D g = (Graphics2D) graphics.create();
+            try {
+                g.setRenderingHint(
+                        java.awt.RenderingHints.KEY_INTERPOLATION,
+                        java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR
+                );
+                g.drawImage(image, x, y, width, height, null);
+            } finally {
+                g.dispose();
             }
         }
     }

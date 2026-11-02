@@ -5,8 +5,8 @@ import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
@@ -21,7 +21,7 @@ import io.opentools.external.process.TemporaryFiles;
 import io.opentools.external.tool.ExecutableLocator;
 import io.opentools.external.tool.ExternalToolSpecs;
 import io.opentools.external.tool.ToolStatus;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -66,7 +66,7 @@ public final class TrimalTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         ValidationResult result = validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("input")));
         try {
             ExternalArguments.parse(request.string("extraArgs"));
         } catch (IllegalArgumentException ex) {
@@ -77,8 +77,8 @@ public final class TrimalTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
-        Path output = FormatTaskSupport.outputPath(request, context, "trimmed-alignment.fa");
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
+        Path output = FormatToolSupport.outputPath(request, context, "trimmed-alignment.fa");
         ToolStatus trimal = new ExecutableLocator(ExternalRuntime.appHome()).resolve(
                 ExternalToolSpecs.TRIMAL, null, request.path("executablePath"));
         if (!trimal.available() || trimal.executable() == null) {
@@ -105,13 +105,13 @@ public final class TrimalTool extends AbstractOpenTool {
                 throw new ExternalProcessException("TRIMAL_OUTPUT_MISSING",
                         "trimAl did not create an output alignment.", "Check the trimAl parameters.");
             }
-            FormatTaskSupport.createParent(output);
+            FormatToolSupport.createParent(output);
             Files.move(aligned, output, StandardCopyOption.REPLACE_EXISTING);
         } finally {
             TemporaryFiles.deleteRecursively(work);
         }
         context.progress(1.0, "trimAl completed");
-        return new TaskResult(
+        return new ToolResult(
                 "trimAl alignment trimming completed",
                 "result.trimal.summary", List.of(),
                 "Using " + trimal.version(),

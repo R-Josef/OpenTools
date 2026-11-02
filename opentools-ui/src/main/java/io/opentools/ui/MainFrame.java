@@ -202,6 +202,7 @@ final class MainFrame extends JFrame {
                 session.registry(),
                 session.execution(),
                 session.language(),
+                request -> session.submit(request),
                 this::refreshJobs
         );
         cards.add(catalogPanel, TOOLS);

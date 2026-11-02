@@ -3,7 +3,7 @@ package io.opentools.api.tool;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Thread-safe cooperative cancellation signal passed to a running task.
+ * Thread-safe cooperative cancellation signal passed to a running tool.
  */
 public final class CancellationToken {
     private final AtomicBoolean cancelled = new AtomicBoolean();
@@ -18,7 +18,7 @@ public final class CancellationToken {
     }
 
     /**
-     * Requests cooperative task cancellation.
+     * Requests cooperative tool cancellation.
      */
     public void cancel() {
         cancelled.set(true);
@@ -31,7 +31,7 @@ public final class CancellationToken {
      */
     public void throwIfCancelled() {
         if (isCancelled()) {
-            throw new java.util.concurrent.CancellationException("Task cancelled");
+            throw new java.util.concurrent.CancellationException("Tool cancelled");
         }
     }
 }

@@ -16,7 +16,7 @@
 ```json
 {
   "ok": false,
-  "apiVersion": "1.0",
+  "apiVersion": "2.0",
   "data": null,
   "error": {
     "code": "VALIDATION_FAILED",

@@ -5,15 +5,15 @@ import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
 import io.opentools.core.util.OrderedParallelProcessor;
 import io.opentools.core.util.SqliteSpillSupport;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 import io.opentools.formats.table.DelimitedTableReader;
 import io.opentools.formats.table.DelimitedTableWriter;
 
@@ -74,11 +74,11 @@ public final class TableTools {
 
         @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
         @Override public ValidationResult validate(ToolRequest request) { return validateTable(request); }
-        @Override public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+        @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
             double min = parseBound(request.string("numericMin"), Double.NEGATIVE_INFINITY);
             double max = parseBound(request.string("numericMax"), Double.POSITIVE_INFINITY);
             Pattern regex = request.string("regex").isBlank() ? null : Pattern.compile(request.string("regex"));
-            Path output = FormatTaskSupport.outputPath(request, context, "filtered-table.tsv");
+            Path output = FormatToolSupport.outputPath(request, context, "filtered-table.tsv");
             long[] totals = new long[3];
             char delimiter = delimiter(request.path("input"), request.string("delimiter"));
             int threads = resolveTableThreads(
@@ -91,7 +91,7 @@ public final class TableTools {
                 int column = columnIndex(headers, request.string("column"));
                 int numericColumn = request.string("numericColumn").isBlank()
                         ? column : columnIndex(headers, request.string("numericColumn"));
-                FormatTaskSupport.writeAtomically(output, writer -> {
+                FormatToolSupport.writeAtomically(output, writer -> {
                     writeLine(writer, headers);
                     OrderedParallelProcessor.processChunks(
                             threads,
@@ -112,7 +112,7 @@ public final class TableTools {
                 });
             }
             context.progress(1.0, "Table filter completed");
-            TaskResult result = withMetric(
+            ToolResult result = withMetric(
                     tableResult("table.filter", output, totals[0], totals[1]),
                     "filteredRows", totals[2]);
             result = withMetric(result, "threads", threads);
@@ -132,8 +132,8 @@ public final class TableTools {
 
         @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
         @Override public ValidationResult validate(ToolRequest request) { return validateTable(request); }
-        @Override public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
-            Path output = FormatTaskSupport.outputPath(request, context, "selected-columns.tsv");
+        @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
+            Path output = FormatToolSupport.outputPath(request, context, "selected-columns.tsv");
             long[] rows = new long[1];
             char delimiter = delimiter(request.path("input"), request.string("delimiter"));
             int threads = resolveTableThreads(
@@ -154,7 +154,7 @@ public final class TableTools {
                             "Enter one or more header names.");
                 }
                 List<Integer> selectedColumns = List.copyOf(selected);
-                FormatTaskSupport.writeAtomically(output, writer -> {
+                FormatToolSupport.writeAtomically(output, writer -> {
                     writeLine(writer, names);
                     OrderedParallelProcessor.processChunks(
                             threads,
@@ -174,7 +174,7 @@ public final class TableTools {
                 });
             }
             context.progress(1.0, "Column selection completed");
-            TaskResult result = tableResult("table.select_columns", output, rows[0], rows[0]);
+            ToolResult result = tableResult("table.select_columns", output, rows[0], rows[0]);
             result = withMetric(result, "threads", threads);
             return withMetric(result, "parallelRecords", threads > 1);
         }
@@ -195,7 +195,7 @@ public final class TableTools {
 
         @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
         @Override public ValidationResult validate(ToolRequest request) { return validateTable(request); }
-        @Override public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+        @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
             char leftDelimiter = delimiter(request.path("left"), request.string("delimiter"));
             char rightDelimiter = delimiter(request.path("right"), request.string("delimiter"));
             Table right = Table.read(
@@ -225,9 +225,9 @@ public final class TableTools {
                 }
                 boolean[] matchedRight = new boolean[right.rows.size()];
                 String joinType = request.string("joinType");
-                Path output = FormatTaskSupport.outputPath(request, context, "joined-table.tsv");
+                Path output = FormatToolSupport.outputPath(request, context, "joined-table.tsv");
                 long[] totals = new long[4];
-                FormatTaskSupport.writeAtomically(output, writer -> {
+                FormatToolSupport.writeAtomically(output, writer -> {
                     List<String> header = new ArrayList<>(leftHeaders);
                     header.addAll(uniqueRightHeaders(leftHeaders, right.headers));
                     writeLine(writer, header);
@@ -261,7 +261,7 @@ public final class TableTools {
                     }
                 });
                 context.progress(1.0, "Table join completed");
-                TaskResult result = tableResult("table.join", output, totals[0], totals[1]);
+                ToolResult result = tableResult("table.join", output, totals[0], totals[1]);
                 result = withMetric(result, "unmatchedLeftRows", totals[2]);
                 result = withMetric(result, "unmatchedRightRows", totals[3]);
                 return result;
@@ -289,9 +289,9 @@ public final class TableTools {
 
         @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
         @Override public ValidationResult validate(ToolRequest request) { return validateTable(request); }
-        @Override public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+        @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
             char delimiter = delimiter(request.path("input"), request.string("delimiter"));
-            Path output = FormatTaskSupport.outputPath(request, context, "transposed.tsv");
+            Path output = FormatToolSupport.outputPath(request, context, "transposed.tsv");
             boolean disk = shouldUseDisk(request);
             if (disk) {
                 long maxTempBytes = SqliteSpillSupport.megabytes(
@@ -299,7 +299,7 @@ public final class TableTools {
                 TransposeStats stats = transposeWithDatabase(
                         request.path("input"), delimiter, output, maxTempBytes, context);
                 context.progress(1.0, "Table transpose completed");
-                TaskResult result = tableResult(
+                ToolResult result = tableResult(
                         "table.transpose", output, stats.inputRows(), stats.columns());
                 result = withMetric(result, "transposeMode", "DISK");
                 result = withMetric(result, "spilledCells", stats.nonEmptyCells());
@@ -315,7 +315,7 @@ public final class TableTools {
                 }
                 columns = Math.max(columns, table.headers.size());
                 int outputColumns = columns;
-                FormatTaskSupport.writeAtomically(output, writer -> {
+                FormatToolSupport.writeAtomically(output, writer -> {
                     for (int column = 0; column < outputColumns; column++) {
                         List<String> row = new ArrayList<>();
                         row.add(columnName(table.headers, column));
@@ -326,7 +326,7 @@ public final class TableTools {
                     }
                 });
                 context.progress(1.0, "Table transpose completed");
-                TaskResult result = tableResult(
+                ToolResult result = tableResult(
                         "table.transpose", output, table.rows.size(), columns);
                 result = withMetric(result, "transposeMode", "IN_MEMORY");
                 result = withMetric(result, "spilledCells", 0);
@@ -343,7 +343,7 @@ public final class TableTools {
             TransposeStats stats = transposeWithDatabase(
                     request.path("input"), delimiter, output, maxTempBytes, context);
             context.progress(1.0, "Table transpose completed");
-            TaskResult result = tableResult(
+            ToolResult result = tableResult(
                     "table.transpose", output, stats.inputRows(), stats.columns());
             result = withMetric(result, "transposeMode", "DISK");
             result = withMetric(result, "spilledCells", stats.nonEmptyCells());
@@ -367,7 +367,7 @@ public final class TableTools {
                 char delimiter,
                 Path output,
                 long maxTempBytes,
-                TaskContext context
+                ToolExecutionContext context
         ) throws Exception {
             Path tempDirectory = context.runDirectory().resolve("tmp");
             Path database = SqliteSpillSupport.createTemporaryDatabase(
@@ -428,7 +428,7 @@ public final class TableTools {
                         }
                         int finalColumns = columns;
                         long finalInputRows = inputRows;
-                        FormatTaskSupport.writeAtomically(output, writer -> {
+                        FormatToolSupport.writeAtomically(output, writer -> {
                             try (PreparedStatement select = connection.prepareStatement(
                                     "SELECT row_index,value FROM cells "
                                             + "WHERE column_index=? ORDER BY row_index")) {
@@ -475,16 +475,16 @@ public final class TableTools {
 
         @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
         @Override public ValidationResult validate(ToolRequest request) { return validateTable(request); }
-        @Override public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+        @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
             char delimiter = delimiter(request.path("input"), request.string("delimiter"));
-            Path output = FormatTaskSupport.outputPath(request, context, "deduplicated.tsv");
+            Path output = FormatToolSupport.outputPath(request, context, "deduplicated.tsv");
             Set<List<String>> seen = new LinkedHashSet<>();
             long[] totals = new long[3];
             try (DelimitedTableReader reader = new DelimitedTableReader(
                     request.path("input"), delimiter, true, true)) {
                 List<String> headers = requireHeader(reader);
                 List<Integer> keys = keyIndexes(headers, request.string("keyColumns"));
-                FormatTaskSupport.writeAtomically(output, writer -> {
+                FormatToolSupport.writeAtomically(output, writer -> {
                     writeLine(writer, headers);
                     List<String> row;
                     while ((row = reader.nextRow()) != null) {
@@ -509,7 +509,7 @@ public final class TableTools {
                 });
             }
             context.progress(1.0, "Deduplication completed");
-            TaskResult result = tableResult("table.deduplicate", output, totals[0], totals[1]);
+            ToolResult result = tableResult("table.deduplicate", output, totals[0], totals[1]);
             return withMetric(result, "duplicates", totals[2]);
         }
     }
@@ -530,7 +530,7 @@ public final class TableTools {
 
         @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
         @Override public ValidationResult validate(ToolRequest request) { return validateTable(request); }
-        @Override public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+        @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
             char delimiter = delimiter(request.path("input"), request.string("delimiter"));
             Map<String, Map<String, Aggregate>> values = new LinkedHashMap<>();
             Set<String> pivotColumns = new LinkedHashSet<>();
@@ -591,10 +591,10 @@ public final class TableTools {
                 }
                 outputRows.add(output);
             }
-            Path output = FormatTaskSupport.outputPath(request, context, "pivot.tsv");
+            Path output = FormatToolSupport.outputPath(request, context, "pivot.tsv");
             Table.writeAll(output, outputColumns, outputRows);
             context.progress(1.0, "Pivot completed");
-            TaskResult result = tableResult("table.pivot", output, inputRows, outputRows.size());
+            ToolResult result = tableResult("table.pivot", output, inputRows, outputRows.size());
             return withMetric(result, "pivotCells", cells);
         }
     }
@@ -613,9 +613,9 @@ public final class TableTools {
 
         @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
         @Override public ValidationResult validate(ToolRequest request) { return validateTable(request); }
-        @Override public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+        @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
             Pattern pattern = Pattern.compile(request.string("search"));
-            Path output = FormatTaskSupport.outputPath(request, context, "replaced.tsv");
+            Path output = FormatToolSupport.outputPath(request, context, "replaced.tsv");
             char delimiter = delimiter(request.path("input"), request.string("delimiter"));
             long[] totals = new long[3];
             int threads = resolveTableThreads(
@@ -626,7 +626,7 @@ public final class TableTools {
                     request.path("input"), delimiter, true, true)) {
                 List<String> headers = requireHeader(reader);
                 int column = columnIndex(headers, request.string("column"));
-                FormatTaskSupport.writeAtomically(output, writer -> {
+                FormatToolSupport.writeAtomically(output, writer -> {
                     writeLine(writer, headers);
                     OrderedParallelProcessor.processChunks(
                             threads,
@@ -646,7 +646,7 @@ public final class TableTools {
                 });
             }
             context.progress(1.0, "Text replacement completed");
-            TaskResult result = tableResult("table.replace", output, totals[0], totals[1]);
+            ToolResult result = tableResult("table.replace", output, totals[0], totals[1]);
             result = withMetric(result, "replacements", totals[2]);
             result = withMetric(result, "threads", threads);
             return withMetric(result, "parallelRecords", threads > 1);
@@ -676,11 +676,11 @@ public final class TableTools {
 
     private static ValidationResult validateTable(ToolRequest request) {
         Path input = request.path("input") != null ? request.path("input") : request.path("left");
-        return new ValidationResult(List.of()).merge(FormatTaskSupport.validateOutput(request, input));
+        return new ValidationResult(List.of()).merge(FormatToolSupport.validateOutput(request, input));
     }
 
-    private static TaskResult tableResult(String prefix, Path output, long input, long outputRows) {
-        return new TaskResult(
+    private static ToolResult tableResult(String prefix, Path output, long input, long outputRows) {
+        return new ToolResult(
                 "Processed " + input + " rows; wrote " + outputRows,
                 "result." + prefix.replace('.', '_') + ".summary", List.of(input, outputRows),
                 "Table operation completed.", "result." + prefix.replace('.', '_') + ".detail", List.of(),
@@ -766,10 +766,10 @@ public final class TableTools {
         );
     }
 
-    private static TaskResult withMetric(TaskResult result, String key, Object value) {
+    private static ToolResult withMetric(ToolResult result, String key, Object value) {
         Map<String, Object> metrics = new LinkedHashMap<>(result.metrics());
         metrics.put(key, value);
-        return new TaskResult(result.summary(), result.summaryKey(), result.summaryArguments(),
+        return new ToolResult(result.summary(), result.summaryKey(), result.summaryArguments(),
                 result.detail(), result.detailKey(), result.detailArguments(),
                 result.table(), result.artifacts(), metrics);
     }
@@ -973,7 +973,7 @@ public final class TableTools {
         }
 
         static void writeAll(Path output, List<String> headers, List<List<String>> rows) throws Exception {
-            FormatTaskSupport.writeAtomically(output, writer -> {
+            FormatToolSupport.writeAtomically(output, writer -> {
                 writeLine(writer, headers);
                 for (List<String> row : rows) writeLine(writer, row);
             });

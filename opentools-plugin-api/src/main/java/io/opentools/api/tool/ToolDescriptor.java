@@ -4,16 +4,16 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Metadata describing one task for discovery, forms, and documentation.
+ * Metadata describing one tool for discovery, forms, and documentation.
  *
- * @param id stable task identifier
+ * @param id stable tool identifier
  * @param name display name
- * @param description task summary
- * @param category task category
+ * @param description tool summary
+ * @param category tool category
  * @param aliases alternate search names
  * @param inputFormats accepted input labels
  * @param outputFormats produced output labels
- * @param version task implementation version
+ * @param version tool implementation version
  * @param parameters input parameter definitions
  */
 public record ToolDescriptor(

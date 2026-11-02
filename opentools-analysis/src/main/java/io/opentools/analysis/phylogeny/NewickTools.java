@@ -4,14 +4,14 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
 import io.opentools.formats.Compression;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 import io.opentools.formats.newick.NewickNode;
 import io.opentools.formats.newick.NewickParser;
 
@@ -40,19 +40,19 @@ public final class NewickTools {
 
         @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
         @Override public ValidationResult validate(ToolRequest request) {
-            return validateParameters(request).merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+            return validateParameters(request).merge(FormatToolSupport.validateOutput(request, request.path("input")));
         }
-        @Override public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+        @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
             NewickNode root = new NewickParser().parse(read(request.path("input")));
             Stats stats = stats(root);
-            Path output = FormatTaskSupport.outputPath(request, context, "newick-summary.tsv");
-            FormatTaskSupport.writeAtomically(output, writer -> {
+            Path output = FormatToolSupport.outputPath(request, context, "newick-summary.tsv");
+            FormatToolSupport.writeAtomically(output, writer -> {
                 writer.write("metric\tvalue\nleaves\t" + stats.leaves
                         + "\nnodes\t" + stats.nodes + "\nmax_depth\t" + stats.depth
                         + "\ntotal_branch_length\t" + stats.branchLength + "\n");
             });
             context.progress(1.0, "Newick summary completed");
-            return new TaskResult("Summarized Newick tree", "result.tree.summary.summary",
+            return new ToolResult("Summarized Newick tree", "result.tree.summary.summary",
                     List.of(stats.leaves), stats.leaves + " leaves and " + stats.nodes + " nodes.",
                     "result.tree.summary.detail", List.of(stats.nodes),
                     new ResultTable(List.of("Metric", "Value"), List.of(
@@ -76,9 +76,9 @@ public final class NewickTools {
 
         @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
         @Override public ValidationResult validate(ToolRequest request) {
-            return validateParameters(request).merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+            return validateParameters(request).merge(FormatToolSupport.validateOutput(request, request.path("input")));
         }
-        @Override public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+        @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
             NewickNode root = new NewickParser().parse(read(request.path("input")));
             Set<String> taxa = new LinkedHashSet<>(request.string("taxa").lines()
                     .map(String::trim).filter(line -> !line.isBlank() && !line.startsWith("#")).toList());
@@ -86,12 +86,12 @@ public final class NewickTools {
             if (subset == null || subset.leaf() && subset.name().isBlank()) {
                 throw new OpenToolException("NO_TREE_TAXA", "None of the requested taxa were found.", "Check taxon names.");
             }
-            Path output = FormatTaskSupport.outputPath(request, context, "subset.nwk");
+            Path output = FormatToolSupport.outputPath(request, context, "subset.nwk");
             String newick = new NewickParser().write(subset);
-            FormatTaskSupport.writeAtomically(output, writer -> writer.write(newick + "\n"));
+            FormatToolSupport.writeAtomically(output, writer -> writer.write(newick + "\n"));
             long leaves = stats(subset).leaves;
             context.progress(1.0, "Newick subset completed");
-            return new TaskResult("Retained " + leaves + " taxa", "result.tree.subset.summary", List.of(leaves),
+            return new ToolResult("Retained " + leaves + " taxa", "result.tree.subset.summary", List.of(leaves),
                     "Empty branches were pruned.", "result.tree.subset.detail", List.of(),
                     new ResultTable(List.of("Metric", "Value"), List.of(List.of("Leaves", Long.toString(leaves)))),
                     List.of(new OutputArtifact(output, "Subset Newick tree", "text/plain")),

@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Definition of one task input parameter.
+ * Definition of one tool input parameter.
  *
  * @param id parameter identifier used in requests
  * @param title display title

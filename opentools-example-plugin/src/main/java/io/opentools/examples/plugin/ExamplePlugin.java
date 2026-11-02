@@ -11,7 +11,8 @@ import java.awt.BorderLayout;
 public final class ExamplePlugin implements OpenToolsPlugin {
     @Override
     public void onEnable(PluginContext context) {
-        context.log("Registering example plugin task and page");
+        context.log("Registering example plugin tools and page");
+        context.registerTool(new CoinRunnerTool());
         context.registerTool(new HelloTool());
         context.registerPage("main", "Example Plugin", () -> page(context));
     }

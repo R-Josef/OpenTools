@@ -4,8 +4,8 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
@@ -57,7 +57,7 @@ public final class FastaSplitTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path input = request.path("input");
         int recordsPerFile = request.integer("recordsPerFile");
         Path outputDirectory = request.path("outputDirectory");
@@ -118,7 +118,7 @@ public final class FastaSplitTool extends AbstractOpenTool {
                 )
         );
         context.progress(1.0, "Split into " + artifacts.size() + " files");
-        return new TaskResult(
+        return new ToolResult(
                 "Split " + totalRecords + " records",
                 "result.fasta.split.summary",
                 List.of(totalRecords),

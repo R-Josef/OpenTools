@@ -3,7 +3,7 @@ package io.opentools.ui;
 import com.formdev.flatlaf.FlatLightLaf;
 import io.opentools.analysis.BuiltInAnalysis;
 import io.opentools.core.job.SqliteJobStore;
-import io.opentools.core.job.TaskExecutionService;
+import io.opentools.core.job.ToolExecutionService;
 import io.opentools.core.i18n.LanguageManager;
 import io.opentools.core.runtime.AppPaths;
 import io.opentools.core.tool.ToolRegistry;
@@ -40,7 +40,7 @@ public final class OpenToolsGui {
             BuiltInVisualizations.register(registry);
             SqliteJobStore store = new SqliteJobStore(project.databasePath());
             store.initialize();
-            TaskExecutionService execution = new TaskExecutionService(registry, store);
+            ToolExecutionService execution = new ToolExecutionService(registry, store);
             Path appHome = appRoot();
             PluginManager plugins = new PluginManager(appHome, registry);
             String forcedLanguage = System.getProperty("opentools.language");
@@ -73,7 +73,7 @@ public final class OpenToolsGui {
     public static void launch(
             ToolRegistry registry,
             Project project,
-            TaskExecutionService execution,
+            ToolExecutionService execution,
             PluginManager plugins,
             LanguageManager language
     ) {
@@ -110,12 +110,12 @@ public final class OpenToolsGui {
         private final PluginManager plugins;
         private final LanguageManager language;
         private Project project;
-        private TaskExecutionService execution;
+        private ToolExecutionService execution;
 
         public UiSession(
                 ToolRegistry registry,
                 Project project,
-                TaskExecutionService execution,
+                ToolExecutionService execution,
                 PluginManager plugins,
                 LanguageManager language
         ) {
@@ -134,7 +134,7 @@ public final class OpenToolsGui {
             return project;
         }
 
-        public synchronized TaskExecutionService execution() {
+        public synchronized ToolExecutionService execution() {
             return execution;
         }
 
@@ -169,8 +169,8 @@ public final class OpenToolsGui {
             }
             SqliteJobStore store = new SqliteJobStore(next.databasePath());
             store.initialize();
-            TaskExecutionService previous = execution;
-            execution = new TaskExecutionService(registry, store);
+            ToolExecutionService previous = execution;
+            execution = new ToolExecutionService(registry, store);
             project = next;
             try {
                 previous.close();

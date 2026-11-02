@@ -1,5 +1,6 @@
 package io.opentools.examples.plugin;
 
+import io.opentools.api.tool.InteractiveOpenTool;
 import io.opentools.api.tool.OpenTool;
 import io.opentools.plugin.PageContribution;
 import io.opentools.plugin.PluginContext;
@@ -13,19 +14,21 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class ExamplePluginTest {
     @TempDir
     Path tempDir;
 
     @Test
-    void registersReferenceTaskAndPage() {
+    void registersReferenceToolsAndPage() {
         TestContext context = new TestContext(tempDir);
 
         new ExamplePlugin().onEnable(context);
 
-        assertEquals(List.of("plugin.example.hello"),
+        assertEquals(List.of("plugin.example.coin-runner", "plugin.example.hello"),
                 context.tools.stream().map(tool -> tool.descriptor().id()).toList());
+        assertTrue(context.tools.getFirst() instanceof InteractiveOpenTool);
         assertEquals(List.of("main"), context.pages);
         assertEquals(1, context.logMessages.size());
     }

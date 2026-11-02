@@ -5,8 +5,8 @@ import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
@@ -85,7 +85,7 @@ public final class FastaExtractTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path input = request.path("input");
         Path output = request.path("output");
         if (output == null || output.toString().isBlank()) {
@@ -152,7 +152,7 @@ public final class FastaExtractTool extends AbstractOpenTool {
         String detail = remaining.isEmpty() ? "All requested IDs were found." :
                 "Missing IDs were written to missing-ids.txt.";
         context.progress(1.0, summary);
-        return new TaskResult(
+        return new ToolResult(
                 summary,
                 "result.fasta.extract.summary",
                 List.of(found.size(), requested.size()),

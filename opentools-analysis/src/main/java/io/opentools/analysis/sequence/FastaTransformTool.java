@@ -5,8 +5,8 @@ import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
@@ -110,7 +110,7 @@ public final class FastaTransformTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         ValidationResult result = validateParameters(request)
-                .merge(SequenceTaskSupport.validateOutput(request, request.path("input")));
+                .merge(SequenceToolSupport.validateOutput(request, request.path("input")));
         boolean complement = "COMPLEMENT".equals(request.string("direction"))
                 || "REVERSE_COMPLEMENT".equals(request.string("direction"));
         if (complement && "PROTEIN".equals(request.string("sequenceType"))) {
@@ -124,9 +124,9 @@ public final class FastaTransformTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path input = request.path("input");
-        Path output = SequenceTaskSupport.outputPath(request, context, "transformed.fa");
+        Path output = SequenceToolSupport.outputPath(request, context, "transformed.fa");
         Path report = context.defaultOutputPath("transform-report.tsv");
         String direction = request.string("direction");
         String caseMode = request.string("caseMode");
@@ -137,7 +137,7 @@ public final class FastaTransformTool extends AbstractOpenTool {
 
         long[] totals = new long[6];
         context.log("Transforming FASTA: " + input);
-        SequenceTaskSupport.writeAtomically(output, report, (outputWriter, reportWriter) -> {
+        SequenceToolSupport.writeAtomically(output, report, (outputWriter, reportWriter) -> {
             writeReportHeader(reportWriter);
 
             try (FastaReader reader = new FastaReader(input)) {
@@ -220,7 +220,7 @@ public final class FastaTransformTool extends AbstractOpenTool {
                 )
         );
         context.progress(1.0, "FASTA transform completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Transformed " + totals[0] + " FASTA records",
                 "result.fasta.transform.summary",
                 List.of(totals[0]),
@@ -301,7 +301,7 @@ public final class FastaTransformTool extends AbstractOpenTool {
                         "INVALID_SEQUENCE_CHARACTER",
                         "Sequence " + id + " contains an invalid " + type.toLowerCase(Locale.ROOT)
                                 + " character "
-                                + SequenceTaskSupport.codepoint(value) + ".",
+                                + SequenceToolSupport.codepoint(value) + ".",
                         "Enable cleanInvalid or correct the sequence alphabet."
                 );
             }
@@ -398,7 +398,7 @@ public final class FastaTransformTool extends AbstractOpenTool {
     ) throws Exception {
         writer.write(Long.toString(recordNumber));
         writer.write('\t');
-        writer.write(SequenceTaskSupport.escapeTsv(record.id()));
+        writer.write(SequenceToolSupport.escapeTsv(record.id()));
         writer.write("\tOK\t");
         writer.write(type);
         writer.write('\t');
@@ -408,9 +408,9 @@ public final class FastaTransformTool extends AbstractOpenTool {
         writer.write('\t');
         writer.write(Long.toString(removedCount));
         writer.write('\t');
-        writer.write(String.join(",", removed.stream().map(SequenceTaskSupport::codepoint).toList()));
+        writer.write(String.join(",", removed.stream().map(SequenceToolSupport::codepoint).toList()));
         writer.write('\t');
-        writer.write(SequenceTaskSupport.escapeTsv(record.header()));
+        writer.write(SequenceToolSupport.escapeTsv(record.header()));
         writer.newLine();
     }
 

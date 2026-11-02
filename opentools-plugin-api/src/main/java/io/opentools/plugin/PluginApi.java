@@ -9,7 +9,7 @@ public final class PluginApi {
     /**
      * Version implemented by this API artifact.
      */
-    public static final String VERSION = "1.0";
+    public static final String VERSION = "2.0";
 
     /**
      * Capability names accepted by the current host.

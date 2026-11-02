@@ -4,8 +4,8 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
@@ -45,7 +45,7 @@ public final class GxfGenomeMatchTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path genomePath = request.path("genome");
         Path annotationPath = request.path("annotation");
         Path report = request.path("report");
@@ -116,7 +116,7 @@ public final class GxfGenomeMatchTool extends AbstractOpenTool {
         context.progress(1.0, "Genome and annotation match check completed");
         String summary = issues.isEmpty() ? "Genome and annotation are compatible" :
                 "Found " + issues.size() + " compatibility issues";
-        return new TaskResult(
+        return new ToolResult(
                 summary,
                 issues.isEmpty() ? "result.gxf.match.summary.ok" : "result.gxf.match.summary.issues",
                 List.of(issues.size()),

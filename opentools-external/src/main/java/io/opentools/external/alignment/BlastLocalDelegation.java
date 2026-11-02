@@ -1,7 +1,7 @@
 package io.opentools.external.alignment;
 
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolRequest;
 
 import java.nio.file.Path;
@@ -12,7 +12,7 @@ final class BlastLocalDelegation {
     private BlastLocalDelegation() {
     }
 
-    static TaskResult run(ToolRequest request, TaskContext context, Path preparedQuery, Path output) throws Exception {
+    static ToolResult run(ToolRequest request, ToolExecutionContext context, Path preparedQuery, Path output) throws Exception {
         Map<String, Object> parameters = new LinkedHashMap<>();
         parameters.put("query", preparedQuery.toString());
         parameters.put("subject", request.path("subject").toString());

@@ -3,7 +3,7 @@ import io.opentools.analysis.BuiltInAnalysis;
 import io.opentools.core.job.JobRecord;
 import io.opentools.core.job.JobStatus;
 import io.opentools.core.job.SqliteJobStore;
-import io.opentools.core.job.TaskExecutionService;
+import io.opentools.core.job.ToolExecutionService;
 import io.opentools.core.tool.ToolRegistry;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.core.workspace.Project;
@@ -48,7 +48,7 @@ public final class TbtoolsCompareHarness {
         store.initialize();
 
         List<Long> measured = new ArrayList<>();
-        try (TaskExecutionService execution = new TaskExecutionService(registry, store)) {
+        try (ToolExecutionService execution = new ToolExecutionService(registry, store)) {
             for (int iteration = 0; iteration < iterations; iteration++) {
                 Path output = Path.of(outputPrefix + "-" + iteration + ".tsv");
                 Map<String, Object> parameters = parameters(

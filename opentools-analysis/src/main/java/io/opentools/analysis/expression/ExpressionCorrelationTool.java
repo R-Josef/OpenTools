@@ -4,14 +4,14 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
 import io.opentools.core.util.OrderedParallelProcessor;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.io.BufferedWriter;
 import java.nio.file.Files;
@@ -56,14 +56,14 @@ public final class ExpressionCorrelationTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         return validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("input")));
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         ExpressionMatrix matrix = new ExpressionMatrixParser().parse(
                 request.path("input"), request.string("delimiter"), "ERROR", request.bool("log2"));
-        Path output = FormatTaskSupport.outputPath(request, context, "sample-correlation.tsv");
+        Path output = FormatToolSupport.outputPath(request, context, "sample-correlation.tsv");
         int count = matrix.columnNames().size();
         int threads = OrderedParallelProcessor.resolveThreads(
                 request.integer("threads"), Files.size(request.path("input")));
@@ -100,9 +100,9 @@ public final class ExpressionCorrelationTool extends AbstractOpenTool {
                     }
                 }
         );
-        FormatTaskSupport.writeAtomically(output, writer -> writeMatrix(writer, matrix.columnNames(), correlation));
+        FormatToolSupport.writeAtomically(output, writer -> writeMatrix(writer, matrix.columnNames(), correlation));
         context.progress(1.0, "Expression correlation completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Calculated " + count + " x " + count + " sample correlation",
                 "result.expression.correlation.summary", List.of(count, request.string("method")),
                 "Coefficients were calculated from " + matrix.rowNames().size() + " genes.",

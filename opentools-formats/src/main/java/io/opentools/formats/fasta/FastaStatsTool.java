@@ -4,8 +4,8 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
@@ -13,7 +13,7 @@ import io.opentools.api.tool.ValidationIssue;
 import io.opentools.api.tool.ValidationResult;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.core.util.OrderedParallelProcessor;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.io.BufferedWriter;
 import java.nio.file.Files;
@@ -65,7 +65,7 @@ public final class FastaStatsTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path input = request.path("input");
         Path output = request.path("output");
         if (output == null || output.toString().isBlank()) {
@@ -84,7 +84,7 @@ public final class FastaStatsTool extends AbstractOpenTool {
         int threads = OrderedParallelProcessor.resolveThreads(
                 request.integer("threads"), Files.size(input), 128L * 1024 * 1024);
 
-        FormatTaskSupport.writeAtomically(output, writer -> {
+        FormatToolSupport.writeAtomically(output, writer -> {
             writer.write("id\tlength\tgc_percent\tn_count\theader");
             writer.newLine();
             try (FastaReader reader = new FastaReader(input)) {
@@ -180,7 +180,7 @@ public final class FastaStatsTool extends AbstractOpenTool {
         metrics.put("parallelRecords", threads > 1);
 
         context.progress(1.0, "FASTA statistics completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Processed " + sequenceCount + " sequences",
                 "result.fasta.stats.summary",
                 List.of(sequenceCount),

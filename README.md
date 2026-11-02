@@ -22,6 +22,8 @@ GPL-3.0-or-later; bundled third-party programs retain their own licenses.
   persisted together for reproducible reruns.
 - GUI, CLI, and MCP share `ToolDescriptor`, validation, tool execution, and
   result contracts.
+- The bundled default plugin adds an interactive Coin Runner tool whose
+  completed run feeds the normal job and result pipeline.
 - The in-app Docs view follows the active UI language and renders bundled
   Markdown fully offline.
 - Java-native tools require no external executable. BLAST+, DIAMOND, HMMER,
@@ -42,6 +44,7 @@ GPL-3.0-or-later; bundled third-party programs retain their own licenses.
 
 1. **General JAR**: runs Java-native tools and discovers external executables
    from package `tools/`, explicit paths, `OPENTOOLS_*` variables, or `PATH`.
+   The bundled default plugin is under `plugins/`.
 2. **Windows x64 portable package**: starts from `OpenTools.exe`, includes a
    private Java runtime and pinned Windows tools, and does not require conda or
    MSYS2 for end users.

@@ -8,7 +8,7 @@ language:
 | English (`en_US`) | [`en_US/`](en_US/README.md) |
 | Simplified Chinese (`zh_CN`) | [`zh_CN/`](zh_CN/README.md) |
 
-Task pages are generated from the same `ToolDescriptor` and language files as the
+Tool pages are generated from the same `ToolDescriptor` and language files as the
 GUI, CLI, and MCP endpoints. Each language directory contains its own Markdown
 links, screenshots, categories, and image resources so relative navigation stays
 inside a single language root.

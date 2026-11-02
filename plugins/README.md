@@ -23,8 +23,8 @@ Example descriptor:
 {
   "id": "example.plugin",
   "name": "Example Plugin",
-  "version": "1.0.0",
-  "apiVersion": "1.0",
+  "version": "1.1.0",
+  "apiVersion": "2.0",
   "mainClass": "org.example.ExamplePlugin",
   "description": "Example OpenTools plugin",
   "author": "Example Author",
@@ -33,14 +33,14 @@ Example descriptor:
 }
 ```
 
-The main class must implement `io.opentools.plugin.OpenToolsPlugin`. Public task
+The main class must implement `io.opentools.plugin.OpenToolsPlugin`. Public tool
 contracts use the `io.opentools.api.tool` package. The plugin context can
-register headless tasks and Swing pages. Plugin tools become available to both
-the Swing workbench and CLI.
+register headless tools, interactive tool pages, and standalone Swing pages.
+Plugin tools become available to the Swing workbench, CLI, and MCP.
 
 Supported capabilities:
 
-- `tool`: register headless `OpenTool` contributions.
+- `tool`: register `OpenTool` and `InteractiveOpenTool` contributions.
 - `page`: register Swing page factories.
 - `data`: access `plugins/data/<plugin-id>/`.
 
@@ -59,15 +59,15 @@ java -jar opentools.jar plugins enable example.plugin
 java -jar opentools.jar plugins disable example.plugin
 ```
 
-Plugin IDs are disabled by default. Installing a JAR does not execute its
-code; enable it explicitly after reviewing its source, author, dependencies,
-and requested capabilities.
+Plugin IDs are disabled by default. The release package ships a
+`plugin-state.json` that enables the trusted default plugin. Installing a
+third-party JAR does not execute its code until it is enabled.
 
 The state is stored in `plugins/plugin-state.json`. Disabling a required
 dependency prevents its dependants from loading.
 
 The buildable reference plugin is `opentools-example-plugin`. Its JAR is copied
-to `opentools-app/target/dist/examples/plugins/` by the full Maven build.
+to the release `plugins/` directory and starts enabled by default.
 
 ## Compile SDK
 

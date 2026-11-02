@@ -3,8 +3,8 @@ package io.opentools.formats.gxf;
 import io.opentools.api.tool.CancellationToken;
 import io.opentools.api.tool.OpenTool;
 import io.opentools.api.tool.OpenToolException;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.core.tool.ToolRegistry;
 import io.opentools.api.tool.ToolRequest;
@@ -40,7 +40,7 @@ final class AnnotationBedToolsTest {
                 chr1\ttest\tCDS\t6\t8\t.\t-\t0\tID=cds3;Parent=g1
                 """);
         Path filtered = tempDir.resolve("filtered.gff3");
-        TaskResult filter = run("gxf.filter", Map.of(
+        ToolResult filter = run("gxf.filter", Map.of(
                 "input", gff,
                 "types", "CDS",
                 "strand", "+",
@@ -55,7 +55,7 @@ final class AnnotationBedToolsTest {
         assertTrue(bedLines.get(1).startsWith("chr1\t2\t5\t"));
 
         Path stats = tempDir.resolve("bed-stats.tsv");
-        TaskResult statistics = run("bed.stats", Map.of("input", bed, "output", stats));
+        ToolResult statistics = run("bed.stats", Map.of("input", bed, "output", stats));
         assertEquals(2L, statistics.metrics().get("records"));
         assertEquals(4L, statistics.metrics().get("totalBases"));
 
@@ -70,12 +70,12 @@ final class AnnotationBedToolsTest {
     void findsOverlapsAndSelectsRepresentativeTranscript() throws Exception {
         Path annotation = writeTranscripts();
         Path overlaps = tempDir.resolve("overlaps.tsv");
-        TaskResult overlap = run("gxf.overlap", Map.of("input", annotation, "output", overlaps));
+        ToolResult overlap = run("gxf.overlap", Map.of("input", annotation, "output", overlaps));
         assertTrue((Long) overlap.metrics().get("overlapPairs") > 0);
         assertTrue(Files.readString(overlaps).contains("exon"));
 
         Path representative = tempDir.resolve("representative.gff3");
-        TaskResult selected = run("gxf.representative", Map.of(
+        ToolResult selected = run("gxf.representative", Map.of(
                 "input", annotation,
                 "transcriptTypes", "mRNA,transcript",
                 "scoreMode", "LONGEST_TRANSCRIPT",
@@ -101,7 +101,7 @@ final class AnnotationBedToolsTest {
                 """);
 
         Path diskOutput = tempDir.resolve("disk-overlaps.tsv");
-        TaskResult disk = run("gxf.overlap", Map.of(
+        ToolResult disk = run("gxf.overlap", Map.of(
                 "input", annotation,
                 "overlapMode", "DISK",
                 "sameTypeOnly", true,
@@ -114,7 +114,7 @@ final class AnnotationBedToolsTest {
         assertEquals(2L, Files.readAllLines(diskOutput).size() - 1);
 
         Path truncatedOutput = tempDir.resolve("truncated-overlaps.tsv");
-        TaskResult truncated = run("gxf.overlap", Map.of(
+        ToolResult truncated = run("gxf.overlap", Map.of(
                 "input", annotation,
                 "overlapMode", "DISK",
                 "sameTypeOnly", true,
@@ -126,7 +126,7 @@ final class AnnotationBedToolsTest {
         assertEquals(true, truncated.metrics().get("truncated"));
 
         Path autoOutput = tempDir.resolve("auto-overlaps.tsv");
-        TaskResult automatic = run("gxf.overlap", Map.of(
+        ToolResult automatic = run("gxf.overlap", Map.of(
                 "input", annotation,
                 "overlapMode", "AUTO",
                 "maxRecords", 1,
@@ -142,7 +142,7 @@ final class AnnotationBedToolsTest {
                 chr1\ttest\texon\t7\t7\t.\t+\t.\tID=s2
                 """);
         Path singleBaseOutput = tempDir.resolve("single-base-overlaps.tsv");
-        TaskResult singleBase = run("gxf.overlap", Map.of(
+        ToolResult singleBase = run("gxf.overlap", Map.of(
                 "input", singleBaseInput,
                 "overlapMode", "DISK",
                 "output", singleBaseOutput
@@ -223,7 +223,7 @@ final class AnnotationBedToolsTest {
                 """);
         Path output = tempDir.resolve("global-pair-limit.tsv");
 
-        TaskResult result = run("gxf.overlap", Map.of(
+        ToolResult result = run("gxf.overlap", Map.of(
                 "input", annotation,
                 "overlapMode", "DISK",
                 "maxPairs", 1,
@@ -254,7 +254,7 @@ final class AnnotationBedToolsTest {
                 """);
         Path output = tempDir.resolve("large-coordinate-overlaps.tsv");
 
-        TaskResult result = run("gxf.overlap", Map.of(
+        ToolResult result = run("gxf.overlap", Map.of(
                 "input", annotation,
                 "overlapMode", "DISK",
                 "output", output
@@ -328,7 +328,7 @@ final class AnnotationBedToolsTest {
                 chr1\ttest\texon\t8\t9\t.\t+\t.\tParent=old_tx
                 """);
         Path mapped = tempDir.resolve("mapped.gff3");
-        TaskResult mapping = run("gxf.id-map", Map.of(
+        ToolResult mapping = run("gxf.id-map", Map.of(
                 "input", annotation,
                 "mapping", "old_gene\tgene.new\nold_tx\ttx.new",
                 "output", mapped
@@ -337,7 +337,7 @@ final class AnnotationBedToolsTest {
         assertTrue(Files.readString(mapped).contains("ID=tx.new"));
 
         Path checked = tempDir.resolve("checked.gff3");
-        TaskResult checkedResult = run("gxf.check-repair", Map.of(
+        ToolResult checkedResult = run("gxf.check-repair", Map.of(
                 "input", annotation,
                 "repair", true,
                 "output", checked
@@ -366,7 +366,7 @@ final class AnnotationBedToolsTest {
                 chr2\ttest\tgene\t2\t4\t.\t+\t.\tID=g3
                 """);
         Path density = tempDir.resolve("density.tsv");
-        TaskResult densityResult = run("gxf.gene-density", Map.of(
+        ToolResult densityResult = run("gxf.gene-density", Map.of(
                 "input", first,
                 "windowSize", 5,
                 "stepSize", 5,
@@ -376,7 +376,7 @@ final class AnnotationBedToolsTest {
         assertTrue(Files.readString(density).contains("\t1\t5\t1\t"));
 
         Path merged = tempDir.resolve("merged.gff3");
-        TaskResult merge = run("gxf.merge-split", Map.of(
+        ToolResult merge = run("gxf.merge-split", Map.of(
                 "mode", "MERGE",
                 "inputs", first + "\n" + second,
                 "output", merged
@@ -385,7 +385,7 @@ final class AnnotationBedToolsTest {
         assertEquals(4L, merge.metrics().get("records"));
 
         Path split = tempDir.resolve("split");
-        TaskResult splitResult = run("gxf.merge-split", Map.of(
+        ToolResult splitResult = run("gxf.merge-split", Map.of(
                 "mode", "SPLIT",
                 "inputs", merged.toString(),
                 "outputDirectory", split.toString(),
@@ -410,7 +410,7 @@ final class AnnotationBedToolsTest {
         return annotation;
     }
 
-    private TaskResult run(String toolId, Map<String, Object> supplied) throws Exception {
+    private ToolResult run(String toolId, Map<String, Object> supplied) throws Exception {
         OpenTool tool = tool(toolId);
         Map<String, Object> parameters = new LinkedHashMap<>();
         for (ToolParameter parameter : tool.descriptor().parameters()) {
@@ -423,7 +423,7 @@ final class AnnotationBedToolsTest {
         ValidationResult validation = tool.validate(request);
         assertTrue(validation.valid(), validation.issues().toString());
         Path outputDirectory = Files.createDirectories(tempDir.resolve("out"));
-        return tool.execute(request, new TaskContext(
+        return tool.execute(request, new ToolExecutionContext(
                 "annotation-test",
                 tempDir,
                 outputDirectory,

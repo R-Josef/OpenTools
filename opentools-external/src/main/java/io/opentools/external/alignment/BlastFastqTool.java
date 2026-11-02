@@ -4,15 +4,15 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
 import io.opentools.external.process.ExternalArguments;
 import io.opentools.external.process.TemporaryFiles;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 import io.opentools.formats.fastq.FastqFastaConverter;
 
 import java.nio.file.Files;
@@ -69,7 +69,7 @@ public final class BlastFastqTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         ValidationResult result = validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("query")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("query")));
         try {
             ExternalArguments.parse(request.string("extraArgs"));
         } catch (IllegalArgumentException ex) {
@@ -80,15 +80,15 @@ public final class BlastFastqTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
-        Path output = FormatTaskSupport.outputPath(request, context, "blast-fastq-hits.tsv");
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
+        Path output = FormatToolSupport.outputPath(request, context, "blast-fastq-hits.tsv");
         Path work = Files.createTempDirectory("opentools-blast-fastq-");
         try {
             Path query = work.resolve("query.fasta");
             long records = FastqFastaConverter.convert(request.path("query"), query);
-            TaskResult delegated = BlastLocalDelegation.run(request, context, query, output);
+            ToolResult delegated = BlastLocalDelegation.run(request, context, query, output);
             context.progress(1.0, "FASTQ BLAST completed");
-            return new TaskResult(
+            return new ToolResult(
                     delegated.summary(),
                     "result.blast.fastq.summary", List.of(records),
                     records + " FASTQ records were converted to temporary FASTA queries.",

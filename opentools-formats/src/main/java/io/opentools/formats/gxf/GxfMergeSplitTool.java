@@ -5,14 +5,14 @@ import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationIssue;
 import io.opentools.api.tool.ValidationResult;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.io.BufferedWriter;
 import java.nio.charset.StandardCharsets;
@@ -77,7 +77,7 @@ public final class GxfMergeSplitTool extends AbstractOpenTool {
                 result = result.merge(ValidationResult.of(ValidationIssue.error(
                         "output", "Merged output is required.", "Choose an output GFF3/GTF path.")));
             } else {
-                result = result.merge(FormatTaskSupport.validateOutput(request, paths.isEmpty() ? null : Path.of(paths.getFirst())));
+                result = result.merge(FormatToolSupport.validateOutput(request, paths.isEmpty() ? null : Path.of(paths.getFirst())));
             }
         } else {
             if (paths.size() != 1) {
@@ -93,7 +93,7 @@ public final class GxfMergeSplitTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         List<Path> inputs = inputPaths(request.string("inputs")).stream().map(Path::of).toList();
         if ("MERGE".equals(request.string("mode"))) {
             return merge(inputs, request, context);
@@ -101,10 +101,10 @@ public final class GxfMergeSplitTool extends AbstractOpenTool {
         return split(inputs.getFirst(), request, context);
     }
 
-    private static TaskResult merge(List<Path> inputs, ToolRequest request, TaskContext context) throws Exception {
-        Path output = FormatTaskSupport.outputPath(request, context, "merged.gff3");
+    private static ToolResult merge(List<Path> inputs, ToolRequest request, ToolExecutionContext context) throws Exception {
+        Path output = FormatToolSupport.outputPath(request, context, "merged.gff3");
         long[] totals = new long[2];
-        FormatTaskSupport.writeAtomically(output, writer -> {
+        FormatToolSupport.writeAtomically(output, writer -> {
             long records = 0;
             long files = 0;
             for (Path input : inputs) {
@@ -125,7 +125,7 @@ public final class GxfMergeSplitTool extends AbstractOpenTool {
             totals[1] = records;
         });
         context.progress(1.0, "Annotation merge completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Merged " + totals[0] + " annotation files",
                 "result.gxf.merge.summary", List.of(totals[0]),
                 totals[1] + " annotation records were written.",
@@ -139,7 +139,7 @@ public final class GxfMergeSplitTool extends AbstractOpenTool {
         );
     }
 
-    private static TaskResult split(Path input, ToolRequest request, TaskContext context) throws Exception {
+    private static ToolResult split(Path input, ToolRequest request, ToolExecutionContext context) throws Exception {
         Path directory = Path.of(request.string("outputDirectory")).toAbsolutePath().normalize();
         Files.createDirectories(directory);
         Map<String, List<GxfRecord>> groups = new TreeMap<>();
@@ -168,12 +168,12 @@ public final class GxfMergeSplitTool extends AbstractOpenTool {
         try (BufferedWriter report = Files.newBufferedWriter(manifest, StandardCharsets.UTF_8)) {
             report.write("key\tpath\trecords\n");
             for (Map.Entry<String, List<GxfRecord>> entry : groups.entrySet()) {
-                Path output = directory.resolve(FormatTaskSupport.sanitizeFileName(entry.getKey()) + ".gff3");
+                Path output = directory.resolve(FormatToolSupport.sanitizeFileName(entry.getKey()) + ".gff3");
                 if (Files.exists(output) && !request.bool("overwrite")) {
                     throw new OpenToolException("OUTPUT_EXISTS", "Split output already exists: " + output,
                             "Choose another directory or enable overwrite.");
                 }
-                FormatTaskSupport.writeAtomically(output, writer -> {
+                FormatToolSupport.writeAtomically(output, writer -> {
                     for (GxfRecord record : entry.getValue()) {
                         GxfWriter.write(writer, record);
                     }
@@ -191,7 +191,7 @@ public final class GxfMergeSplitTool extends AbstractOpenTool {
         artifacts.add(new OutputArtifact(manifest, "Split manifest", "text/tab-separated-values"));
         context.progress(1.0, "Annotation split completed");
         long records = groups.values().stream().mapToLong(List::size).sum();
-        return new TaskResult(
+        return new ToolResult(
                 "Split annotation into " + groups.size() + " parts",
                 "result.gxf.split.summary", List.of(groups.size()),
                 records + " records were partitioned by " + request.string("splitBy") + ".",

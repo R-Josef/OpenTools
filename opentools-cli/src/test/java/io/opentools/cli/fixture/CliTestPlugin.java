@@ -2,8 +2,8 @@ package io.opentools.cli.fixture;
 
 import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OutputArtifact;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.plugin.OpenToolsPlugin;
@@ -40,10 +40,10 @@ public final class CliTestPlugin implements OpenToolsPlugin {
         }
 
         @Override
-        public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+        public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
             Path output = context.defaultOutputPath("cli-plugin.txt");
             Files.writeString(output, "cli-plugin");
-            return TaskResult.success(
+            return ToolResult.success(
                     "CLI plugin task completed",
                     "",
                     null,

@@ -1,6 +1,6 @@
 # Plugin developer guide
 
-OpenTools plugins use Plugin API 1.0 and register tools or pages through an
+OpenTools plugins use Plugin API 2.0 and register tools or pages through an
 isolated class loader. A plugin JAR needs
 `META-INF/opentools-plugin.json`.
 
@@ -11,7 +11,7 @@ isolated class loader. A plugin JAR needs
   "id": "example.plugin",
   "name": "Example Plugin",
   "version": "1.0.0",
-  "apiVersion": "1.0",
+  "apiVersion": "2.0",
   "mainClass": "com.example.ExamplePlugin",
   "description": "Example extension",
   "dependencies": [],
@@ -27,8 +27,9 @@ Declare only the `tool`, `page`, and `data` capabilities the plugin uses.
 mvn -pl opentools-example-plugin -am package
 ```
 
-Put the JAR in the release `plugins/` directory. Copying a JAR does not execute
-it. Enable it explicitly:
+Put the JAR in the release `plugins/` directory. Third-party plugins are
+disabled unless enabled explicitly. Release packages seed the trusted default
+plugin through `plugins/plugin-state.json`.
 
 ```powershell
 OpenToolsCLI.exe plugins inspect example.plugin
@@ -53,7 +54,7 @@ Maven plugins should depend on `opentools-plugin-api` with `provided` scope.
 The API JAR contains both extension interfaces and the public execution contracts
 needed to implement a plugin tool.
 
-See [Plugin API 1.0](plugin-api.md) for the complete compile, runtime, Javadoc,
+See [Plugin API 2.0](plugin-api.md) for the complete compile, runtime, Javadoc,
 and compatibility boundary.
 
 ## Security boundary
@@ -68,6 +69,7 @@ capabilities, and license before use.
 - minimal capabilities;
 - traversal-safe archives and no unpacking bomb;
 - complete tool schemas;
+- correct interactive panel lifecycle and standard request submission;
 - shared GUI, CLI, MCP contracts;
 - disable and rollback coverage;
 - complete license and third-party notices.

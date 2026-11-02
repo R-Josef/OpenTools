@@ -4,14 +4,14 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationIssue;
 import io.opentools.api.tool.ValidationResult;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
@@ -49,7 +49,7 @@ public final class GxfGeneDensityTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         ValidationResult result = validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("input")));
         if (request.integer("windowSize") < 1 || request.integer("stepSize") < 1) {
             result = result.merge(ValidationResult.of(ValidationIssue.error(
                     "windowSize", "Window and step sizes must be positive.", "Use values of at least 1.")));
@@ -58,9 +58,9 @@ public final class GxfGeneDensityTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path input = request.path("input");
-        Path output = FormatTaskSupport.outputPath(request, context, "gene-density.tsv");
+        Path output = FormatToolSupport.outputPath(request, context, "gene-density.tsv");
         Set<String> geneTypes = AnnotationTaskSupport.tokens(request.string("geneTypes"), true);
         int windowSize = request.integer("windowSize");
         int stepSize = request.integer("stepSize");
@@ -84,7 +84,7 @@ public final class GxfGeneDensityTool extends AbstractOpenTool {
         }
         long geneCount = genes;
         long[] totals = new long[2];
-        FormatTaskSupport.writeAtomically(output, writer -> {
+        FormatToolSupport.writeAtomically(output, writer -> {
             writer.write("seq_id\tstart\tend\tgene_count\tgenes_per_mb\n");
             long windows = 0;
             for (Map.Entry<String, Long> sequence : sequenceLengths.entrySet()) {
@@ -110,7 +110,7 @@ public final class GxfGeneDensityTool extends AbstractOpenTool {
             totals[1] = windows;
         });
         context.progress(1.0, "Gene density calculation completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Calculated gene density for " + totals[1] + " windows",
                 "result.gxf.gene_density.summary", List.of(totals[1]),
                 totals[0] + " genes were assigned by start position.",

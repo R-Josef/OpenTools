@@ -1,11 +1,11 @@
 package io.opentools.ui;
 
 import io.opentools.core.job.SqliteJobStore;
-import io.opentools.core.job.TaskExecutionService;
+import io.opentools.core.job.ToolExecutionService;
 import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.core.tool.ToolRegistry;
 import io.opentools.api.tool.ToolRequest;
@@ -42,7 +42,7 @@ final class UiSessionProjectSwitchTest {
         registry.register(new BlockingTool(started, release));
         SqliteJobStore store = new SqliteJobStore(firstProject.databasePath());
         store.initialize();
-        TaskExecutionService execution = new TaskExecutionService(registry, store);
+        ToolExecutionService execution = new ToolExecutionService(registry, store);
         OpenToolsGui.UiSession session = new OpenToolsGui.UiSession(
                 registry, firstProject, execution, null, null);
         Thread worker = Thread.ofVirtual().start(() -> {
@@ -58,7 +58,7 @@ final class UiSessionProjectSwitchTest {
 
         release.countDown();
         worker.join(5_000);
-        TaskExecutionService previous = session.execution();
+        ToolExecutionService previous = session.execution();
         session.switchProject(secondProject);
         assertEquals(secondProject.id(), session.project().id());
         assertNotSame(previous, session.execution());
@@ -72,7 +72,7 @@ final class UiSessionProjectSwitchTest {
         ToolRegistry registry = new ToolRegistry();
         SqliteJobStore store = new SqliteJobStore(firstProject.databasePath());
         store.initialize();
-        TaskExecutionService execution = new TaskExecutionService(registry, store);
+        ToolExecutionService execution = new ToolExecutionService(registry, store);
         OpenToolsGui.UiSession session = new OpenToolsGui.UiSession(
                 registry, firstProject, execution, null, null);
 
@@ -84,7 +84,7 @@ final class UiSessionProjectSwitchTest {
                 Instant.now()
         );
         Files.createDirectories(invalid.databasePath());
-        TaskExecutionService previousExecution = session.execution();
+        ToolExecutionService previousExecution = session.execution();
 
         assertThrows(Exception.class, () -> session.switchProject(invalid));
         assertEquals(firstProject.id(), session.project().id());
@@ -118,12 +118,12 @@ final class UiSessionProjectSwitchTest {
         }
 
         @Override
-        public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+        public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
             started.countDown();
             if (!release.await(5, TimeUnit.SECONDS)) {
                 throw new IllegalStateException("Test latch timed out");
             }
-            return new TaskResult(
+            return new ToolResult(
                     "Completed",
                     null,
                     List.of(),

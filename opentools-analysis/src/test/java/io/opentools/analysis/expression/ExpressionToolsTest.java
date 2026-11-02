@@ -3,8 +3,8 @@ package io.opentools.analysis.expression;
 import io.opentools.analysis.BuiltInAnalysis;
 import io.opentools.api.tool.CancellationToken;
 import io.opentools.api.tool.OpenTool;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.core.tool.ToolRegistry;
 import io.opentools.api.tool.ToolRequest;
@@ -30,7 +30,7 @@ final class ExpressionToolsTest {
         Path lengths = tempDir.resolve("lengths.tsv");
         Files.writeString(lengths, "gene\tlength\nA\t1000\nB\t2000\nC\t500\nD\t800\n");
         Path output = tempDir.resolve("tpm.tsv");
-        TaskResult result = run("expression.normalize", Map.of(
+        ToolResult result = run("expression.normalize", Map.of(
                 "input", input,
                 "geneLengths", lengths,
                 "method", "TPM",
@@ -54,7 +54,7 @@ final class ExpressionToolsTest {
     void calculatesCorrelationAndPcaCoordinates() throws Exception {
         Path input = writeCounts();
         Path correlation = tempDir.resolve("correlation.tsv");
-        TaskResult correlationResult = run("expression.correlation", Map.of(
+        ToolResult correlationResult = run("expression.correlation", Map.of(
                 "input", input,
                 "method", "PEARSON",
                 "output", correlation
@@ -66,7 +66,7 @@ final class ExpressionToolsTest {
         Path groups = tempDir.resolve("groups.tsv");
         Files.writeString(groups, "sample\tgroup\nS1\tA\nS2\tA\nS3\tB\n");
         Path pca = tempDir.resolve("pca.tsv");
-        TaskResult pcaResult = run("expression.pca", Map.of(
+        ToolResult pcaResult = run("expression.pca", Map.of(
                 "input", input,
                 "groups", groups,
                 "components", 2,
@@ -84,7 +84,7 @@ final class ExpressionToolsTest {
         Path groups = tempDir.resolve("groups.tsv");
         Files.writeString(groups, "sample\tgroup\nS1\tA\nS2\tA\nS3\tB\n");
         Path output = tempDir.resolve("differential.tsv");
-        TaskResult result = run("expression.differential-input", Map.of(
+        ToolResult result = run("expression.differential-input", Map.of(
                 "input", input,
                 "groups", groups,
                 "output", output
@@ -101,7 +101,7 @@ final class ExpressionToolsTest {
         Path parallel = tempDir.resolve("correlation-parallel.tsv");
         run("expression.correlation", Map.of(
                 "input", input, "threads", 1, "output", sequential));
-        TaskResult result = run("expression.correlation", Map.of(
+        ToolResult result = run("expression.correlation", Map.of(
                 "input", input, "threads", 3, "output", parallel));
 
         assertEquals(Files.readString(sequential), Files.readString(parallel));
@@ -120,7 +120,7 @@ final class ExpressionToolsTest {
         return input;
     }
 
-    private TaskResult run(String id, Map<String, Object> supplied) throws Exception {
+    private ToolResult run(String id, Map<String, Object> supplied) throws Exception {
         ToolRegistry registry = new ToolRegistry();
         BuiltInAnalysis.register(registry);
         OpenTool tool = registry.find(id).orElseThrow();
@@ -135,7 +135,7 @@ final class ExpressionToolsTest {
         var validation = tool.validate(request);
         assertTrue(validation.valid(), validation.issues().toString());
         Path output = Files.createDirectories(tempDir.resolve("out"));
-        return tool.execute(request, new TaskContext("expression", tempDir, output, output,
+        return tool.execute(request, new ToolExecutionContext("expression", tempDir, output, output,
                 ignored -> { }, ignored -> { }, new CancellationToken()));
     }
 }

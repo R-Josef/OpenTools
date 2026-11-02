@@ -5,14 +5,14 @@ import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
 import io.opentools.formats.Compression;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -56,7 +56,7 @@ public final class ExpressionNormalizeTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         ValidationResult result = validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("input")));
         if (!"TAU".equals(request.string("method")) && request.path("geneLengths") == null) {
             result = result.merge(io.opentools.api.tool.ValidationResult.of(
                     io.opentools.api.tool.ValidationIssue.error(
@@ -67,10 +67,10 @@ public final class ExpressionNormalizeTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         ExpressionMatrix matrix = new ExpressionMatrixParser().parse(
                 request.path("input"), request.string("delimiter"), "ERROR", request.bool("log2"));
-        Path output = FormatTaskSupport.outputPath(request, context, "normalized-expression.tsv");
+        Path output = FormatToolSupport.outputPath(request, context, "normalized-expression.tsv");
         String method = request.string("method");
         Map<String, Double> lengths = "TAU".equals(method) ? Map.of() : readLengths(request.path("geneLengths"));
         List<List<Double>> normalized;
@@ -81,7 +81,7 @@ public final class ExpressionNormalizeTool extends AbstractOpenTool {
         }
         write(output, matrix, normalized);
         context.progress(1.0, "Expression normalization completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Normalized " + matrix.rowNames().size() + " genes by " + method,
                 "result.expression.normalize.summary", List.of(matrix.rowNames().size(), method),
                 matrix.columnNames().size() + " samples were normalized.",
@@ -192,7 +192,7 @@ public final class ExpressionNormalizeTool extends AbstractOpenTool {
     }
 
     private static void write(Path output, ExpressionMatrix matrix, List<List<Double>> values) throws Exception {
-        FormatTaskSupport.writeAtomically(output, writer -> {
+        FormatToolSupport.writeAtomically(output, writer -> {
             writer.write("gene");
             for (String sample : matrix.columnNames()) {
                 writer.write('\t');

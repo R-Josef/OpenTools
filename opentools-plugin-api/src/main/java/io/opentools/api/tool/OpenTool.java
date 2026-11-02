@@ -1,31 +1,31 @@
 package io.opentools.api.tool;
 
 /**
- * A headless task exposed by OpenTools or a plugin.
+ * A headless tool exposed by OpenTools or a plugin.
  */
 public interface OpenTool {
     /**
-     * Returns task metadata used by discovery, validation, and documentation.
+     * Returns tool metadata used by discovery, validation, and documentation.
      *
-     * @return immutable task descriptor
+     * @return immutable tool descriptor
      */
     ToolDescriptor descriptor();
 
     /**
-     * Validates task parameters without executing the task.
+     * Validates tool parameters without executing the tool.
      *
-     * @param request task parameters
+     * @param request tool parameters
      * @return validation issues
      */
     ValidationResult validate(ToolRequest request);
 
     /**
-     * Executes the task.
+     * Executes the tool.
      *
-     * @param request validated task parameters
+     * @param request validated tool parameters
      * @param context run-scoped paths, logging, progress, and cancellation
      * @return result summary, table, metrics, and output artifacts
-     * @throws Exception when task execution fails
+     * @throws Exception when tool execution fails
      */
-    TaskResult execute(ToolRequest request, TaskContext context) throws Exception;
+    ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception;
 }

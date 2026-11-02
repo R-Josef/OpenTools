@@ -1,7 +1,7 @@
 package io.opentools.external.alignment;
 
 import io.opentools.api.tool.CancellationToken;
-import io.opentools.api.tool.TaskContext;
+import io.opentools.api.tool.ToolExecutionContext;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.external.ExternalRuntime;
 import io.opentools.external.process.ExternalProcessException;
@@ -41,7 +41,7 @@ final class BlastLocalToolIntegrationTest {
         Files.writeString(subject, ">s1\n" + sequence + "\n");
         Path run = tempDir.resolve("run");
         List<String> logs = new ArrayList<>();
-        TaskContext context = new TaskContext(
+        ToolExecutionContext context = new ToolExecutionContext(
                 "blast-test",
                 tempDir,
                 run,
@@ -112,7 +112,7 @@ final class BlastLocalToolIntegrationTest {
         Files.writeString(query, ">q1\n" + sequence + "\n");
         Files.writeString(subject, ">s1\n" + sequence + "\n");
         Path run = tempDir.resolve("failed-run");
-        TaskContext context = new TaskContext(
+        ToolExecutionContext context = new ToolExecutionContext(
                 "blast-failed-test",
                 tempDir,
                 run,

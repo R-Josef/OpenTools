@@ -5,13 +5,13 @@ import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -53,13 +53,13 @@ public final class GxfRepresentativeTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         return validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("input")));
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path input = request.path("input");
-        Path output = FormatTaskSupport.outputPath(request, context, "representative.gff3");
+        Path output = FormatToolSupport.outputPath(request, context, "representative.gff3");
         Set<String> transcriptTypes = AnnotationTaskSupport.tokens(request.string("transcriptTypes"), true);
         long[] sourceRecords = new long[1];
         Map<String, Candidate> candidates;
@@ -85,7 +85,7 @@ public final class GxfRepresentativeTool extends AbstractOpenTool {
                 .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
         long[] totals = new long[2];
 
-        FormatTaskSupport.writeAtomically(output, writer -> {
+        FormatToolSupport.writeAtomically(output, writer -> {
             long written = 0;
             try (GxfReader reader = new GxfReader(input)) {
                 GxfRecord record;
@@ -107,7 +107,7 @@ public final class GxfRepresentativeTool extends AbstractOpenTool {
         });
 
         context.progress(1.0, "Representative transcript selection completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Selected " + totals[0] + " representative transcripts",
                 "result.gxf.representative.summary", List.of(totals[0]),
                 totals[1] + " annotation records were written.",
@@ -129,7 +129,7 @@ public final class GxfRepresentativeTool extends AbstractOpenTool {
             Set<String> transcriptTypes,
             String configuredGroupAttribute,
             long[] sourceRecords,
-            TaskContext context
+            ToolExecutionContext context
     ) throws Exception {
         Map<String, Candidate> candidates = new LinkedHashMap<>();
         Map<String, String> childToGene = new LinkedHashMap<>();

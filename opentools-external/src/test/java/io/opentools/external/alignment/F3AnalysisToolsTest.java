@@ -4,8 +4,8 @@ import io.opentools.api.tool.CancellationToken;
 import io.opentools.core.automation.ToolContracts;
 import io.opentools.api.tool.OpenTool;
 import io.opentools.api.tool.OpenToolException;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.core.tool.ToolRegistry;
 import io.opentools.api.tool.ToolRequest;
@@ -67,7 +67,7 @@ final class F3AnalysisToolsTest {
                 </BlastOutput>
                 """);
         Path output = tempDir.resolve("table.tsv");
-        TaskResult result = run("alignment.blast.xml-to-table", Map.of(
+        ToolResult result = run("alignment.blast.xml-to-table", Map.of(
                 "input", xml,
                 "output", output
         ));
@@ -110,7 +110,7 @@ final class F3AnalysisToolsTest {
                 s2\tq1\t80\t10\t2\t0\t1\t10\t1\t10\t1e-10\t50
                 """);
         Path output = tempDir.resolve("rbh.tsv");
-        TaskResult result = run("alignment.blast.reciprocal", Map.of(
+        ToolResult result = run("alignment.blast.reciprocal", Map.of(
                 "forward", forward,
                 "reverse", reverse,
                 "output", output
@@ -127,7 +127,7 @@ final class F3AnalysisToolsTest {
                 "PF00001  PF00001.20  100  protein1  -  250  1e-20  80.2  0.0  1  1  1e-23  1e-23  70.1  0.0  1  100  5  50  5  50  0.98  Kinase domain\\n");
         assertEquals(1, new HmmerDomTableParser().parse(domtbl).size());
         Path pfam = tempDir.resolve("pfam.tsv");
-        TaskResult pfamResult = run("annotation.pfam.import", Map.of(
+        ToolResult pfamResult = run("annotation.pfam.import", Map.of(
                 "input", domtbl,
                 "output", pfam
         ));
@@ -141,7 +141,7 @@ final class F3AnalysisToolsTest {
                 gene2\t2DEF\t-\t-\t-\tS\t1e-20\t300\tUnknown
                 """);
         Path normalized = tempDir.resolve("eggnog-normalized.tsv");
-        TaskResult eggnogResult = run("annotation.eggnog.import", Map.of(
+        ToolResult eggnogResult = run("annotation.eggnog.import", Map.of(
                 "input", eggnog,
                 "output", normalized
         ));
@@ -251,7 +251,7 @@ final class F3AnalysisToolsTest {
         }
     }
 
-    private TaskResult run(String toolId, Map<String, Object> supplied) throws Exception {
+    private ToolResult run(String toolId, Map<String, Object> supplied) throws Exception {
         OpenTool tool = tool(toolId);
         Map<String, Object> parameters = new LinkedHashMap<>();
         for (ToolParameter parameter : tool.descriptor().parameters()) {
@@ -266,9 +266,9 @@ final class F3AnalysisToolsTest {
         return tool.execute(request, context());
     }
 
-    private TaskContext context() throws Exception {
+    private ToolExecutionContext context() throws Exception {
         Path output = Files.createDirectories(tempDir.resolve("out"));
-        return new TaskContext("f3-test", tempDir, output, output,
+        return new ToolExecutionContext("f3-test", tempDir, output, output,
                 ignored -> { }, ignored -> { }, new CancellationToken());
     }
 

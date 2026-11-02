@@ -4,8 +4,8 @@ import io.opentools.analysis.BuiltInAnalysis;
 import io.opentools.api.tool.CancellationToken;
 import io.opentools.api.tool.OpenTool;
 import io.opentools.api.tool.OpenToolException;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.core.tool.ToolRegistry;
 import io.opentools.api.tool.ToolRequest;
@@ -41,7 +41,7 @@ final class TableToolsTest {
                 d	A	40
                 """);
         Path filtered = tempDir.resolve("filtered.tsv");
-        TaskResult filter = run("table.filter", Map.of(
+        ToolResult filter = run("table.filter", Map.of(
                 "input", input, "column", "group", "regex", "^A$", "numericColumn", "value",
                 "numericMin", "15", "output", filtered));
         assertEquals(2L, filter.metrics().get("outputRows"));
@@ -52,7 +52,7 @@ final class TableToolsTest {
         assertTrue(Files.readAllLines(selected).getFirst().equals("id\tvalue"));
 
         Path replaced = tempDir.resolve("replaced.tsv");
-        TaskResult replace = run("table.replace", Map.of(
+        ToolResult replace = run("table.replace", Map.of(
                 "input", selected, "column", "id", "search", "^",
                 "replacement", "gene_", "output", replaced));
         assertEquals(2L, replace.metrics().get("replacements"));
@@ -61,7 +61,7 @@ final class TableToolsTest {
         Path dedupInput = tempDir.resolve("dedup.tsv");
         Files.writeString(dedupInput, "id\tvalue\na\t1\na\t2\nb\t3\n");
         Path dedup = tempDir.resolve("dedup-out.tsv");
-        TaskResult dedupResult = run("table.deduplicate", Map.of(
+        ToolResult dedupResult = run("table.deduplicate", Map.of(
                 "input", dedupInput, "keyColumns", "id", "output", dedup));
         assertEquals(1L, dedupResult.metrics().get("duplicates"));
     }
@@ -73,7 +73,7 @@ final class TableToolsTest {
         Path right = tempDir.resolve("right.tsv");
         Files.writeString(right, "id\tvalue\na\t1\na\t2\nb\t3\n");
         Path joined = tempDir.resolve("joined.tsv");
-        TaskResult join = run("table.join", Map.of(
+        ToolResult join = run("table.join", Map.of(
                 "left", left, "right", right, "leftKey", "id", "rightKey", "id",
                 "joinType", "LEFT", "output", joined));
         assertEquals(4L, join.metrics().get("outputRows"));
@@ -92,7 +92,7 @@ final class TableToolsTest {
                 g2	S1	4
                 """);
         Path pivot = tempDir.resolve("pivot.tsv");
-        TaskResult pivotResult = run("table.pivot", Map.of(
+        ToolResult pivotResult = run("table.pivot", Map.of(
                 "input", longTable, "rowColumn", "gene", "columnColumn", "sample",
                 "valueColumn", "value", "aggregation", "MEAN", "output", pivot));
         assertEquals(2L, pivotResult.metrics().get("outputRows"));
@@ -109,7 +109,7 @@ final class TableToolsTest {
                 B"	20
                 """);
         Path filtered = tempDir.resolve("quoted-filtered.tsv");
-        TaskResult filter = run("table.filter", Map.of(
+        ToolResult filter = run("table.filter", Map.of(
                 "input", quoted,
                 "column", "group",
                 "regex", "B$",
@@ -123,7 +123,7 @@ final class TableToolsTest {
         Path right = tempDir.resolve("compound-right.tsv");
         Files.writeString(right, "id\tgroup\tlabel\na\tA\tx\nc\tC\ty\n");
         Path joined = tempDir.resolve("compound-full.tsv");
-        TaskResult join = run("table.join", Map.of(
+        ToolResult join = run("table.join", Map.of(
                 "left", left,
                 "right", right,
                 "leftKey", "id,group",
@@ -176,7 +176,7 @@ final class TableToolsTest {
             run(id, parameters);
             parameters.put("threads", 3);
             parameters.put("output", parallel);
-            TaskResult result = run(id, parameters);
+            ToolResult result = run(id, parameters);
 
             assertEquals(Files.readString(sequential), Files.readString(parallel));
             assertEquals(3, result.metrics().get("threads"));
@@ -294,7 +294,7 @@ final class TableToolsTest {
         Files.writeString(input, "a\tb\n1\t2\n3\t4\n");
         Path output = tempDir.resolve("auto-spill-output.tsv");
 
-        TaskResult result = run("table.transpose", Map.of(
+        ToolResult result = run("table.transpose", Map.of(
                 "input", input,
                 "transposeMode", "AUTO",
                 "maxCells", 2,
@@ -311,7 +311,7 @@ final class TableToolsTest {
         Files.writeString(input, "a\tb\n\"x\ny\"\t1\nz\t2\t3\n");
         Path output = tempDir.resolve("disk-transposed.tsv");
 
-        TaskResult result = run("table.transpose", Map.of(
+        ToolResult result = run("table.transpose", Map.of(
                 "input", input,
                 "transposeMode", "DISK",
                 "output", output
@@ -360,11 +360,11 @@ final class TableToolsTest {
         assertFalse(Files.exists(output));
     }
 
-    private TaskResult run(String id, Map<String, Object> supplied) throws Exception {
+    private ToolResult run(String id, Map<String, Object> supplied) throws Exception {
         return run(id, supplied, new CancellationToken());
     }
 
-    private TaskResult run(
+    private ToolResult run(
             String id,
             Map<String, Object> supplied,
             CancellationToken cancellationToken
@@ -381,7 +381,7 @@ final class TableToolsTest {
         var validation = tool.validate(request);
         assertTrue(validation.valid(), validation.issues().toString());
         Path output = Files.createDirectories(tempDir.resolve("out"));
-        return tool.execute(request, new TaskContext("tables", tempDir, output, output,
+        return tool.execute(request, new ToolExecutionContext("tables", tempDir, output, output,
                 ignored -> { }, ignored -> { }, cancellationToken));
     }
 }

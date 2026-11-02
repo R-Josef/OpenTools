@@ -4,13 +4,13 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
@@ -47,11 +47,11 @@ public final class ExpressionDifferentialInputTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         return validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("input")));
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         ExpressionMatrix matrix = new ExpressionMatrixParser().parse(
                 request.path("input"), request.string("delimiter"), "ERROR", false);
         Map<String, String> groups = readGroups(request.path("groups"));
@@ -62,8 +62,8 @@ public final class ExpressionDifferentialInputTool extends AbstractOpenTool {
                         "Add a sample/group row for every matrix sample.");
             }
         }
-        Path output = FormatTaskSupport.outputPath(request, context, "differential-input.tsv");
-        FormatTaskSupport.writeAtomically(output, writer -> {
+        Path output = FormatToolSupport.outputPath(request, context, "differential-input.tsv");
+        FormatToolSupport.writeAtomically(output, writer -> {
             writer.write("gene\tsample\tgroup\tvalue\n");
             for (int row = 0; row < matrix.rowNames().size(); row++) {
                 for (int column = 0; column < matrix.columnNames().size(); column++) {
@@ -84,7 +84,7 @@ public final class ExpressionDifferentialInputTool extends AbstractOpenTool {
         });
         context.progress(1.0, "Differential input preparation completed");
         long values = (long) matrix.rowNames().size() * matrix.columnNames().size();
-        return new TaskResult(
+        return new ToolResult(
                 "Prepared " + values + " expression observations",
                 "result.expression.differential.summary", List.of(values),
                 matrix.rowNames().size() + " genes across " + groups.values().stream().distinct().count() + " groups.",

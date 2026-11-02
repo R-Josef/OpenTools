@@ -2,8 +2,8 @@ package io.opentools.external.comparative;
 
 import io.opentools.api.tool.CancellationToken;
 import io.opentools.api.tool.OpenTool;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.core.tool.ToolRegistry;
 import io.opentools.api.tool.ToolRequest;
@@ -33,7 +33,7 @@ final class ComparativeToolsTest {
                   1-  1: geneB geneY
                 """);
         Path imported = tempDir.resolve("collinearity.tsv");
-        TaskResult importResult = run("mcscan.import", Map.of(
+        ToolResult importResult = run("mcscan.import", Map.of(
                 "input", collinearity, "output", imported));
         assertEquals(2L, importResult.metrics().get("pairs"));
         assertTrue(Files.readString(imported).contains("geneA\tgeneX"));
@@ -41,7 +41,7 @@ final class ComparativeToolsTest {
         Path cds = tempDir.resolve("pairs.fa");
         Files.writeString(cds, ">a\nATGGCCTAA\n>b\nATGGCTTAA\n");
         Path kaks = tempDir.resolve("kaks.tsv");
-        TaskResult kaksResult = run("kaks.calculate", Map.of(
+        ToolResult kaksResult = run("kaks.calculate", Map.of(
                 "input", cds, "output", kaks));
         assertEquals(1L, kaksResult.metrics().get("pairs"));
         assertTrue(Files.readString(kaks).contains("a\tb"));
@@ -100,14 +100,14 @@ final class ComparativeToolsTest {
 
         run("kaks.calculate", Map.of(
                 "input", cds, "threads", 1, "output", sequential));
-        TaskResult result = run("kaks.calculate", Map.of(
+        ToolResult result = run("kaks.calculate", Map.of(
                 "input", cds, "threads", 3, "output", parallel));
 
         assertEquals(Files.readString(sequential), Files.readString(parallel));
         assertEquals(3, result.metrics().get("threads"));
     }
 
-    private TaskResult run(String id, Map<String, Object> supplied) throws Exception {
+    private ToolResult run(String id, Map<String, Object> supplied) throws Exception {
         ToolRegistry registry = new ToolRegistry();
         ExternalTools.register(registry);
         OpenTool tool = registry.find(id).orElseThrow();
@@ -122,7 +122,7 @@ final class ComparativeToolsTest {
         var validation = tool.validate(request);
         assertTrue(validation.valid(), validation.issues().toString());
         Path output = Files.createDirectories(tempDir.resolve("out"));
-        return tool.execute(request, new TaskContext("comparative", tempDir, output, output,
+        return tool.execute(request, new ToolExecutionContext("comparative", tempDir, output, output,
                 ignored -> { }, ignored -> { }, new CancellationToken()));
     }
 }

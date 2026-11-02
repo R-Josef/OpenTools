@@ -5,15 +5,15 @@ import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
 import io.opentools.external.process.ExternalArguments;
 import io.opentools.external.process.TemporaryFiles;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 import io.opentools.formats.bed.BedReader;
 import io.opentools.formats.bed.BedRecord;
 import io.opentools.formats.fasta.FastaRecord;
@@ -77,7 +77,7 @@ public final class BlastRegionsTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         ValidationResult result = validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("genome")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("genome")));
         try {
             ExternalArguments.parse(request.string("extraArgs"));
         } catch (IllegalArgumentException ex) {
@@ -88,8 +88,8 @@ public final class BlastRegionsTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
-        Path output = FormatTaskSupport.outputPath(request, context, "blast-region-hits.tsv");
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
+        Path output = FormatToolSupport.outputPath(request, context, "blast-region-hits.tsv");
         Path work = Files.createTempDirectory("opentools-blast-regions-");
         try {
             Path query = work.resolve("regions.fasta");
@@ -100,9 +100,9 @@ public final class BlastRegionsTool extends AbstractOpenTool {
                 throw new OpenToolException("NO_REGIONS_EXTRACTED", "No BED regions could be extracted.",
                         "Check sequence IDs, BED coordinates, and genome FASTA.");
             }
-            TaskResult delegated = BlastLocalDelegation.run(request, context, query, output);
+            ToolResult delegated = BlastLocalDelegation.run(request, context, query, output);
             context.progress(1.0, "Region BLAST completed");
-            return new TaskResult(
+            return new ToolResult(
                     delegated.summary(),
                     "result.blast.regions.summary", List.of(extracted),
                     extracted + " BED regions were used as BLAST queries.",
@@ -124,7 +124,7 @@ public final class BlastRegionsTool extends AbstractOpenTool {
             Path genome,
             Path bed,
             Path output,
-            TaskContext context
+            ToolExecutionContext context
     ) throws Exception {
         Map<String, List<BedRecord>> regionsBySequence = new LinkedHashMap<>();
         try (BedReader reader = new BedReader(bed)) {
@@ -135,7 +135,7 @@ public final class BlastRegionsTool extends AbstractOpenTool {
         }
         FastaSequenceStore sequences = FastaSequenceStore.load(genome);
         long[] count = new long[1];
-        FormatTaskSupport.writeAtomically(output, writer -> {
+        FormatToolSupport.writeAtomically(output, writer -> {
             for (Map.Entry<String, List<BedRecord>> entry : regionsBySequence.entrySet()) {
                 String seqId = entry.getKey();
                 if (!sequences.contains(seqId)) {

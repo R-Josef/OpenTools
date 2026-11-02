@@ -1,7 +1,7 @@
 package io.opentools.external.alignment;
 
 import io.opentools.api.tool.CancellationToken;
-import io.opentools.api.tool.TaskContext;
+import io.opentools.api.tool.ToolExecutionContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -339,9 +339,9 @@ final class BlastDatabaseCacheTest {
         }
     }
 
-    private TaskContext context() {
+    private ToolExecutionContext context() {
         Path run = tempDir.resolve("run-" + System.nanoTime());
-        return new TaskContext(
+        return new ToolExecutionContext(
                 "blast-cache-test",
                 tempDir,
                 run,

@@ -35,7 +35,7 @@ final class OpenToolsCliTest {
         assertEquals(0, outcome.code());
         var json = read(outcome);
         assertEquals(true, json.path("ok").asBoolean());
-        assertEquals("1.0", json.path("apiVersion").asText());
+        assertEquals("2.0", json.path("apiVersion").asText());
         assertTrue(json.path("error").isNull());
         assertTrue(outcome.out().contains("fasta.stats"));
         assertTrue(outcome.out().contains("fasta.extract"));
@@ -212,7 +212,7 @@ final class OpenToolsCliTest {
                       "id": "cli.test",
                       "name": "CLI Test Plugin",
                       "version": "1.0",
-                      "apiVersion": "1.0",
+                      "apiVersion": "2.0",
                       "mainClass": "io.opentools.cli.fixture.CliTestPlugin",
                       "dependencies": [],
                       "requestedCapabilities": ["tool", "page", "data"]

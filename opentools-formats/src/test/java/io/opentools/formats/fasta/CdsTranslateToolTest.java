@@ -1,7 +1,7 @@
 package io.opentools.formats.fasta;
 
 import io.opentools.api.tool.CancellationToken;
-import io.opentools.api.tool.TaskContext;
+import io.opentools.api.tool.ToolExecutionContext;
 import io.opentools.api.tool.ToolRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -22,7 +22,7 @@ final class CdsTranslateToolTest {
         Path input = tempDir.resolve("cds.fa");
         Path output = tempDir.resolve("protein.fa");
         Files.writeString(input, ">gene1\nATGGCTTAA\n");
-        TaskContext context = new TaskContext(
+        ToolExecutionContext context = new ToolExecutionContext(
                 "run",
                 tempDir,
                 tempDir.resolve("run"),
@@ -51,7 +51,7 @@ final class CdsTranslateToolTest {
         Path input = tempDir.resolve("mitochondrial.fa");
         Path output = tempDir.resolve("mitochondrial-protein.fa");
         Files.writeString(input, ">mito\nATGAGATGA\n");
-        TaskContext context = new TaskContext(
+        ToolExecutionContext context = new ToolExecutionContext(
                 "run",
                 tempDir,
                 tempDir.resolve("run"),
@@ -88,7 +88,7 @@ final class CdsTranslateToolTest {
         Files.writeString(input, records);
         Path sequential = tempDir.resolve("sequential-protein.fa");
         Path parallel = tempDir.resolve("parallel-protein.fa");
-        TaskContext context = new TaskContext(
+        ToolExecutionContext context = new ToolExecutionContext(
                 "run",
                 tempDir,
                 tempDir.resolve("run"),

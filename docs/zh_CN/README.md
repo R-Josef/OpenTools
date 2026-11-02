@@ -15,7 +15,7 @@
 | 命令行或 Agent | [CLI](cli.md)、[MCP](mcp.md) |
 | 配置外部程序 | [外部工具](external-tools.md) |
 | 开发插件 | [插件开发者指南](plugin-development.md) |
-| Plugin API 与 Javadoc | [Plugin API 1.0](plugin-api.md) |
+| Plugin API 与 Javadoc | [Plugin API 2.0](plugin-api.md) |
 | UI 与文档开发 | [界面、Markdown 和视觉验证](ui-and-docs.md) |
 | 排查失败 | [错误与退出码](errors-exit-codes.md)、[FAQ](faq.md) |
 | 选择发布物 | [发布包说明](release-packages.md) |
@@ -29,6 +29,7 @@
 - [表达与富集](categories/expression-enrichment.md)
 - [HTS/BAM/VCF](categories/hts.md)
 - [可视化](categories/visualization.md)
+- [插件工具](categories/plugin.md)
 - [CLI 与 MCP](cli.md)
 - [外部工具](external-tools.md)
 - [FAQ](faq.md)

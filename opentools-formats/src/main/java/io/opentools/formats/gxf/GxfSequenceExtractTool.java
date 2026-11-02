@@ -5,8 +5,8 @@ import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
@@ -85,7 +85,7 @@ public final class GxfSequenceExtractTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path output = request.path("output");
         if (output == null || output.toString().isBlank()) {
             output = context.defaultOutputPath("extracted-features.fa");
@@ -194,7 +194,7 @@ public final class GxfSequenceExtractTool extends AbstractOpenTool {
                 )
         );
         context.progress(1.0, "Feature extraction completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Extracted " + extracted + " of " + groups.size() + " feature groups",
                 "result.gxf.extract.summary",
                 List.of(extracted, groups.size()),

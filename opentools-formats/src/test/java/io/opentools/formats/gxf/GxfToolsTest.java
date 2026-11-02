@@ -1,7 +1,7 @@
 package io.opentools.formats.gxf;
 
 import io.opentools.api.tool.CancellationToken;
-import io.opentools.api.tool.TaskContext;
+import io.opentools.api.tool.ToolExecutionContext;
 import io.opentools.api.tool.ToolRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -79,7 +79,7 @@ final class GxfToolsTest {
     void inspectsAndMatchesGenomeAnnotation() throws Exception {
         Path genome = writeGenome();
         Path annotation = writeAnnotation();
-        TaskContext context = context();
+        ToolExecutionContext context = context();
 
         var inspection = new GxfInspectTool().execute(
                 new ToolRequest("gxf.inspect", Map.of(
@@ -106,7 +106,7 @@ final class GxfToolsTest {
     void extractsFeatureAndStrandAwarePromoters() throws Exception {
         Path genome = writeGenome();
         Path annotation = writeAnnotation();
-        TaskContext context = context();
+        ToolExecutionContext context = context();
 
         Path plusFeature = tempDir.resolve("plus-cds.fa");
         var extraction = new GxfSequenceExtractTool().execute(
@@ -247,8 +247,8 @@ final class GxfToolsTest {
         return annotation;
     }
 
-    private TaskContext context() {
+    private ToolExecutionContext context() {
         Path run = tempDir.resolve("run-" + System.nanoTime());
-        return new TaskContext("run", tempDir, run, run, ignored -> { }, ignored -> { }, new CancellationToken());
+        return new ToolExecutionContext("run", tempDir, run, run, ignored -> { }, ignored -> { }, new CancellationToken());
     }
 }

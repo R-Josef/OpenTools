@@ -4,8 +4,8 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
@@ -59,7 +59,7 @@ public final class FastaSubsequenceTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         ValidationResult result = validateParameters(request)
-                .merge(SequenceTaskSupport.validateOutput(request, request.path("input")));
+                .merge(SequenceToolSupport.validateOutput(request, request.path("input")));
         if (request.path("regionsFile") != null && !request.string("regions").isBlank()) {
             result = result.merge(ValidationResult.of(ValidationIssue.error(
                     "regionsFile",
@@ -103,9 +103,9 @@ public final class FastaSubsequenceTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path input = request.path("input");
-        Path output = SequenceTaskSupport.outputPath(request, context, "subsequences.fa");
+        Path output = SequenceToolSupport.outputPath(request, context, "subsequences.fa");
         Path diagnostics = context.defaultOutputPath("subsequence-diagnostics.tsv");
         ParseResult parsed = parse(regionText(request));
         if (!parsed.errors().isEmpty()) {
@@ -124,7 +124,7 @@ public final class FastaSubsequenceTool extends AbstractOpenTool {
 
         long[] totals = new long[4];
         context.log("Extracting " + regions.size() + " requested subsequences");
-        SequenceTaskSupport.writeAtomically(output, diagnostics, (outputWriter, diagnosticsWriter) -> {
+        SequenceToolSupport.writeAtomically(output, diagnostics, (outputWriter, diagnosticsWriter) -> {
             long extracted = 0;
             long diagnosticCount = 0;
             long duplicateSourceIds = 0;
@@ -251,7 +251,7 @@ public final class FastaSubsequenceTool extends AbstractOpenTool {
                 )
         );
         context.progress(1.0, "FASTA subsequence extraction completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Extracted " + totals[1] + " of " + totals[0] + " requested subsequences",
                 "result.fasta.subsequence.summary",
                 List.of(totals[1], totals[0]),
@@ -270,7 +270,7 @@ public final class FastaSubsequenceTool extends AbstractOpenTool {
     private static Map<String, Long> findRequestedOccurrences(
             Path input,
             Set<String> requestedIds,
-            TaskContext context
+            ToolExecutionContext context
     ) throws Exception {
         Map<String, Long> occurrenceCounts = new HashMap<>();
         try (FastaReader reader = new FastaReader(input)) {
@@ -328,7 +328,7 @@ public final class FastaSubsequenceTool extends AbstractOpenTool {
         writer.write('\t');
         writer.write(code);
         writer.write('\t');
-        writer.write(SequenceTaskSupport.escapeTsv(sourceId));
+        writer.write(SequenceToolSupport.escapeTsv(sourceId));
         writer.write('\t');
         writer.write(start == null ? "" : Integer.toString(start));
         writer.write('\t');
@@ -336,9 +336,9 @@ public final class FastaSubsequenceTool extends AbstractOpenTool {
         writer.write('\t');
         writer.write(strand == null ? "" : strand);
         writer.write('\t');
-        writer.write(SequenceTaskSupport.escapeTsv(outputId));
+        writer.write(SequenceToolSupport.escapeTsv(outputId));
         writer.write('\t');
-        writer.write(SequenceTaskSupport.escapeTsv(message));
+        writer.write(SequenceToolSupport.escapeTsv(message));
         writer.newLine();
     }
 

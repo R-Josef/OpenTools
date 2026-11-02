@@ -4,7 +4,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 /**
- * A file produced by a task.
+ * A file produced by a tool.
  *
  * @param path artifact path
  * @param title display title

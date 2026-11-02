@@ -4,14 +4,14 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationIssue;
 import io.opentools.api.tool.ValidationResult;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -50,7 +50,7 @@ public final class GxfIdMapTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         ValidationResult result = validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("input")));
         ParseResult parsed = parse(request.string("mapping"));
         for (String error : parsed.errors()) {
             result = result.merge(ValidationResult.of(ValidationIssue.error(
@@ -64,9 +64,9 @@ public final class GxfIdMapTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path input = request.path("input");
-        Path output = FormatTaskSupport.outputPath(request, context, "mapped.gff3");
+        Path output = FormatToolSupport.outputPath(request, context, "mapped.gff3");
         Path report = context.defaultOutputPath("id-mapping-report.tsv");
         ParseResult parsed = parse(request.string("mapping"));
         Map<String, String> mapping = parsed.mapping();
@@ -74,7 +74,7 @@ public final class GxfIdMapTool extends AbstractOpenTool {
         Map<String, Long> occurrences = new LinkedHashMap<>();
         long[] totals = new long[2];
 
-        FormatTaskSupport.writePairAtomically(output, report, (writer, reportWriter) -> {
+        FormatToolSupport.writePairAtomically(output, report, (writer, reportWriter) -> {
             reportWriter.write("old_id\tnew_id\toccurrences\n");
             long records = 0;
             long replacements = 0;
@@ -120,7 +120,7 @@ public final class GxfIdMapTool extends AbstractOpenTool {
         });
         long unused = totals[1];
         context.progress(1.0, "Annotation ID mapping completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Applied " + totals[0] + " ID replacements",
                 "result.gxf.id_map.summary", List.of(totals[0]),
                 unused + " mapping keys were unused.",

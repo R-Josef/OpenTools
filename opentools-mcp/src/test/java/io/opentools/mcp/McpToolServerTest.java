@@ -30,7 +30,7 @@ final class McpToolServerTest {
                 tempDir.resolve("app"),
                 List.of(tempDir)
         );
-        server = new McpToolServer(runtime.tasks());
+        server = new McpToolServer(runtime.toolAutomation());
     }
 
     @AfterEach

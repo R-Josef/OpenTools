@@ -3,8 +3,8 @@ package io.opentools.external.comparative;
 import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
@@ -16,7 +16,7 @@ import io.opentools.external.process.TemporaryFiles;
 import io.opentools.external.tool.ExecutableLocator;
 import io.opentools.external.tool.ExternalToolSpecs;
 import io.opentools.external.tool.ToolStatus;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,17 +38,17 @@ public final class McscanRunTool extends AbstractOpenTool {
 
     @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
     @Override public ValidationResult validate(ToolRequest request) {
-        return validateParameters(request).merge(FormatTaskSupport.validateOutput(request, Path.of(request.string("prefix") + ".gff")));
+        return validateParameters(request).merge(FormatToolSupport.validateOutput(request, Path.of(request.string("prefix") + ".gff")));
     }
 
-    @Override public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path sourceGff = Path.of(request.string("prefix") + ".gff").toAbsolutePath().normalize();
         Path sourceBlast = Path.of(request.string("prefix") + ".blast").toAbsolutePath().normalize();
         if (!Files.isRegularFile(sourceGff) || !Files.isRegularFile(sourceBlast)) {
             throw new OpenToolException("MCSCAN_INPUT_MISSING", "MCScanX .gff/.blast files were not found.",
                     "Run mcscan.input or provide a valid prefix.");
         }
-        Path output = FormatTaskSupport.outputPath(request, context, "mcscan.collinearity");
+        Path output = FormatToolSupport.outputPath(request, context, "mcscan.collinearity");
         ToolStatus tool = new ExecutableLocator(ExternalRuntime.appHome()).resolve(
                 ExternalToolSpecs.MCSCANX, null, request.path("executablePath"));
         if (!tool.available() || tool.executable() == null) {
@@ -74,10 +74,10 @@ public final class McscanRunTool extends AbstractOpenTool {
                 throw new ExternalProcessException("MCSCAN_OUTPUT_MISSING", "MCScanX did not produce collinearity.",
                         "Check MCScanX input files.");
             }
-            FormatTaskSupport.createParent(output);
+            FormatToolSupport.createParent(output);
             Files.move(collinearity, output, StandardCopyOption.REPLACE_EXISTING);
             context.progress(1.0, "MCScanX completed");
-            return new TaskResult("MCScanX collinearity completed", "result.mcscan.run.summary", List.of(),
+            return new ToolResult("MCScanX collinearity completed", "result.mcscan.run.summary", List.of(),
                     "MCScanX " + versionLabel, "result.mcscan.run.detail", List.of(versionLabel),
                     io.opentools.api.tool.ResultTable.empty(),
                     List.of(new OutputArtifact(output, "Collinearity blocks", "text/plain")),

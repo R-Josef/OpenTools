@@ -5,8 +5,8 @@ import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
@@ -21,7 +21,7 @@ import io.opentools.external.process.TemporaryFiles;
 import io.opentools.external.tool.ExecutableLocator;
 import io.opentools.external.tool.ExternalToolSpecs;
 import io.opentools.external.tool.ToolStatus;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -89,7 +89,7 @@ public final class HmmsearchTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path output = request.path("domtbl");
         if (output == null || output.toString().isBlank()) {
             output = context.defaultOutputPath("hmmsearch-domtbl.txt");
@@ -133,7 +133,7 @@ public final class HmmsearchTool extends AbstractOpenTool {
                         "Check HMMER parameters and write permissions."
                 );
             }
-            FormatTaskSupport.createParent(output);
+            FormatToolSupport.createParent(output);
             Files.move(domtbl, output, StandardCopyOption.REPLACE_EXISTING);
             List<HmmerDomainHit> hits = new HmmerDomTableParser().parse(output);
             context.progress(1.0, "HMMER hmmsearch completed");
@@ -141,7 +141,7 @@ public final class HmmsearchTool extends AbstractOpenTool {
                     List.of("Metric", "Value"),
                     List.of(List.of("Domain hits", Integer.toString(hits.size())))
             );
-            return new TaskResult(
+            return new ToolResult(
                     "hmmsearch reported " + hits.size() + " domain hits",
                     "result.hmmer.hmmsearch.summary", List.of(hits.size()),
                     "hmmsearch " + hmmsearch.version(),

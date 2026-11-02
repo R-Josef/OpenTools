@@ -20,7 +20,7 @@ logic. Treat JSON output as the automation API.
 5. Report the run ID, status, artifacts, and actionable error fields.
 
 Use MCP when it is connected. Otherwise use the CLI. Both call the same
-`TaskExecutionService` and `ToolRegistry`.
+`ToolExecutionService` and `ToolRegistry`.
 
 ## Required Boundaries
 
@@ -39,7 +39,7 @@ Every `--json` response uses this envelope:
 ```json
 {
   "ok": true,
-  "apiVersion": "1.0",
+  "apiVersion": "2.0",
   "data": {},
   "error": null
 }
@@ -50,7 +50,7 @@ Stable exit codes:
 - `0`: command/job succeeded or was successfully queued.
 - `2`: invalid input, usage, or unknown task.
 - `3`: missing external dependency.
-- `4`: task execution failed or only partially completed.
+- `4`: tool execution failed or only partially completed.
 - `5`: cancelled.
 - `6`: internal error.
 

@@ -2,7 +2,7 @@ package io.opentools.external.alignment;
 
 import io.opentools.api.tool.CancellationToken;
 import io.opentools.api.tool.OpenToolException;
-import io.opentools.api.tool.TaskContext;
+import io.opentools.api.tool.ToolExecutionContext;
 import io.opentools.external.process.TemporaryFiles;
 
 import java.io.IOException;
@@ -59,7 +59,7 @@ final class BlastDatabaseCache {
             String key,
             String databaseType,
             boolean refresh,
-            TaskContext context,
+            ToolExecutionContext context,
             Builder builder
     ) throws Exception {
         return acquire(
@@ -73,7 +73,7 @@ final class BlastDatabaseCache {
             String databaseType,
             boolean refresh,
             long maxBytes,
-            TaskContext context,
+            ToolExecutionContext context,
             Builder builder
     ) throws Exception {
         return acquire(
@@ -95,7 +95,7 @@ final class BlastDatabaseCache {
             boolean refresh,
             Limits limits,
             boolean maintainOnHit,
-            TaskContext context,
+            ToolExecutionContext context,
             Builder builder
     ) throws Exception {
         Path root = cacheRoot.toAbsolutePath().normalize();
@@ -324,7 +324,7 @@ final class BlastDatabaseCache {
         );
     }
 
-    private static void touchSafely(Path root, String key, TaskContext context) {
+    private static void touchSafely(Path root, String key, ToolExecutionContext context) {
         try {
             touch(root, key);
         } catch (IOException ex) {
@@ -353,7 +353,7 @@ final class BlastDatabaseCache {
             Path root,
             String currentKey,
             Limits limits,
-            TaskContext context
+            ToolExecutionContext context
     ) {
         if (!limits.enabled()) {
             return MaintenanceStats.notRun();
@@ -369,7 +369,7 @@ final class BlastDatabaseCache {
     static MaintenanceStats maintain(
             Path root,
             Limits limits,
-            TaskContext context
+            ToolExecutionContext context
     ) throws Exception {
         return enforceCapacity(root, null, limits, context);
     }
@@ -377,7 +377,7 @@ final class BlastDatabaseCache {
     static void release(
             CachedDatabase database,
             Limits limits,
-            TaskContext context
+            ToolExecutionContext context
     ) {
         if (database == null) {
             return;
@@ -413,7 +413,7 @@ final class BlastDatabaseCache {
             Path root,
             String currentKey,
             Limits limits,
-            TaskContext context
+            ToolExecutionContext context
     ) throws Exception {
         Path maintenanceLock = root.resolve(MAINTENANCE_LOCK);
         try (FileChannel channel = FileChannel.open(

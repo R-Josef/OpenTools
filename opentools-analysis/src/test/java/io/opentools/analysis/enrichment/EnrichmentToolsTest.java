@@ -3,8 +3,8 @@ package io.opentools.analysis.enrichment;
 import io.opentools.analysis.BuiltInAnalysis;
 import io.opentools.api.tool.CancellationToken;
 import io.opentools.api.tool.OpenTool;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.core.tool.ToolRegistry;
 import io.opentools.api.tool.ToolRequest;
@@ -38,7 +38,7 @@ final class EnrichmentToolsTest {
         Path background = tempDir.resolve("background.txt");
         Files.writeString(background, "g1\ng2\ng3\ng4\n");
         Path go = tempDir.resolve("go.tsv");
-        TaskResult goResult = run("go.enrich", Map.of(
+        ToolResult goResult = run("go.enrich", Map.of(
                 "annotations", annotations,
                 "genes", genes,
                 "background", background,
@@ -58,7 +58,7 @@ final class EnrichmentToolsTest {
                 g4\tko1
                 """);
         Path kegg = tempDir.resolve("kegg.tsv");
-        TaskResult keggResult = run("kegg.enrich", Map.of(
+        ToolResult keggResult = run("kegg.enrich", Map.of(
                 "annotations", pathways,
                 "genes", genes,
                 "background", background,
@@ -86,7 +86,7 @@ final class EnrichmentToolsTest {
                 GO:3	grandchild	biological_process
                 """);
         Path output = tempDir.resolve("levels.tsv");
-        TaskResult result = run("go.level", Map.of(
+        ToolResult result = run("go.level", Map.of(
                 "hierarchy", hierarchy,
                 "termInfo", info,
                 "output", output
@@ -131,7 +131,7 @@ final class EnrichmentToolsTest {
                 id: part_of
                 """);
         Path output = tempDir.resolve("obo-levels.tsv");
-        TaskResult result = run("go.level", Map.of("hierarchy", obo, "output", output));
+        ToolResult result = run("go.level", Map.of("hierarchy", obo, "output", output));
 
         assertEquals(5, result.metrics().get("terms"));
         assertEquals("OBO", result.metrics().get("format"));
@@ -154,7 +154,7 @@ final class EnrichmentToolsTest {
                 GO:ROOT\t.
                 """);
         Path output = tempDir.resolve("cycle-levels.tsv");
-        TaskResult result = run("go.level", Map.of("hierarchy", hierarchy, "output", output));
+        ToolResult result = run("go.level", Map.of("hierarchy", hierarchy, "output", output));
 
         assertEquals(2L, result.metrics().get("cycleOrUnreachableTerms"));
         String text = Files.readString(output);
@@ -162,7 +162,7 @@ final class EnrichmentToolsTest {
         assertTrue(text.contains("GO:B\t\t\t1\tGO:A"));
     }
 
-    private TaskResult run(String id, Map<String, Object> supplied) throws Exception {
+    private ToolResult run(String id, Map<String, Object> supplied) throws Exception {
         ToolRegistry registry = new ToolRegistry();
         BuiltInAnalysis.register(registry);
         OpenTool tool = registry.find(id).orElseThrow();
@@ -177,7 +177,7 @@ final class EnrichmentToolsTest {
         var validation = tool.validate(request);
         assertTrue(validation.valid(), validation.issues().toString());
         Path output = Files.createDirectories(tempDir.resolve("out"));
-        return tool.execute(request, new TaskContext("enrichment", tempDir, output, output,
+        return tool.execute(request, new ToolExecutionContext("enrichment", tempDir, output, output,
                 ignored -> { }, ignored -> { }, new CancellationToken()));
     }
 }

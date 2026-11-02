@@ -30,8 +30,8 @@ final class PluginManagerTest {
                     {
                       "id": "broken",
                       "name": "Broken Plugin",
-                      "version": "1.0",
-                      "apiVersion": "1.0",
+                      "version": "2.0",
+                      "apiVersion": "2.0",
                       "mainClass": "missing.Plugin",
                       "description": "",
                       "author": ""
@@ -57,8 +57,8 @@ final class PluginManagerTest {
                     {
                       "id": "unsafe",
                       "name": "Unsafe Plugin",
-                      "version": "1.0",
-                      "apiVersion": "1.0",
+                      "version": "2.0",
+                      "apiVersion": "2.0",
                       "mainClass": "unsafe.Plugin",
                       "dependencies": [],
                       "requestedCapabilities": ["tool"]
@@ -80,7 +80,7 @@ final class PluginManagerTest {
                 plugins.resolve("working.jar"),
                 "working",
                 "Working Plugin",
-                "1.0",
+                "2.0",
                 "io.opentools.plugin.host.fixture.TestPlugin",
                 "",
                 List.of()
@@ -102,13 +102,46 @@ final class PluginManagerTest {
     }
 
     @Test
+    void packagedPluginStateCanEnableTrustedPluginByDefault() throws Exception {
+        Path plugins = Files.createDirectories(tempDir.resolve("plugins"));
+        writePluginJar(
+                plugins.resolve("bundled.jar"),
+                "bundled",
+                "Bundled Plugin",
+                "2.0",
+                "io.opentools.plugin.host.fixture.TestPlugin",
+                "2.0",
+                List.of(),
+                List.of("tool", "page")
+        );
+        Files.writeString(plugins.resolve("plugin-state.json"), """
+                {
+                  "schemaVersion": 1,
+                  "enabled": {
+                    "bundled": true
+                  }
+                }
+                """);
+
+        ToolRegistry registry = new ToolRegistry();
+        PluginManager manager = new PluginManager(tempDir, registry);
+
+        assertEquals(PluginState.ENABLED, manager.scan().getFirst().state());
+        assertTrue(registry.find("fixture.plugin.echo").isPresent());
+
+        manager.disable("bundled");
+        assertEquals(PluginState.DISABLED, manager.scan().getFirst().state());
+        assertTrue(registry.find("fixture.plugin.echo").isEmpty());
+    }
+
+    @Test
     void reportsMissingDependencyWhileLoadingIndependentPlugin() throws Exception {
         Path plugins = Files.createDirectories(tempDir.resolve("plugins"));
         writePluginJar(
                 plugins.resolve("missing-dependency.jar"),
                 "needs.missing",
                 "Missing Dependency",
-                "1.0",
+                "2.0",
                 "example.Missing",
                 "",
                 List.of("not-installed")
@@ -117,7 +150,7 @@ final class PluginManagerTest {
                 plugins.resolve("working.jar"),
                 "working",
                 "Working Plugin",
-                "1.0",
+                "2.0",
                 "io.opentools.plugin.host.fixture.TestPlugin",
                 "",
                 List.of()
@@ -142,7 +175,7 @@ final class PluginManagerTest {
                 plugins.resolve("dependency.jar"),
                 "dependency",
                 "Dependency",
-                "1.0",
+                "2.0",
                 "io.opentools.plugin.host.fixture.TestPlugin",
                 "",
                 List.of()
@@ -151,7 +184,7 @@ final class PluginManagerTest {
                 plugins.resolve("dependent.jar"),
                 "dependent",
                 "Dependent",
-                "1.0",
+                "2.0",
                 "io.opentools.plugin.host.fixture.DependentPlugin",
                 "",
                 List.of("dependency")
@@ -186,9 +219,9 @@ final class PluginManagerTest {
                 plugins.resolve("future-api.jar"),
                 "future-api",
                 "Future API",
-                "1.0",
-                "io.opentools.plugin.host.fixture.TestPlugin",
                 "2.0",
+                "io.opentools.plugin.host.fixture.TestPlugin",
+                "3.0",
                 List.of(),
                 List.of("tool", "page")
         );
@@ -196,7 +229,7 @@ final class PluginManagerTest {
                 plugins.resolve("unknown-capability.jar"),
                 "unknown-capability",
                 "Unknown Capability",
-                "1.0",
+                "2.0",
                 "io.opentools.plugin.host.fixture.TestPlugin",
                 "",
                 List.of(),
@@ -206,9 +239,9 @@ final class PluginManagerTest {
                 plugins.resolve("compatible-api.jar"),
                 "compatible-api",
                 "Compatible API",
-                "1.0",
+                "2.0",
                 "io.opentools.plugin.host.fixture.TestPlugin",
-                "1.0",
+                "2.0",
                 List.of(),
                 List.of("tool", "page")
         );
@@ -229,7 +262,7 @@ final class PluginManagerTest {
                 plugins.resolve("dependency.jar"),
                 "dependency",
                 "Dependency",
-                "1.0",
+                "2.0",
                 "io.opentools.plugin.host.fixture.TestPlugin",
                 "",
                 List.of()
@@ -238,7 +271,7 @@ final class PluginManagerTest {
                 plugins.resolve("dependent.jar"),
                 "dependent",
                 "Dependent",
-                "1.0",
+                "2.0",
                 "io.opentools.plugin.host.fixture.DependentPlugin",
                 "",
                 List.of("dependency")
@@ -294,7 +327,7 @@ final class PluginManagerTest {
                 plugins.resolve("no-page-capability.jar"),
                 "no-page-capability",
                 "No Page Capability",
-                "1.0",
+                "2.0",
                 "io.opentools.plugin.host.fixture.TestPlugin",
                 "",
                 List.of(),
@@ -316,7 +349,7 @@ final class PluginManagerTest {
                 plugins.resolve("cycle-a.jar"),
                 "cycle.a",
                 "Cycle A",
-                "1.0",
+                "2.0",
                 "io.opentools.plugin.host.fixture.TestPlugin",
                 "",
                 List.of("cycle.b")
@@ -325,7 +358,7 @@ final class PluginManagerTest {
                 plugins.resolve("cycle-b.jar"),
                 "cycle.b",
                 "Cycle B",
-                "1.0",
+                "2.0",
                 "io.opentools.plugin.host.fixture.TestPlugin",
                 "",
                 List.of("cycle.a")
@@ -371,7 +404,7 @@ final class PluginManagerTest {
         if (classBytes.length == 0 && mainClass.startsWith("io.opentools.")) {
             throw new IllegalStateException("Fixture class missing: " + fixture);
         }
-        String actualApi = apiVersion == null || apiVersion.isBlank() ? "1.0" : apiVersion;
+        String actualApi = apiVersion == null || apiVersion.isBlank() ? "2.0" : apiVersion;
         String json = """
                 {
                   "id": "%s",
@@ -460,8 +493,8 @@ final class PluginManagerTest {
                 {
                   "id": "%s",
                   "name": "%s",
-                  "version": "1.0",
-                  "apiVersion": "1.0",
+                  "version": "2.0",
+                  "apiVersion": "2.0",
                   "mainClass": "isolate.Plugin",
                   "dependencies": [],
                   "requestedCapabilities": ["page"]

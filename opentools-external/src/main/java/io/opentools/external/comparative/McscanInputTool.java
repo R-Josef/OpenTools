@@ -2,13 +2,13 @@ package io.opentools.external.comparative;
 
 import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OutputArtifact;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 import io.opentools.formats.gxf.GxfReader;
 import io.opentools.formats.gxf.GxfRecord;
 
@@ -31,7 +31,7 @@ public final class McscanInputTool extends AbstractOpenTool {
     @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
     @Override public ValidationResult validate(ToolRequest request) { return validateParameters(request); }
 
-    @Override public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path gff = Path.of(request.string("outputPrefix") + ".gff");
         Path blast = Path.of(request.string("outputPrefix") + ".blast");
         if ((Files.exists(gff) || Files.exists(blast)) && !request.bool("overwrite")) {
@@ -40,7 +40,7 @@ public final class McscanInputTool extends AbstractOpenTool {
         }
         boolean useGeneFeatures = containsFeatureType(request.path("annotation"), "gene");
         long[] count = new long[1];
-        FormatTaskSupport.writeAtomically(gff, writer -> {
+        FormatToolSupport.writeAtomically(gff, writer -> {
             try (GxfReader reader = new GxfReader(request.path("annotation"))) {
                 GxfRecord record;
                 while ((record = reader.next()) != null) {
@@ -68,7 +68,7 @@ public final class McscanInputTool extends AbstractOpenTool {
         });
         Files.copy(request.path("blast"), blast, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         context.progress(1.0, "MCScanX input preparation completed");
-        return new TaskResult("Prepared MCScanX inputs", "result.mcscan.input.summary", List.of(count[0]),
+        return new ToolResult("Prepared MCScanX inputs", "result.mcscan.input.summary", List.of(count[0]),
                 "Created " + gff.getFileName() + " and " + blast.getFileName() + ".",
                 "result.mcscan.input.detail", List.of(),
                 io.opentools.api.tool.ResultTable.empty(),

@@ -2,7 +2,7 @@ package io.opentools.mcp;
 
 import io.opentools.analysis.BuiltInAnalysis;
 import io.opentools.core.job.SqliteJobStore;
-import io.opentools.core.job.TaskExecutionService;
+import io.opentools.core.job.ToolExecutionService;
 import io.opentools.core.tool.ToolRegistry;
 import io.opentools.core.workspace.Project;
 import io.opentools.core.workspace.ProjectService;
@@ -19,15 +19,15 @@ public final class AutomationRuntime implements AutoCloseable {
     private final ToolRegistry registry;
     private final Project project;
     private final PluginManager plugins;
-    private final TaskExecutionService execution;
+    private final ToolExecutionService execution;
     private final WorkspacePolicy workspacePolicy;
-    private final TaskAutomationService tasks;
+    private final ToolAutomationService toolAutomation;
 
     private AutomationRuntime(
             ToolRegistry registry,
             Project project,
             PluginManager plugins,
-            TaskExecutionService execution,
+            ToolExecutionService execution,
             WorkspacePolicy workspacePolicy
     ) {
         this.registry = registry;
@@ -35,7 +35,7 @@ public final class AutomationRuntime implements AutoCloseable {
         this.plugins = plugins;
         this.execution = execution;
         this.workspacePolicy = workspacePolicy;
-        this.tasks = new TaskAutomationService(this);
+        this.toolAutomation = new ToolAutomationService(this);
     }
 
     public static AutomationRuntime open(
@@ -65,7 +65,7 @@ public final class AutomationRuntime implements AutoCloseable {
         plugins.scan();
         SqliteJobStore jobStore = new SqliteJobStore(project.databasePath());
         jobStore.initialize();
-        TaskExecutionService execution = new TaskExecutionService(registry, jobStore);
+        ToolExecutionService execution = new ToolExecutionService(registry, jobStore);
         WorkspacePolicy workspacePolicy = new WorkspacePolicy(project.root(), workspaceRoots);
         return new AutomationRuntime(registry, project, plugins, execution, workspacePolicy);
     }
@@ -82,7 +82,7 @@ public final class AutomationRuntime implements AutoCloseable {
         return plugins;
     }
 
-    public TaskExecutionService execution() {
+    public ToolExecutionService execution() {
         return execution;
     }
 
@@ -90,8 +90,8 @@ public final class AutomationRuntime implements AutoCloseable {
         return workspacePolicy;
     }
 
-    public TaskAutomationService tasks() {
-        return tasks;
+    public ToolAutomationService toolAutomation() {
+        return toolAutomation;
     }
 
     @Override

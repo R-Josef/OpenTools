@@ -5,8 +5,8 @@ import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
@@ -121,7 +121,7 @@ public final class BlastLocalTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path query = request.path("query");
         Path subject = request.path("subject");
         Path output = request.path("output");
@@ -283,7 +283,7 @@ public final class BlastLocalTool extends AbstractOpenTool {
                 new OutputArtifact(summaryOutput, "BLAST best-hit summary", "text/tab-separated-values")
         );
         context.progress(1.0, "BLAST completed");
-        return new TaskResult(
+        return new ToolResult(
                 summary.totalHits() + " hits across " + inputQueries + " queries",
                 "result.blast.summary",
                 List.of(summary.totalHits(), inputQueries),
@@ -369,7 +369,7 @@ public final class BlastLocalTool extends AbstractOpenTool {
             Path directory,
             BlastProgram program,
             Duration timeout,
-            TaskContext context
+            ToolExecutionContext context
     ) throws Exception {
         Path stagedSubject = directory.resolve("subject.fasta");
         Files.copy(subject, stagedSubject, StandardCopyOption.REPLACE_EXISTING);
@@ -442,7 +442,7 @@ public final class BlastLocalTool extends AbstractOpenTool {
     private static void releaseCachedDatabase(
             BlastDatabaseCache.CachedDatabase database,
             BlastDatabaseCache.Limits limits,
-            TaskContext context
+            ToolExecutionContext context
     ) {
         BlastDatabaseCache.release(database, limits, context);
     }

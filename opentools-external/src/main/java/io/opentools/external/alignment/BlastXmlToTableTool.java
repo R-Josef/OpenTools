@@ -4,14 +4,14 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
 import io.opentools.formats.Compression;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import javax.xml.XMLConstants;
 import javax.xml.stream.XMLInputFactory;
@@ -52,15 +52,15 @@ public final class BlastXmlToTableTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         return validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("input")));
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path input = request.path("input");
-        Path output = FormatTaskSupport.outputPath(request, context, "blast-table.tsv");
+        Path output = FormatToolSupport.outputPath(request, context, "blast-table.tsv");
         long[] hits = new long[1];
-        FormatTaskSupport.writeAtomically(output, writer -> {
+        FormatToolSupport.writeAtomically(output, writer -> {
             hits[0] = convert(input, writer, context);
             if (hits[0] == 0) {
                 throw new OpenToolException(
@@ -72,7 +72,7 @@ public final class BlastXmlToTableTool extends AbstractOpenTool {
         });
         int metricHits = Math.toIntExact(hits[0]);
         context.progress(1.0, "BLAST XML conversion completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Converted " + hits[0] + " BLAST HSP records",
                 "result.blast.xml.summary", List.of(metricHits),
                 "Output uses 12 columns compatible with BLAST outfmt 6.",
@@ -85,7 +85,7 @@ public final class BlastXmlToTableTool extends AbstractOpenTool {
         );
     }
 
-    static long convert(Path input, BufferedWriter writer, TaskContext context) throws Exception {
+    static long convert(Path input, BufferedWriter writer, ToolExecutionContext context) throws Exception {
         XMLInputFactory factory = secureFactory();
         long count = 0;
         String queryDefinition = "";

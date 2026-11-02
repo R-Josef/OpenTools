@@ -4,15 +4,15 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
 import io.opentools.core.util.OrderedParallelProcessor;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 import io.opentools.formats.fastq.FastqReader;
 import io.opentools.formats.fastq.FastqRecord;
 
@@ -51,10 +51,10 @@ public final class FastqStatsTool extends AbstractOpenTool {
 
     @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
     @Override public ValidationResult validate(ToolRequest request) {
-        return validateParameters(request).merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+        return validateParameters(request).merge(FormatToolSupport.validateOutput(request, request.path("input")));
     }
 
-    @Override public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         FastqQualityEncoding selectedEncoding = FastqQualityEncoding.explicit(
                 request.string("qualityEncoding"));
         int threads = OrderedParallelProcessor.resolveThreads(
@@ -113,7 +113,7 @@ public final class FastqStatsTool extends AbstractOpenTool {
                 counters[4] += count;
             }
         }
-        Path output = FormatTaskSupport.outputPath(request, context, "fastq-stats.tsv");
+        Path output = FormatToolSupport.outputPath(request, context, "fastq-stats.tsv");
         long records = counters[0];
         long bases = counters[1];
         long minimumLength = minLength;
@@ -127,7 +127,7 @@ public final class FastqStatsTool extends AbstractOpenTool {
             maxQuality = 0;
         }
         long canonical = counters[5] + counters[6] + counters[7] + counters[8];
-        FormatTaskSupport.writeAtomically(output, writer -> {
+        FormatToolSupport.writeAtomically(output, writer -> {
             writer.write("metric\tvalue\n");
             String[] labels = {"records", "bases", "min_length", "max_length", "mean_length",
                     "mean_quality", "q20_percent", "q30_percent", "a_percent", "c_percent",
@@ -166,7 +166,7 @@ public final class FastqStatsTool extends AbstractOpenTool {
         metrics.put("qualityDetectionAmbiguous", encoding.ambiguous());
         metrics.put("threads", threads);
         metrics.put("parallelRecords", threads > 1);
-        return new TaskResult(
+        return new ToolResult(
                 "Summarized " + records + " FASTQ records",
                 "result.fastq.stats.summary", List.of(records),
                 bases + " bases; Q30 " + format(q30) + "%.",

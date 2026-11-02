@@ -20,6 +20,7 @@ OpenTools `0.8.1-SNAPSHOT` 注册 86 个内置工具。应用内 Docs 的左侧�
 | 表达与富集 | [Expression / Enrichment](categories/expression-enrichment.md) | 7 |
 | HTS | [HTS](categories/hts.md) | 6 |
 | 可视化 | [Visualization](categories/visualization.md) | 20 |
+| 插件 | [插件工具](categories/plugin.md) | 随包提供 |
 
 工具按注册表实时生成，以上总数由应用内工具覆盖测试校验。CLI 可使用：
 

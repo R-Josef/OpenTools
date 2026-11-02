@@ -4,14 +4,14 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
 import io.opentools.core.util.OrderedParallelProcessor;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,17 +49,17 @@ public final class BedStatsTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         return validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("input")));
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path input = request.path("input");
-        Path output = FormatTaskSupport.outputPath(request, context, "bed-stats.tsv");
+        Path output = FormatToolSupport.outputPath(request, context, "bed-stats.tsv");
         int threads = OrderedParallelProcessor.resolveThreads(
                 request.integer("threads"), Files.size(input));
         long[] totals = new long[8];
-        FormatTaskSupport.writeAtomically(output, writer -> {
+        FormatToolSupport.writeAtomically(output, writer -> {
             BedSummary summary = new BedSummary();
             try (BedReader reader = new BedReader(input)) {
                 OrderedParallelProcessor.processChunks(
@@ -119,7 +119,7 @@ public final class BedStatsTool extends AbstractOpenTool {
         metrics.put("threads", threads);
         metrics.put("parallelRecords", threads > 1);
         context.progress(1.0, "BED statistics completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Summarized " + totals[0] + " BED intervals",
                 "result.bed.stats.summary", List.of(totals[0]),
                 totals[1] + " bases across " + totals[4] + " sequence IDs.",

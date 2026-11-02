@@ -24,6 +24,12 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.opentools</groupId>
+            <artifactId>opentools-example-plugin</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
@@ -122,10 +128,9 @@
                                 <copy todir="${project.build.directory}/dist/examples">
                                     <fileset dir="${project.basedir}/../examples"/>
                                 </copy>
-                                <mkdir dir="${project.build.directory}/dist/examples/plugins"/>
+                                <mkdir dir="${project.build.directory}/dist/plugins"/>
                                 <copy file="${project.basedir}/../opentools-example-plugin/target/opentools-example-plugin.jar"
-                                      failonerror="false"
-                                      tofile="${project.build.directory}/dist/examples/plugins/opentools-example-plugin.jar"/>
+                                      tofile="${project.build.directory}/dist/plugins/opentools-example-plugin.jar"/>
                                 <mkdir dir="${project.build.directory}/dist/skills"/>
                                 <copy todir="${project.build.directory}/dist/skills">
                                     <fileset dir="${project.basedir}/../skills"/>
@@ -136,6 +141,8 @@
                                 </copy>
                                 <copy file="${project.basedir}/../plugins/README.md"
                                       tofile="${project.build.directory}/dist/plugins/README.md"/>
+                                <copy file="${project.basedir}/../plugins/plugin-state.json"
+                                      tofile="${project.build.directory}/dist/plugins/plugin-state.json"/>
                             </target>
                         </configuration>
                     </execution>

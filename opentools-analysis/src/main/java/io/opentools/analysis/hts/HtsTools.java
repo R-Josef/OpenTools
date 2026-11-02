@@ -30,15 +30,15 @@ import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationIssue;
 import io.opentools.api.tool.ValidationResult;
 import io.opentools.core.util.OrderedParallelProcessor;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 import io.opentools.formats.bed.BedReader;
 import io.opentools.formats.bed.BedRecord;
 
@@ -100,9 +100,9 @@ public final class HtsTools {
 
         @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
         @Override public ValidationResult validate(ToolRequest request) {
-            return validateParameters(request).merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+            return validateParameters(request).merge(FormatToolSupport.validateOutput(request, request.path("input")));
         }
-        @Override public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+        @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
             long[] counts = new long[7];
             long min = Long.MAX_VALUE;
             long max = 0;
@@ -133,12 +133,12 @@ public final class HtsTools {
             if (counts[0] == 0) {
                 throw new OpenToolException("EMPTY_ALIGNMENT", "No alignment records were found.", "Check the file.");
             }
-            Path output = FormatTaskSupport.outputPath(request, context, "sam-stats.tsv");
+            Path output = FormatToolSupport.outputPath(request, context, "sam-stats.tsv");
             long records = counts[0];
             long minimum = min == Long.MAX_VALUE ? 0 : min;
             long maximum = max;
             long average = counts[6] / Math.max(1, records);
-            FormatTaskSupport.writeAtomically(output, writer -> {
+            FormatToolSupport.writeAtomically(output, writer -> {
                 writer.write("metric\tvalue\n");
                 String[] labels = {"records", "unmapped", "mapped", "first_in_pair",
                         "duplicates", "failed_qc", "total_bases_min", "total_bases_max",
@@ -150,7 +150,7 @@ public final class HtsTools {
                 }
             });
             context.progress(1.0, "Alignment statistics completed");
-            return new TaskResult("Summarized " + records + " alignment records",
+            return new ToolResult("Summarized " + records + " alignment records",
                     "result.hts.sam.summary", List.of(records),
                     counts[2] + " mapped and " + counts[1] + " unmapped reads.",
                     "result.hts.sam.detail", List.of(counts[2], counts[1]),
@@ -182,11 +182,11 @@ public final class HtsTools {
 
         @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
         @Override public ValidationResult validate(ToolRequest request) {
-            return validateParameters(request).merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+            return validateParameters(request).merge(FormatToolSupport.validateOutput(request, request.path("input")));
         }
-        @Override public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+        @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
             List<Region> mergedRegions = mergeRegions(parseRegions(request.string("regions")));
-            Path output = FormatTaskSupport.outputPath(request, context, "subset.bam");
+            Path output = FormatToolSupport.outputPath(request, context, "subset.bam");
             boolean bam = output.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".bam");
             boolean createIndex = bam && request.bool("createIndex");
             int threads = OrderedParallelProcessor.resolveThreads(
@@ -207,7 +207,7 @@ public final class HtsTools {
             Path stagedIndex = null;
             Path publishedIndex = createIndex ? bamIndexPath(output) : null;
             try {
-                FormatTaskSupport.createParent(output);
+                FormatToolSupport.createParent(output);
                 ensurePrimaryTarget(
                         output,
                         request.bool("overwrite"),
@@ -293,7 +293,7 @@ public final class HtsTools {
                 artifacts.add(new OutputArtifact(index, "BAM index", "application/octet-stream"));
             }
             context.progress(1.0, "Alignment subset completed");
-            return new TaskResult("Wrote " + records + " alignment records",
+            return new ToolResult("Wrote " + records + " alignment records",
                     "result.hts.bam_subset.summary", List.of(records),
                     "Output format: " + (bam ? "BAM" : "SAM")
                             + (indexed ? "; input index used." : "; input scanned linearly."),
@@ -329,9 +329,9 @@ public final class HtsTools {
 
         @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
         @Override public ValidationResult validate(ToolRequest request) {
-            return validateParameters(request).merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+            return validateParameters(request).merge(FormatToolSupport.validateOutput(request, request.path("input")));
         }
-        @Override public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+        @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
             List<BedRegion> regions = bedRegions(request.path("regions"));
             int threads = OrderedParallelProcessor.resolveThreads(
                     request.integer("threads"), Files.size(request.path("input")),
@@ -373,9 +373,9 @@ public final class HtsTools {
                         context
                 );
             }
-            Path output = FormatTaskSupport.outputPath(request, context, "coverage.bedgraph");
+            Path output = FormatToolSupport.outputPath(request, context, "coverage.bedgraph");
             long[] bases = new long[2];
-            FormatTaskSupport.writeAtomically(output, writer -> {
+            FormatToolSupport.writeAtomically(output, writer -> {
                 for (BedRegion region : regions) {
                     CoverageStats stats = writeCoverageRuns(writer, region);
                     bases[0] += stats.bases();
@@ -383,7 +383,7 @@ public final class HtsTools {
                 }
             });
             context.progress(1.0, "BAM coverage completed");
-            return new TaskResult("Calculated coverage for " + regions.size() + " BED regions",
+            return new ToolResult("Calculated coverage for " + regions.size() + " BED regions",
                     "result.hts.bam_coverage.summary", List.of(regions.size()),
                     bases[0] + " bases searched; mean depth " + String.format(Locale.ROOT, "%.3f",
                             bases[1] / (double) Math.max(1, bases[0]))
@@ -415,10 +415,10 @@ public final class HtsTools {
 
         @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
         @Override public ValidationResult validate(ToolRequest request) {
-            return validateParameters(request).merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+            return validateParameters(request).merge(FormatToolSupport.validateOutput(request, request.path("input")));
         }
-        @Override public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
-            Path output = FormatTaskSupport.outputPath(request, context, "vcf-stats.tsv");
+        @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
+            Path output = FormatToolSupport.outputPath(request, context, "vcf-stats.tsv");
             int threads = OrderedParallelProcessor.resolveThreads(
                     request.integer("threads"), Files.size(request.path("input")),
                     32L * 1024 * 1024);
@@ -454,7 +454,7 @@ public final class HtsTools {
             if (totals[0] == 0) {
                 throw new OpenToolException("EMPTY_VCF", "No variant records were found.", "Check the VCF/BCF.");
             }
-            FormatTaskSupport.writeAtomically(output, writer -> {
+            FormatToolSupport.writeAtomically(output, writer -> {
                 writer.write("metric\tvalue\n");
                 String[] labels = {"variants", "snps", "indels", "biallelic", "other",
                         "transitions", "transversions", "missing_qual", "samples"};
@@ -465,7 +465,7 @@ public final class HtsTools {
                         : String.format(Locale.ROOT, "%.4f", totals[5] / (double) totals[6])) + "\n");
             });
             context.progress(1.0, "VCF statistics completed");
-            return new TaskResult("Summarized " + totals[0] + " variant records",
+            return new ToolResult("Summarized " + totals[0] + " variant records",
                     "result.hts.vcf.summary", List.of(totals[0]),
                     totals[1] + " SNPs and " + totals[2] + " indels.", "result.hts.vcf.detail",
                     List.of(totals[1], totals[2]),
@@ -551,7 +551,7 @@ public final class HtsTools {
         @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
         @Override public ValidationResult validate(ToolRequest request) {
             ValidationResult result = validateParameters(request)
-                    .merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+                    .merge(FormatToolSupport.validateOutput(request, request.path("input")));
             Path output = request.path("output");
             if (output != null) {
                 try {
@@ -563,8 +563,8 @@ public final class HtsTools {
             }
             return result;
         }
-        @Override public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
-            Path output = FormatTaskSupport.outputPath(request, context, "filtered.vcf");
+        @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
+            Path output = FormatToolSupport.outputPath(request, context, "filtered.vcf");
             String indexType = indexType(request.string("indexType"), output);
             int threads = OrderedParallelProcessor.resolveThreads(
                     request.integer("threads"), Files.size(request.path("input")),
@@ -580,7 +580,7 @@ public final class HtsTools {
             Path stagedIndex = null;
             Path index = null;
             try {
-                FormatTaskSupport.createParent(output);
+                FormatToolSupport.createParent(output);
                 ensurePrimaryTarget(
                         output,
                         request.bool("overwrite"),
@@ -675,7 +675,7 @@ public final class HtsTools {
             if (index != null) {
                 metrics.put("indexPath", index.toString());
             }
-            return new TaskResult("Retained " + totals[1] + " of " + totals[0] + " variants",
+            return new ToolResult("Retained " + totals[1] + " of " + totals[0] + " variants",
                     "result.hts.vcf_filter.summary", List.of(totals[1], totals[0]),
                     "Filtered " + (totals[0] - totals[1]) + " variants.",
                     "result.hts.vcf_filter.detail", List.of(totals[0] - totals[1]),
@@ -824,9 +824,9 @@ public final class HtsTools {
 
         @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
         @Override public ValidationResult validate(ToolRequest request) {
-            return validateParameters(request).merge(FormatTaskSupport.validateOutput(request, request.path("alignment")));
+            return validateParameters(request).merge(FormatToolSupport.validateOutput(request, request.path("alignment")));
         }
-        @Override public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+        @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
             List<BedRegion> regions = bedRegions(request.path("regions"));
             int threads = OrderedParallelProcessor.resolveThreads(
                     request.integer("threads"), Files.size(request.path("alignment")),
@@ -868,8 +868,8 @@ public final class HtsTools {
                         context
                 );
             }
-            Path output = FormatTaskSupport.outputPath(request, context, "bed-coverage.tsv");
-            FormatTaskSupport.writeAtomically(output, writer -> {
+            Path output = FormatToolSupport.outputPath(request, context, "bed-coverage.tsv");
+            FormatToolSupport.writeAtomically(output, writer -> {
                 writer.write("seq_id\tstart\tend\tmean_coverage\tcovered_bases\n");
                 for (BedRegion region : regions) {
                     CoverageStats stats = summarizeCoverage(region);
@@ -880,7 +880,7 @@ public final class HtsTools {
                 }
             });
             context.progress(1.0, "BED coverage completed");
-            return new TaskResult("Calculated mean coverage for " + regions.size() + " BED intervals",
+            return new ToolResult("Calculated mean coverage for " + regions.size() + " BED intervals",
                     "result.bed.coverage.summary", List.of(regions.size()), "Per-interval mean depth reported.",
                     "result.bed.coverage.detail", List.of(),
                     new ResultTable(List.of("Metric", "Value"),
@@ -903,7 +903,7 @@ public final class HtsTools {
             Path stagedOutput,
             boolean createIndex,
             Path workDirectory,
-            TaskContext context
+            ToolExecutionContext context
     ) throws Exception {
         SAMFileHeader outputHeader = inputHeader.clone();
         outputHeader.setSortOrder(SortOrder.coordinate);
@@ -968,7 +968,7 @@ public final class HtsTools {
             int threads,
             Path workDirectory,
             ConcurrentLinkedQueue<Path> workerOutputs,
-            TaskContext context
+            ToolExecutionContext context
     ) throws Exception {
         Map<String, List<Region>> byContig = regionsByContig(regions);
         java.util.Iterator<Region> iterator = regions.iterator();
@@ -1034,7 +1034,7 @@ public final class HtsTools {
             Map<String, List<Region>> byContig,
             Path workDirectory,
             ConcurrentLinkedQueue<Path> workerOutputs,
-            TaskContext context
+            ToolExecutionContext context
     ) throws Exception {
         Path output = workDirectory.resolve("query-" + UUID.randomUUID() + ".bam");
         workerOutputs.add(output);
@@ -1389,7 +1389,7 @@ public final class HtsTools {
     private static void queryCoverage(
             SamReader reader,
             BedRegion region,
-            TaskContext context
+            ToolExecutionContext context
     ) throws Exception {
         validateQueryRegion(region.contig, region.start, region.end);
         try (CloseableIterator<SAMRecord> records = reader.queryOverlapping(
@@ -1410,7 +1410,7 @@ public final class HtsTools {
             List<BedRegion> regions,
             boolean deduplicatePairs,
             int threads,
-            TaskContext context
+            ToolExecutionContext context
     ) throws Exception {
         java.util.Iterator<BedRegion> iterator = regions.iterator();
         OrderedParallelProcessor.processChunks(
@@ -1445,7 +1445,7 @@ public final class HtsTools {
     private static void addDeduplicatedCoverage(
             SamReader reader,
             BedRegion region,
-            TaskContext context
+            ToolExecutionContext context
     ) {
         validateQueryRegion(region.contig, region.start, region.end);
         IntervalList intervals = new IntervalList(reader.getFileHeader());

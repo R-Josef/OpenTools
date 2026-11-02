@@ -1,8 +1,12 @@
 package io.opentools.ui;
 
-import io.opentools.core.job.TaskExecutionService;
+import io.opentools.core.job.ToolExecutionService;
 import io.opentools.core.i18n.LanguageManager;
+import io.opentools.api.tool.InteractiveOpenTool;
 import io.opentools.api.tool.ToolDescriptor;
+import io.opentools.api.tool.ToolPanel;
+import io.opentools.api.tool.ToolRequest;
+import io.opentools.api.tool.ToolUiContext;
 import io.opentools.core.tool.ToolRegistry;
 
 import javax.swing.BorderFactory;
@@ -17,7 +21,9 @@ import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.util.ArrayList;
@@ -51,21 +57,32 @@ final class ToolCatalogPanel extends JPanel {
     private final JComboBox<CategoryChoice> categoryFilter = new JComboBox<>();
     private final JLabel count = new JLabel(" ");
     private final ToolFormPanel form;
+    private final JPanel editorPanel = new JPanel();
+    private final CardLayout editorCards = new CardLayout();
+    private final ToolRunSubmitter submitter;
+    private final Runnable afterSubmit;
+    private ToolPanel interactivePanel;
+    private String displayedToolId;
     private String activeFilter = "";
     private String activeCategory;
     private boolean updatingCategoryFilter;
 
     ToolCatalogPanel(
             ToolRegistry registry,
-            TaskExecutionService executionService,
+            ToolExecutionService executionService,
             LanguageManager language,
+            ToolRunSubmitter submitter,
             Runnable afterSubmit
     ) {
         this.registry = registry;
         this.language = language;
+        this.submitter = submitter;
+        this.afterSubmit = afterSubmit;
         setLayout(new BorderLayout(12, 0));
         setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
         this.form = new ToolFormPanel(executionService, language, afterSubmit);
+        editorPanel.setLayout(editorCards);
+        editorPanel.add(form, "form");
         UiAccessibility.name(filter, language.text("tools.search_placeholder", "Search tools"));
         UiAccessibility.name(list, language.text("tools.title", "Tool catalog"));
 
@@ -178,14 +195,14 @@ final class ToolCatalogPanel extends JPanel {
                     }
                     return;
                 }
-                form.setTool(selected == null ? null : selected.tool());
+                showEditor(selected == null ? null : selected.tool());
             }
         });
         JScrollPane listScroll = new JScrollPane(list);
         sidebar.add(listScroll, BorderLayout.CENTER);
         listScroll.setPreferredSize(new Dimension(310, 500));
 
-        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, sidebar, form);
+        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, sidebar, editorPanel);
         split.setDividerLocation(320);
         split.setDividerSize(7);
         split.setResizeWeight(0);
@@ -229,6 +246,9 @@ final class ToolCatalogPanel extends JPanel {
                     }
                 }
             }
+            if (selected != null && !selected.id().equals(displayedToolId)) {
+                showEditor(selected);
+            }
             if (selectedTool() == null) {
                 int first = nextToolIndex(0);
                 if (first >= 0) {
@@ -254,9 +274,95 @@ final class ToolCatalogPanel extends JPanel {
         applySearch(query);
     }
 
-    void rebind(TaskExecutionService executionService) {
+    void rebind(ToolExecutionService executionService) {
         form.setExecutionService(executionService);
+        displayedToolId = null;
+        disposeEditorContent();
         reload();
+    }
+
+    private void showEditor(ToolDescriptor tool) {
+        disposeEditorContent();
+        displayedToolId = tool == null ? null : tool.id();
+        form.setTool(tool);
+        if (tool == null) {
+            editorCards.show(editorPanel, "form");
+            return;
+        }
+        if (registry.find(tool.id()).orElse(null) instanceof InteractiveOpenTool interactive) {
+            try {
+                ToolPanel panel = interactive.createPanel(new HostToolUiContext(tool));
+                interactivePanel = panel;
+                editorPanel.add(panel, "interactive");
+                editorCards.show(editorPanel, "interactive");
+                SwingUtilities.invokeLater(panel::requestFocusInWindow);
+                return;
+            } catch (Exception ex) {
+                JLabel error = new JLabel(language.text(
+                        "tools.interactive_failed",
+                        "Interactive tool page failed: {0}",
+                        rootMessage(ex)
+                ));
+                error.setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
+                editorPanel.add(error, "error");
+                editorCards.show(editorPanel, "error");
+                return;
+            }
+        }
+        editorCards.show(editorPanel, "form");
+    }
+
+    private void disposeEditorContent() {
+        if (interactivePanel != null) {
+            interactivePanel.close();
+            interactivePanel = null;
+        }
+        for (Component component : editorPanel.getComponents()) {
+            if (component != form) {
+                editorPanel.remove(component);
+            }
+        }
+        editorPanel.revalidate();
+        editorPanel.repaint();
+    }
+
+    @Override
+    public void removeNotify() {
+        disposeEditorContent();
+        super.removeNotify();
+    }
+
+    private final class HostToolUiContext implements ToolUiContext {
+        private final ToolDescriptor tool;
+
+        private HostToolUiContext(ToolDescriptor tool) {
+            this.tool = tool;
+        }
+
+        @Override
+        public ToolDescriptor tool() {
+            return tool;
+        }
+
+        @Override
+        public String languageCode() {
+            return language.activeCode();
+        }
+
+        @Override
+        public String submit(ToolRequest request) throws Exception {
+            String runId = submitter.submit(request);
+            SwingUtilities.invokeLater(afterSubmit);
+            return runId;
+        }
+    }
+
+    private static String rootMessage(Throwable throwable) {
+        Throwable current = throwable;
+        while (current.getCause() != null) {
+            current = current.getCause();
+        }
+        return current.getMessage() == null ? current.getClass().getSimpleName() : current.getMessage();
     }
 
     static List<ToolDescriptor> orderedTools(

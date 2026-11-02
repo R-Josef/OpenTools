@@ -5,14 +5,14 @@ import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
 import io.opentools.formats.Compression;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 import io.opentools.formats.fasta.FastaReader;
 import io.opentools.formats.fasta.FastaRecord;
 import io.opentools.formats.fasta.FastaWriter;
@@ -54,17 +54,17 @@ public final class FastaConvertTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         return validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("input")));
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         String mode = request.string("mode");
-        Path output = FormatTaskSupport.outputPath(request, context,
+        Path output = FormatToolSupport.outputPath(request, context,
                 mode.endsWith("_TO_FASTA") ? "converted.fa"
                         : mode.endsWith("_TO_IDS") ? "ids.txt" : "sequences.tsv");
         long[] totals = new long[2];
-        FormatTaskSupport.writeAtomically(output, writer -> {
+        FormatToolSupport.writeAtomically(output, writer -> {
             if (mode.startsWith("FASTA_")) {
                 totals[0] = fromFasta(request.path("input"), writer, mode);
             } else {
@@ -76,7 +76,7 @@ public final class FastaConvertTool extends AbstractOpenTool {
             }
         });
         context.progress(1.0, "Sequence conversion completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Converted " + totals[0] + " sequence records",
                 "result.fasta.convert.summary", List.of(totals[0], mode),
                 "Output format: " + outputFormat(mode) + ".",

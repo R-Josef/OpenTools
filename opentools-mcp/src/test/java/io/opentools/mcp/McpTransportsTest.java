@@ -26,7 +26,7 @@ final class McpTransportsTest {
     @Test
     void servesNewlineDelimitedJsonOverStdio() throws Exception {
         try (AutomationRuntime runtime = runtime()) {
-            McpToolServer protocol = new McpToolServer(runtime.tasks());
+            McpToolServer protocol = new McpToolServer(runtime.toolAutomation());
             String input = """
                     {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}
                     {"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}
@@ -49,7 +49,7 @@ final class McpTransportsTest {
     void httpRequiresTokenAndRestrictsOrigins() throws Exception {
         try (AutomationRuntime runtime = runtime();
              McpHttpServer server = new McpHttpServer(
-                     new McpToolServer(runtime.tasks()),
+                     new McpToolServer(runtime.toolAutomation()),
                      "127.0.0.1",
                      0,
                      "test-token-with-32-characters"
@@ -91,7 +91,7 @@ final class McpTransportsTest {
             assertThrows(
                     IllegalArgumentException.class,
                     () -> new McpHttpServer(
-                            new McpToolServer(runtime.tasks()),
+                            new McpToolServer(runtime.toolAutomation()),
                             "0.0.0.0",
                             0,
                             "test-token-with-32-characters"

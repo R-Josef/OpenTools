@@ -2,7 +2,7 @@ package io.opentools.cli;
 
 import io.opentools.analysis.BuiltInAnalysis;
 import io.opentools.core.job.SqliteJobStore;
-import io.opentools.core.job.TaskExecutionService;
+import io.opentools.core.job.ToolExecutionService;
 import io.opentools.core.i18n.LanguageManager;
 import io.opentools.core.tool.ToolRegistry;
 import io.opentools.core.workspace.Project;
@@ -21,7 +21,7 @@ public final class CliRuntime implements AutoCloseable {
     private final SqliteJobStore jobStore;
     private final PluginManager pluginManager;
     private final LanguageManager language;
-    private TaskExecutionService executionService;
+    private ToolExecutionService executionService;
 
     private CliRuntime(
             ToolRegistry registry,
@@ -81,9 +81,9 @@ public final class CliRuntime implements AutoCloseable {
         return language;
     }
 
-    public synchronized TaskExecutionService execution() {
+    public synchronized ToolExecutionService execution() {
         if (executionService == null) {
-            executionService = new TaskExecutionService(registry, jobStore);
+            executionService = new ToolExecutionService(registry, jobStore);
         }
         return executionService;
     }

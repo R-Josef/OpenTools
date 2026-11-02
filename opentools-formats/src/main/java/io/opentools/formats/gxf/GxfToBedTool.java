@@ -4,13 +4,13 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 import io.opentools.formats.bed.BedRecord;
 import io.opentools.formats.bed.BedWriter;
 
@@ -45,15 +45,15 @@ public final class GxfToBedTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         return validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("input")));
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path input = request.path("input");
-        Path output = FormatTaskSupport.outputPath(request, context, "annotation.bed");
+        Path output = FormatToolSupport.outputPath(request, context, "annotation.bed");
         long[] totals = new long[2];
-        FormatTaskSupport.writeAtomically(output, writer -> {
+        FormatToolSupport.writeAtomically(output, writer -> {
             long records = 0;
             long bases = 0;
             try (GxfReader reader = new GxfReader(input)) {
@@ -83,7 +83,7 @@ public final class GxfToBedTool extends AbstractOpenTool {
             totals[1] = bases;
         });
         context.progress(1.0, "BED conversion completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Converted " + totals[0] + " annotation records to BED",
                 "result.gxf.to_bed.summary", List.of(totals[0]),
                 "Output uses 0-based start and exclusive end.",

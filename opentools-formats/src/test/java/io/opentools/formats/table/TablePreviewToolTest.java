@@ -1,7 +1,7 @@
 package io.opentools.formats.table;
 
 import io.opentools.api.tool.CancellationToken;
-import io.opentools.api.tool.TaskContext;
+import io.opentools.api.tool.ToolExecutionContext;
 import io.opentools.api.tool.ToolRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -22,7 +22,7 @@ final class TablePreviewToolTest {
         Path input = tempDir.resolve("values.csv");
         Path output = tempDir.resolve("preview.tsv");
         Files.writeString(input, "gene,value,note\ng1,1,\"a,b\"\ng2,2,ok\n");
-        TaskContext context = new TaskContext(
+        ToolExecutionContext context = new ToolExecutionContext(
                 "run",
                 tempDir,
                 tempDir.resolve("run"),
@@ -55,7 +55,7 @@ final class TablePreviewToolTest {
         Path input = tempDir.resolve("multiline.tsv");
         Path output = tempDir.resolve("multiline-preview.tsv");
         Files.writeString(input, "id\tnote\tvalue\ng1\t\"first line\nsecond line\"\t7\n");
-        TaskContext context = new TaskContext(
+        ToolExecutionContext context = new ToolExecutionContext(
                 "run",
                 tempDir,
                 tempDir.resolve("run"),

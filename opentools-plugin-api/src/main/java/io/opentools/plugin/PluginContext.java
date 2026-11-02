@@ -36,9 +36,9 @@ public interface PluginContext {
     void log(String message);
 
     /**
-     * Registers a headless task.
+     * Registers a headless tool.
      *
-     * @param tool task implementation
+     * @param tool tool implementation
      * @throws SecurityException if the plugin did not request the {@code tool} capability
      */
     void registerTool(OpenTool tool);

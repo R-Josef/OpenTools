@@ -3,14 +3,14 @@ package io.opentools.external.comparative;
 import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
 import io.opentools.formats.Compression;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -32,13 +32,13 @@ public final class McscanImportTool extends AbstractOpenTool {
 
     @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
     @Override public ValidationResult validate(ToolRequest request) {
-        return validateParameters(request).merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+        return validateParameters(request).merge(FormatToolSupport.validateOutput(request, request.path("input")));
     }
 
-    @Override public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
-        Path output = FormatTaskSupport.outputPath(request, context, "collinearity.tsv");
+    @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
+        Path output = FormatToolSupport.outputPath(request, context, "collinearity.tsv");
         long[] totals = new long[3];
-        FormatTaskSupport.writeAtomically(output, writer -> {
+        FormatToolSupport.writeAtomically(output, writer -> {
             writer.write("block\tblock_score\tgene_a\tgene_b\tpair_index\n");
             Pattern header = Pattern.compile("##\\s+Alignment\\s+(\\d+):\\s+score=([^\\s]+).*");
             int block = 0;
@@ -77,7 +77,7 @@ public final class McscanImportTool extends AbstractOpenTool {
                     "No collinearity pairs were parsed.", "Check MCScanX collinearity format.");
         }
         context.progress(1.0, "MCScanX collinearity import completed");
-        return new TaskResult("Imported " + totals[1] + " collinearity pairs",
+        return new ToolResult("Imported " + totals[1] + " collinearity pairs",
                 "result.mcscan.import.summary", List.of(totals[1]),
                 totals[0] + " blocks were parsed.", "result.mcscan.import.detail", List.of(totals[0]),
                 new ResultTable(List.of("Metric", "Value"), List.of(

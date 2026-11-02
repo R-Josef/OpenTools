@@ -4,8 +4,8 @@ import io.opentools.analysis.BuiltInAnalysis;
 import io.opentools.api.tool.CancellationToken;
 import io.opentools.api.tool.OpenTool;
 import io.opentools.api.tool.OpenToolException;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.core.tool.ToolRegistry;
 import io.opentools.api.tool.ToolRequest;
@@ -49,7 +49,7 @@ final class FastaAnalysisToolsTest {
                 """);
         Path output = tempDir.resolve("filtered.fa");
 
-        TaskResult result = run("fasta.filter", Map.of(
+        ToolResult result = run("fasta.filter", Map.of(
                 "input", input,
                 "includeRegex", "keep|low",
                 "excludeIds", "excluded",
@@ -95,7 +95,7 @@ final class FastaAnalysisToolsTest {
         assertEquals("acgtACGT", readFasta(reverse).get("nucleotide"));
 
         Path cleaned = tempDir.resolve("cleaned.fa");
-        TaskResult result = run("fasta.transform", Map.of(
+        ToolResult result = run("fasta.transform", Map.of(
                 "input", input,
                 "direction", "FORWARD",
                 "caseMode", "UPPERCASE",
@@ -150,7 +150,7 @@ final class FastaAnalysisToolsTest {
                 "s1\t9\t11\t+\tout_of_range"
         );
 
-        TaskResult result = run("fasta.subsequence", Map.of(
+        ToolResult result = run("fasta.subsequence", Map.of(
                 "input", input,
                 "regions", regions,
                 "output", output
@@ -186,7 +186,7 @@ final class FastaAnalysisToolsTest {
         assertTrue(validation.issues().stream().anyMatch(issue -> issue.message().contains("must not exceed")));
 
         Path output = tempDir.resolve("empty.fa");
-        TaskResult empty = run("fasta.subsequence", Map.of(
+        ToolResult empty = run("fasta.subsequence", Map.of(
                 "input", input,
                 "regions", "seq\t5\t6\t+\tmissing_range",
                 "output", output
@@ -209,7 +209,7 @@ final class FastaAnalysisToolsTest {
         }
         Path output = tempDir.resolve("large-filtered.fa.gz");
 
-        TaskResult result = assertTimeoutPreemptively(Duration.ofSeconds(20), () -> run("fasta.filter", Map.of(
+        ToolResult result = assertTimeoutPreemptively(Duration.ofSeconds(20), () -> run("fasta.filter", Map.of(
                 "input", input,
                 "includeRegex", "keep_",
                 "minLength", 8,
@@ -265,16 +265,16 @@ final class FastaAnalysisToolsTest {
         assertEquals(Files.readString(sequentialTransform), Files.readString(parallelTransform));
     }
 
-    private TaskResult run(String toolId, Map<String, Object> supplied) throws Exception {
+    private ToolResult run(String toolId, Map<String, Object> supplied) throws Exception {
         ToolRequest request = request(toolId, supplied);
         ValidationResult validation = tool(toolId).validate(request);
         assertTrue(validation.valid(), validation.issues().toString());
         return tool(toolId).execute(request, context());
     }
 
-    private TaskContext context() throws Exception {
+    private ToolExecutionContext context() throws Exception {
         Path outputDirectory = Files.createDirectories(tempDir.resolve("out"));
-        return new TaskContext(
+        return new ToolExecutionContext(
                 "test-run",
                 tempDir,
                 outputDirectory,

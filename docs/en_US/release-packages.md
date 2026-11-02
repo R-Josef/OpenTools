@@ -12,6 +12,9 @@ The distribution also includes a self-contained Plugin API JAR under
 `plugin-sdk/`, together with a Javadoc JAR and browsable HTML. The API is a
 compile-only contract and must not be bundled into a plugin.
 
+The trusted example plugin is bundled under `plugins/` and starts enabled by
+default. It contributes the interactive Coin Runner tool.
+
 ## Windows x64 portable package
 
 Use this package on Windows 10/11 x64 when you want a fixed, self-contained
@@ -34,6 +37,8 @@ opentools-<version>-windows-x64/
   docs/
     en_US/
     zh_CN/
+  plugins/
+    opentools-example-plugin.jar
   plugin-sdk/
   licenses/
   THIRD_PARTY_NOTICES.md
@@ -55,6 +60,7 @@ opentools-<version>-linux-x64/
     runtime/
     tools/
     docs/
+    plugins/
     licenses/
 ```
 

@@ -4,13 +4,13 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -48,13 +48,13 @@ public final class GxfCheckRepairTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         return validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("input")));
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path input = request.path("input");
-        Path output = FormatTaskSupport.outputPath(request, context, "checked.gff3");
+        Path output = FormatToolSupport.outputPath(request, context, "checked.gff3");
         Path report = context.defaultOutputPath("annotation-diagnostics.tsv");
         List<GxfRecord> records = new ArrayList<>();
         Map<String, Integer> idCounts = new LinkedHashMap<>();
@@ -75,7 +75,7 @@ public final class GxfCheckRepairTool extends AbstractOpenTool {
         Map<String, Integer> duplicateOrdinal = new HashMap<>();
         long[] totals = new long[3];
 
-        FormatTaskSupport.writePairAtomically(output, report, (writer, reportWriter) -> {
+        FormatToolSupport.writePairAtomically(output, report, (writer, reportWriter) -> {
             reportWriter.write("line\tseverity\tcode\tfeature_id\tmessage\n");
             long errors = 0;
             long warnings = 0;
@@ -139,7 +139,7 @@ public final class GxfCheckRepairTool extends AbstractOpenTool {
             totals[2] = repaired;
         });
         context.progress(1.0, "Annotation check completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Found " + totals[0] + " annotation errors",
                 "result.gxf.check_repair.summary", List.of(totals[0]),
                 totals[1] + " warnings; " + totals[2] + " safe repairs applied.",

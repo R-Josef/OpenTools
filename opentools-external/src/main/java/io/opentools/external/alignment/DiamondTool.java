@@ -4,8 +4,8 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
@@ -93,7 +93,7 @@ public final class DiamondTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path query = request.path("query");
         Path subject = request.path("subject");
         long inputQueries = countRecords(query);
@@ -207,7 +207,7 @@ public final class DiamondTool extends AbstractOpenTool {
         summary.metrics().put("inputQueries", inputQueries);
         summary.metrics().put("queriesWithHits", summary.queryCount());
         context.progress(1.0, "DIAMOND completed");
-        return new TaskResult(
+        return new ToolResult(
                 summary.totalHits() + " hits across " + inputQueries + " queries",
                 "result.diamond.summary",
                 List.of(summary.totalHits(), inputQueries),

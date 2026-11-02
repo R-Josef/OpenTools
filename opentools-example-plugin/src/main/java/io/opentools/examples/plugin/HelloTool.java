@@ -3,8 +3,8 @@ package io.opentools.examples.plugin;
 import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
@@ -39,13 +39,13 @@ public final class HelloTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         String message = request.string("message");
         Path output = context.defaultOutputPath("plugin-example-message.txt");
         Files.writeString(output, message + System.lineSeparator(), StandardCharsets.UTF_8);
-        context.progress(1.0, "Plugin task completed");
-        return new TaskResult(
-                "Plugin task completed",
+        context.progress(1.0, "Plugin tool completed");
+        return new ToolResult(
+                "Plugin tool completed",
                 "result.plugin.example.hello.summary",
                 List.of(),
                 message,

@@ -4,8 +4,8 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
@@ -81,7 +81,7 @@ public final class FastaFilterTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         ValidationResult result = validateParameters(request)
-                .merge(SequenceTaskSupport.validateOutput(request, request.path("input")));
+                .merge(SequenceToolSupport.validateOutput(request, request.path("input")));
         if (request.integer("minLength") > request.integer("maxLength")) {
             result = result.merge(ValidationResult.of(ValidationIssue.error(
                     "minLength",
@@ -109,14 +109,14 @@ public final class FastaFilterTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path input = request.path("input");
-        Path output = SequenceTaskSupport.outputPath(request, context, "filtered.fa");
+        Path output = SequenceToolSupport.outputPath(request, context, "filtered.fa");
         Path report = context.defaultOutputPath("filter-report.tsv");
 
-        Set<String> includeIds = normalizedSet(SequenceTaskSupport.parseIds(request.string("includeIds")),
+        Set<String> includeIds = normalizedSet(SequenceToolSupport.parseIds(request.string("includeIds")),
                 request.bool("ignoreCase"));
-        Set<String> excludeIds = normalizedSet(SequenceTaskSupport.parseIds(request.string("excludeIds")),
+        Set<String> excludeIds = normalizedSet(SequenceToolSupport.parseIds(request.string("excludeIds")),
                 request.bool("ignoreCase"));
         Pattern includeRegex = compile(request.string("includeRegex"), request.bool("ignoreCase"));
         Pattern excludeRegex = compile(request.string("excludeRegex"), request.bool("ignoreCase"));
@@ -133,7 +133,7 @@ public final class FastaFilterTool extends AbstractOpenTool {
         Map<String, Long> reasonCounts = new LinkedHashMap<>();
 
         context.log("Filtering FASTA: " + input);
-        SequenceTaskSupport.writeAtomically(output, report, (outputWriter, reportWriter) -> {
+        SequenceToolSupport.writeAtomically(output, report, (outputWriter, reportWriter) -> {
             long[] localTotals = new long[3];
             Map<String, Long> localReasonCounts = new LinkedHashMap<>();
 
@@ -219,7 +219,7 @@ public final class FastaFilterTool extends AbstractOpenTool {
         metrics.put("threads", threads);
         metrics.put("parallelRecords", threads > 1);
         context.progress(1.0, "FASTA filter completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Retained " + retained + " of " + inputRecords + " FASTA records",
                 "result.fasta.filter.summary",
                 List.of(retained, inputRecords),
@@ -349,7 +349,7 @@ public final class FastaFilterTool extends AbstractOpenTool {
     ) throws Exception {
         writer.write(Long.toString(recordNumber));
         writer.write('\t');
-        writer.write(SequenceTaskSupport.escapeTsv(record.id()));
+        writer.write(SequenceToolSupport.escapeTsv(record.id()));
         writer.write('\t');
         writer.write(keep ? "KEPT" : "FILTERED");
         writer.write('\t');
@@ -361,7 +361,7 @@ public final class FastaFilterTool extends AbstractOpenTool {
         writer.write('\t');
         writer.write(String.format(Locale.ROOT, "%.2f", nPercent));
         writer.write('\t');
-        writer.write(SequenceTaskSupport.escapeTsv(record.header()));
+        writer.write(SequenceToolSupport.escapeTsv(record.header()));
         writer.newLine();
     }
 

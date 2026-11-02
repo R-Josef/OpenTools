@@ -4,13 +4,13 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.io.BufferedWriter;
 import java.nio.file.Path;
@@ -52,11 +52,11 @@ public final class ExpressionPcaTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         return validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("input")));
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         ExpressionMatrix matrix = new ExpressionMatrixParser().parse(
                 request.path("input"), request.string("delimiter"), "ERROR", request.bool("log2"));
         int samples = matrix.columnNames().size();
@@ -76,8 +76,8 @@ public final class ExpressionPcaTool extends AbstractOpenTool {
             }
         }
         double varianceTotal = variance.stream().mapToDouble(Double::doubleValue).sum();
-        Path output = FormatTaskSupport.outputPath(request, context, "pca-coordinates.tsv");
-        FormatTaskSupport.writeAtomically(output, writer -> {
+        Path output = FormatToolSupport.outputPath(request, context, "pca-coordinates.tsv");
+        FormatToolSupport.writeAtomically(output, writer -> {
             writer.write("sample\tgroup");
             for (int component = 0; component < components; component++) {
                 writer.write("\tPC" + (component + 1));
@@ -100,7 +100,7 @@ public final class ExpressionPcaTool extends AbstractOpenTool {
             }
         });
         context.progress(1.0, "Expression PCA completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Calculated " + components + " principal components for " + samples + " samples",
                 "result.expression.pca.summary", List.of(samples, components),
                 "PC1 explains " + (varianceTotal == 0 ? "0" :

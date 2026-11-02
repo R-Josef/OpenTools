@@ -5,15 +5,15 @@ import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationIssue;
 import io.opentools.api.tool.ValidationResult;
 import io.opentools.core.util.OrderedParallelProcessor;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 import io.opentools.formats.fasta.FastaReader;
 import io.opentools.formats.fasta.FastaRecord;
 import io.opentools.formats.fasta.FastaWriter;
@@ -71,7 +71,7 @@ public final class FastaRenameTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         ValidationResult result = validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("input")));
         if ("MAP".equals(request.string("mode")) && parseMapping(request.string("mapping")).isEmpty()) {
             result = result.merge(ValidationResult.of(ValidationIssue.error(
                     "mapping", "No ID mappings were provided.", "Add OLD<TAB>NEW pairs.")));
@@ -93,8 +93,8 @@ public final class FastaRenameTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
-        Path output = FormatTaskSupport.outputPath(request, context, "renamed.fa");
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
+        Path output = FormatToolSupport.outputPath(request, context, "renamed.fa");
         Path report = context.defaultOutputPath("rename-report.tsv");
         Map<String, String> mapping = "MAP".equals(request.string("mode"))
                 ? parseMapping(request.string("mapping")) : Map.of();
@@ -105,7 +105,7 @@ public final class FastaRenameTool extends AbstractOpenTool {
                 request.integer("threads"), Files.size(request.path("input")), 16L * 1024 * 1024);
         long[] totals = new long[4];
 
-        FormatTaskSupport.writePairAtomically(output, report, (writer, reportWriter) -> {
+        FormatToolSupport.writePairAtomically(output, report, (writer, reportWriter) -> {
             reportWriter.write("record\told_id\tnew_id\tstatus\tdiagnostic\n");
             Set<String> outputIds = new LinkedHashSet<>();
             Map<String, Integer> duplicateNumbers = new LinkedHashMap<>();
@@ -180,7 +180,7 @@ public final class FastaRenameTool extends AbstractOpenTool {
             totals[3] = mapping.size() - usedMappings.size();
         });
         context.progress(1.0, "FASTA rename completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Renamed " + totals[0] + " FASTA records",
                 "result.fasta.rename.summary", List.of(totals[0]),
                 totals[2] + " duplicate IDs adjusted; " + totals[3] + " mappings unused.",

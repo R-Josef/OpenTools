@@ -1,14 +1,14 @@
 package io.opentools.visualization;
 
 import io.opentools.core.tool.ToolRegistry;
-import io.opentools.visualization.task.GeneStructureTool;
-import io.opentools.visualization.task.HeatmapTool;
-import io.opentools.visualization.task.ExpressionPlotTools;
-import io.opentools.visualization.task.EnrichmentPlotTools;
-import io.opentools.visualization.task.TreePlotTool;
-import io.opentools.visualization.task.ComparativePlotTools;
-import io.opentools.visualization.task.AdvancedPlotTools;
-import io.opentools.visualization.task.VennTool;
+import io.opentools.visualization.tools.GeneStructureTool;
+import io.opentools.visualization.tools.HeatmapTool;
+import io.opentools.visualization.tools.ExpressionPlotTools;
+import io.opentools.visualization.tools.EnrichmentPlotTools;
+import io.opentools.visualization.tools.TreePlotTool;
+import io.opentools.visualization.tools.ComparativePlotTools;
+import io.opentools.visualization.tools.AdvancedPlotTools;
+import io.opentools.visualization.tools.VennTool;
 
 public final class BuiltInVisualizations {
     private BuiltInVisualizations() {

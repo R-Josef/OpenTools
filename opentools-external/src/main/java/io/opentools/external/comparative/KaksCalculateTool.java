@@ -4,14 +4,14 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
 import io.opentools.core.util.OrderedParallelProcessor;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 import io.opentools.formats.fasta.FastaReader;
 import io.opentools.formats.fasta.FastaRecord;
 
@@ -36,10 +36,10 @@ public final class KaksCalculateTool extends AbstractOpenTool {
 
     @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
     @Override public ValidationResult validate(ToolRequest request) {
-        return validateParameters(request).merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+        return validateParameters(request).merge(FormatToolSupport.validateOutput(request, request.path("input")));
     }
 
-    @Override public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         List<FastaRecord> records = new ArrayList<>();
         try (FastaReader reader = new FastaReader(request.path("input"))) {
             FastaRecord record;
@@ -52,11 +52,11 @@ public final class KaksCalculateTool extends AbstractOpenTool {
                     "Provide an even number of adjacent aligned CDS records.",
                     "Each sequence pair must have equal aligned length.");
         }
-        Path output = FormatTaskSupport.outputPath(request, context, "kaks.tsv");
+        Path output = FormatToolSupport.outputPath(request, context, "kaks.tsv");
         int threads = OrderedParallelProcessor.resolveThreads(
                 request.integer("threads"), Files.size(request.path("input")));
         long[] pairs = new long[1];
-        FormatTaskSupport.writeAtomically(output, writer -> {
+        FormatToolSupport.writeAtomically(output, writer -> {
             writer.write("sequence_a\tsequence_b\tlength\tka\tks\tka_ks\n");
             int pairCount = records.size() / 2;
             int[] nextPair = {0};
@@ -85,7 +85,7 @@ public final class KaksCalculateTool extends AbstractOpenTool {
             );
         });
         context.progress(1.0, "Ka/Ks calculation completed");
-        return new TaskResult("Calculated Ka/Ks for " + pairs[0] + " sequence pairs",
+        return new ToolResult("Calculated Ka/Ks for " + pairs[0] + " sequence pairs",
                 "result.kaks.summary", List.of(pairs[0]),
                 "Nei-Gojobori style approximate codon distances.", "result.kaks.detail", List.of(),
                 new ResultTable(List.of("Metric", "Value"), List.of(List.of("Pairs", Long.toString(pairs[0])))),

@@ -7,6 +7,16 @@
 - Linux x64 and macOS x64/arm64 portable release packaging.
 - GitHub Actions release matrix that builds and validates all platform
   artifacts before publishing a tagged GitHub Release.
+- Plugin API 2.0 with `InteractiveOpenTool`, lifecycle-safe `ToolPanel` pages,
+  and standard request submission through `ToolUiContext`.
+- Bundled default example plugin with the interactive Coin Runner tool, JSON
+  run data, PNG result artwork, and default-enabled release packaging.
+
+### Changed
+
+- Tool terminology is now consistent across the UI, CLI JSON, docs, and public
+  execution contracts: `ToolExecutionContext`, `ToolResult`, and
+  `ToolExecutionService`.
 
 ## 0.8.0-SNAPSHOT
 

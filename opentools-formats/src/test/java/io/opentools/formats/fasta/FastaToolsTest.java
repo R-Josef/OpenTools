@@ -1,7 +1,7 @@
 package io.opentools.formats.fasta;
 
 import io.opentools.api.tool.CancellationToken;
-import io.opentools.api.tool.TaskContext;
+import io.opentools.api.tool.ToolExecutionContext;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
 import org.junit.jupiter.api.Test;
@@ -24,7 +24,7 @@ final class FastaToolsTest {
         Path input = tempDir.resolve("input.fa");
         Files.writeString(input, ">a\nGGCC\n>b\nAT\n");
         Path output = tempDir.resolve("stats.tsv");
-        TaskContext context = context();
+        ToolExecutionContext context = context();
 
         var result = new FastaStatsTool().execute(
                 new ToolRequest("fasta.stats", Map.of("input", input.toString(), "output", output.toString())),
@@ -71,7 +71,7 @@ final class FastaToolsTest {
         Path input = tempDir.resolve("input.fa");
         Files.writeString(input, ">a description\nACGT\n>b\nTT\n");
         Path output = tempDir.resolve("out.fa");
-        TaskContext context = context();
+        ToolExecutionContext context = context();
         ToolRequest request = new ToolRequest("fasta.extract", Map.of(
                 "input", input.toString(),
                 "ids", "a\nmissing\n",
@@ -104,7 +104,7 @@ final class FastaToolsTest {
         Path input = tempDir.resolve("merge-input.fa");
         Files.writeString(input, ">a\nAA\n>b\nCCC\n>c\nG\n");
         Path merged = tempDir.resolve("merged.fa");
-        TaskContext context = context();
+        ToolExecutionContext context = context();
         var mergedResult = new FastaMergeTool().execute(
                 new ToolRequest("fasta.merge", Map.of(
                         "inputs", input.toString(),
@@ -130,9 +130,9 @@ final class FastaToolsTest {
         assertTrue(Files.exists(parts.resolve("part-0002.fa")));
     }
 
-    private TaskContext context() {
+    private ToolExecutionContext context() {
         Path runDir = tempDir.resolve("run");
-        return new TaskContext(
+        return new ToolExecutionContext(
                 "run",
                 tempDir,
                 runDir,

@@ -15,7 +15,7 @@ final class ExitCodesTest {
     @Test
     void mapsJobsAndExceptionsToStableExitCodes() {
         assertEquals(ExitCodes.SUCCESS, ExitCodes.forJob(job(JobStatus.SUCCEEDED, null)));
-        assertEquals(ExitCodes.EXECUTION, ExitCodes.forJob(job(JobStatus.FAILED, "TASK_FAILED")));
+        assertEquals(ExitCodes.EXECUTION, ExitCodes.forJob(job(JobStatus.FAILED, "TOOL_FAILED")));
         assertEquals(ExitCodes.DEPENDENCY,
                 ExitCodes.forJob(job(JobStatus.FAILED, "EXTERNAL_TOOL_MISSING")));
         assertEquals(ExitCodes.CANCELLED, ExitCodes.forJob(job(JobStatus.CANCELLED, "CANCELLED")));

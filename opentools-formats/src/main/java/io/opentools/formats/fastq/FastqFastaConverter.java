@@ -12,7 +12,7 @@ public final class FastqFastaConverter {
 
     public static long convert(Path input, Path output) throws Exception {
         long[] totals = new long[1];
-        io.opentools.formats.FormatTaskSupport.writeAtomically(output, writer -> {
+        io.opentools.formats.FormatToolSupport.writeAtomically(output, writer -> {
             long count = 0;
             try (FastqReader reader = new FastqReader(input)) {
                 FastqRecord record;

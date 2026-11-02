@@ -1,6 +1,6 @@
 # 插件开发者指南
 
-OpenTools 插件使用 Plugin API 1.0，通过独立类加载器注册工具和页面。插件 JAR
+OpenTools 插件使用 Plugin API 2.0，通过独立类加载器注册工具和页面。插件 JAR
 需要 `META-INF/opentools-plugin.json`。
 
 ## 最小描述
@@ -10,7 +10,7 @@ OpenTools 插件使用 Plugin API 1.0，通过独立类加载器注册工具和�
   "id": "example.plugin",
   "name": "Example Plugin",
   "version": "1.0.0",
-  "apiVersion": "1.0",
+  "apiVersion": "2.0",
   "mainClass": "com.example.ExamplePlugin",
   "description": "Example extension",
   "dependencies": [],
@@ -28,8 +28,8 @@ OpenTools 插件使用 Plugin API 1.0，通过独立类加载器注册工具和�
 mvn -pl opentools-example-plugin -am package
 ```
 
-把插件 JAR 放入发布目录的 `plugins/`。复制不会自动执行插件；必须在 GUI 或 CLI
-中显式启用。
+把插件 JAR 放入发布目录的 `plugins/`。第三方插件默认禁用；发布包通过
+`plugins/plugin-state.json` 预置受信任默认插件的启用状态。
 
 ```powershell
 opentools plugins inspect example.plugin
@@ -59,7 +59,7 @@ Maven 插件应使用 `provided` scope 依赖 `opentools-plugin-api`。API JAR
 同时包含扩展接口和实现插件工具所需的公共执行契约。
 
 完整编译方式、运行时边界、Javadoc 和兼容策略见
-[Plugin API 1.0](plugin-api.md)。
+[Plugin API 2.0](plugin-api.md)。
 
 ## 安全边界
 
@@ -78,6 +78,7 @@ OpenTools 默认禁用插件，但不把不受信任代码变成安全代码。�
 - 能力最小化；
 - 无路径穿越或解压炸弹行为；
 - 工具参数有完整 Schema；
+- 交互页面正确管理生命周期并提交标准请求；
 - 工具、GUI、CLI、MCP 使用同一执行契约；
 - 许可证和第三方声明完整；
 - 有禁用、失败回滚和升级测试。

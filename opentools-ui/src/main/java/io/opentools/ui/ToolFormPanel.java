@@ -1,10 +1,10 @@
 package io.opentools.ui;
 
-import io.opentools.core.job.TaskExecutionService;
+import io.opentools.core.job.ToolExecutionService;
 import io.opentools.core.job.ToolValidationException;
 import io.opentools.core.i18n.LanguageManager;
 import io.opentools.api.tool.ParameterType;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
@@ -53,7 +53,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 final class ToolFormPanel extends JPanel {
-    private TaskExecutionService executionService;
+    private ToolExecutionService executionService;
     private final LanguageManager language;
     private final Runnable afterSubmit;
     private final Map<String, Supplier<Object>> valueReaders = new LinkedHashMap<>();
@@ -67,7 +67,7 @@ final class ToolFormPanel extends JPanel {
     private ToolDescriptor tool;
     private int row;
 
-    ToolFormPanel(TaskExecutionService executionService, LanguageManager language, Runnable afterSubmit) {
+    ToolFormPanel(ToolExecutionService executionService, LanguageManager language, Runnable afterSubmit) {
         this.executionService = executionService;
         this.language = language;
         this.afterSubmit = afterSubmit;
@@ -130,7 +130,7 @@ final class ToolFormPanel extends JPanel {
         setTool(null);
     }
 
-    void setExecutionService(TaskExecutionService executionService) {
+    void setExecutionService(ToolExecutionService executionService) {
         this.executionService = executionService;
         validationArea.setText("");
     }

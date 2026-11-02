@@ -15,6 +15,8 @@
 发布目录还包含 `plugin-sdk/`，其中提供自包含的 Plugin API 编译 JAR、Javadoc
 JAR 和可直接浏览的 HTML。该 API 只用于编译，不应打包进插件。
 
+受信任的示例插件位于 `plugins/`，默认启用，并提供可交互的“金币跑酷”工具。
+
 ## Windows x64 便携包
 
 适合：
@@ -40,6 +42,8 @@ opentools-<version>-windows-x64/
     iqtree/
     mcscanx/
   docs/
+  plugins/
+    opentools-example-plugin.jar
   plugin-sdk/
   licenses/
   THIRD_PARTY_NOTICES.md
@@ -61,6 +65,7 @@ opentools-<version>-linux-x64/
     runtime/
     tools/
     docs/
+    plugins/
     licenses/
 ```
 

@@ -5,8 +5,8 @@ import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
@@ -21,7 +21,7 @@ import io.opentools.external.process.TemporaryFiles;
 import io.opentools.external.tool.ExecutableLocator;
 import io.opentools.external.tool.ExternalToolSpecs;
 import io.opentools.external.tool.ToolStatus;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -80,7 +80,7 @@ public final class HmmerSearchTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path output = request.path("domtbl");
         if (output == null || output.toString().isBlank()) {
             output = context.defaultOutputPath("hmmer-domtbl.txt");
@@ -121,7 +121,7 @@ public final class HmmerSearchTool extends AbstractOpenTool {
                 throw new ExternalProcessException("HMMER_OUTPUT_MISSING",
                         "hmmscan did not create domtblout.", "Check HMMER parameters and write permissions.");
             }
-            FormatTaskSupport.createParent(output);
+            FormatToolSupport.createParent(output);
             Files.move(domtbl, output, StandardCopyOption.REPLACE_EXISTING);
             List<HmmerDomainHit> hits = new HmmerDomTableParser().parse(output);
             context.progress(1.0, "HMMER search completed");
@@ -129,7 +129,7 @@ public final class HmmerSearchTool extends AbstractOpenTool {
                     List.of("Metric", "Value"),
                     List.of(List.of("Domain hits", Integer.toString(hits.size())))
             );
-            return new TaskResult(
+            return new ToolResult(
                     "HMMER reported " + hits.size() + " domain hits",
                     "result.hmmer.summary", List.of(hits.size()),
                     "hmmscan " + hmmscan.version(),

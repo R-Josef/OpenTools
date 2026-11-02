@@ -4,8 +4,8 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ToolParameter;
@@ -13,7 +13,7 @@ import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationIssue;
 import io.opentools.api.tool.ValidationResult;
 import io.opentools.core.util.OrderedParallelProcessor;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 import io.opentools.formats.fastq.FastqReader;
 import io.opentools.formats.fastq.FastqRecord;
 
@@ -62,7 +62,7 @@ public final class FastqFilterTool extends AbstractOpenTool {
     @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
     @Override public ValidationResult validate(ToolRequest request) {
         ValidationResult result = validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("input")));
         if (request.integer("minLength") > request.integer("maxLength")) {
             result = result.merge(ValidationResult.of(ValidationIssue.error(
                     "minLength", "Minimum length exceeds maximum length.", "Adjust length thresholds.")));
@@ -70,15 +70,15 @@ public final class FastqFilterTool extends AbstractOpenTool {
         return result;
     }
 
-    @Override public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         FastqQualityEncoding.Resolution encoding = FastqQualityEncoding.resolve(
                 request.path("input"), request.string("qualityEncoding"));
         int threads = OrderedParallelProcessor.resolveThreads(
                 request.integer("threads"), Files.size(request.path("input")), 32L * 1024 * 1024);
-        Path output = FormatTaskSupport.outputPath(request, context, "filtered.fastq");
+        Path output = FormatToolSupport.outputPath(request, context, "filtered.fastq");
         Path report = context.defaultOutputPath("fastq-filter-report.tsv");
         long[] totals = new long[3];
-        FormatTaskSupport.writePairAtomically(output, report, (writer, reportWriter) -> {
+        FormatToolSupport.writePairAtomically(output, report, (writer, reportWriter) -> {
             reportWriter.write("record\tid\tstatus\treason\tinput_length\toutput_length"
                     + "\tmean_quality\tn_percent\tquality_encoding\n");
             try (FastqReader reader = new FastqReader(request.path("input"))) {
@@ -127,7 +127,7 @@ public final class FastqFilterTool extends AbstractOpenTool {
             }
         });
         context.progress(1.0, "FASTQ filtering completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Retained " + totals[1] + " of " + totals[0] + " FASTQ reads",
                 "result.fastq.filter.summary", List.of(totals[1], totals[0]),
                 totals[2] + " reads filtered; per-read reasons are in fastq-filter-report.tsv.",

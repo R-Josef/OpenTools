@@ -3,8 +3,8 @@ package io.opentools.analysis.sequence;
 import io.opentools.analysis.BuiltInAnalysis;
 import io.opentools.api.tool.CancellationToken;
 import io.opentools.api.tool.OpenTool;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.core.tool.ToolRegistry;
 import io.opentools.api.tool.ToolRequest;
@@ -33,7 +33,7 @@ final class F1RemainingToolsTest {
         Path input = tempDir.resolve("rename.fa");
         Files.writeString(input, ">a description\nACGT\n>b\nGG\n");
         Path output = tempDir.resolve("renamed.fa");
-        TaskResult result = run("fasta.rename", Map.of(
+        ToolResult result = run("fasta.rename", Map.of(
                 "input", input,
                 "mode", "MAP",
                 "mapping", "a\tb\nb\tb",
@@ -87,7 +87,7 @@ final class F1RemainingToolsTest {
         Path input = tempDir.resolve("orfs.fa");
         Files.writeString(input, ">seq\nCCCATGGCTTAATTT\n");
         Path output = tempDir.resolve("orfs-out.fa");
-        TaskResult result = run("sequence.orf", Map.of(
+        ToolResult result = run("sequence.orf", Map.of(
                 "input", input,
                 "minAminoAcids", 2,
                 "startCodons", "ATG",
@@ -105,7 +105,7 @@ final class F1RemainingToolsTest {
         Path input = tempDir.resolve("mitochondrial-orf.fa");
         Files.writeString(input, ">mito\nATGAGATGA\n");
         Path output = tempDir.resolve("mitochondrial-orf-out.fa");
-        TaskResult result = run("sequence.orf", Map.of(
+        ToolResult result = run("sequence.orf", Map.of(
                 "input", input,
                 "minAminoAcids", 1,
                 "geneticCode", "2",
@@ -127,12 +127,12 @@ final class F1RemainingToolsTest {
             writer.write("@r3\nACGTN\n+\nIII!I\n");
         }
         Path stats = tempDir.resolve("fastq-stats.tsv");
-        TaskResult statsResult = run("fastq.stats", Map.of("input", input, "output", stats));
+        ToolResult statsResult = run("fastq.stats", Map.of("input", input, "output", stats));
         assertEquals(3L, statsResult.metrics().get("records"));
         assertTrue(Files.readString(stats).contains("q30_percent"));
 
         Path output = tempDir.resolve("filtered.fastq.gz");
-        TaskResult filter = run("fastq.filter", Map.of(
+        ToolResult filter = run("fastq.filter", Map.of(
                 "input", input,
                 "trimRight", 1,
                 "minLength", 4,
@@ -162,7 +162,7 @@ final class F1RemainingToolsTest {
         Path input = tempDir.resolve("phred64.fastq");
         Files.writeString(input, "@r64\nACGTA\n+\nhhhhh\n");
         Path stats = tempDir.resolve("phred64-stats.tsv");
-        TaskResult statsResult = run("fastq.stats", Map.of(
+        ToolResult statsResult = run("fastq.stats", Map.of(
                 "input", input,
                 "qualityEncoding", "PHRED_64",
                 "output", stats
@@ -171,7 +171,7 @@ final class F1RemainingToolsTest {
         assertEquals("PHRED_64", statsResult.metrics().get("qualityEncoding"));
 
         Path filtered = tempDir.resolve("phred64-filtered.fastq");
-        TaskResult filterResult = run("fastq.filter", Map.of(
+        ToolResult filterResult = run("fastq.filter", Map.of(
                 "input", input,
                 "qualityEncoding", "AUTO",
                 "minMeanQuality", 30.0,
@@ -190,7 +190,7 @@ final class F1RemainingToolsTest {
             writer.write("chr1\t2\t5\t-\tnegative\n");
         }
         Path output = tempDir.resolve("subsequence-out.fa");
-        TaskResult result = run("fasta.subsequence", Map.of(
+        ToolResult result = run("fasta.subsequence", Map.of(
                 "input", input,
                 "regionsFile", regions,
                 "output", output
@@ -259,7 +259,7 @@ final class F1RemainingToolsTest {
         assertEquals(Files.readString(filterSequential), Files.readString(filterParallel));
     }
 
-    private TaskResult run(String id, Map<String, Object> supplied) throws Exception {
+    private ToolResult run(String id, Map<String, Object> supplied) throws Exception {
         ToolRegistry registry = new ToolRegistry();
         BuiltInAnalysis.register(registry);
         OpenTool tool = registry.find(id).orElseThrow();
@@ -272,7 +272,7 @@ final class F1RemainingToolsTest {
         var validation = tool.validate(request);
         assertTrue(validation.valid(), validation.issues().toString());
         Path output = Files.createDirectories(tempDir.resolve("out"));
-        return tool.execute(request, new TaskContext("f1-remaining", tempDir, output, output,
+        return tool.execute(request, new ToolExecutionContext("f1-remaining", tempDir, output, output,
                 ignored -> { }, ignored -> { }, new CancellationToken()));
     }
 

@@ -1,8 +1,8 @@
 package io.opentools.plugin.host.fixture;
 
 import io.opentools.api.tool.OutputArtifact;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.plugin.OpenToolsPlugin;
@@ -24,7 +24,7 @@ public class TestPlugin implements OpenToolsPlugin {
         private static final ToolDescriptor DESCRIPTOR = new ToolDescriptor(
                 "fixture.plugin.echo",
                 "Plugin Echo",
-                "Test plugin task.",
+                "Test plugin tool.",
                 "Plugin",
                 List.of(),
                 List.of("Text"),
@@ -39,11 +39,11 @@ public class TestPlugin implements OpenToolsPlugin {
         }
 
         @Override
-        public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+        public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
             Path output = context.defaultOutputPath("plugin-echo.txt");
             Files.writeString(output, "plugin");
-            return TaskResult.success(
-                    "Plugin task",
+            return ToolResult.success(
+                    "Plugin tool",
                     "",
                     null,
                     List.of(new OutputArtifact(output, "Plugin output", "text/plain"))

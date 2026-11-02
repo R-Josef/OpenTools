@@ -26,7 +26,7 @@ final class McpHttpServerTest {
                 List.of()
         );
              McpHttpServer server = new McpHttpServer(
-                     new McpToolServer(runtime.tasks()),
+                     new McpToolServer(runtime.toolAutomation()),
                      "127.0.0.1",
                      0,
                      "test-token-with-32-characters"
@@ -93,7 +93,7 @@ final class McpHttpServerTest {
             assertThrows(
                     IllegalArgumentException.class,
                     () -> new McpHttpServer(
-                            new McpToolServer(runtime.tasks()),
+                            new McpToolServer(runtime.toolAutomation()),
                             "127.0.0.1",
                             0,
                             "short-token"

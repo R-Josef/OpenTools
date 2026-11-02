@@ -15,7 +15,7 @@ same Markdown directory when the interface language is English.
 | Use the terminal or an agent | [CLI](cli.md), [MCP](mcp.md) |
 | Configure external programs | [External tools](external-tools.md) |
 | Develop a plugin | [Plugin developer guide](plugin-development.md) |
-| Plugin API and Javadoc | [Plugin API 1.0](plugin-api.md) |
+| Plugin API and Javadoc | [Plugin API 2.0](plugin-api.md) |
 | Develop the UI or Docs | [UI and Docs development](ui-and-docs.md) |
 | Troubleshoot failures | [Errors and exit codes](errors-exit-codes.md), [FAQ](faq.md) |
 | Choose a package | [Release packages](release-packages.md) |
@@ -29,6 +29,7 @@ same Markdown directory when the interface language is English.
 - [Expression and enrichment](categories/expression-enrichment.md)
 - [HTS / BAM / VCF](categories/hts.md)
 - [Visualization](categories/visualization.md)
+- [Plugin tools](categories/plugin.md)
 - [CLI and MCP](cli.md)
 - [External tools](external-tools.md)
 - [FAQ](faq.md)

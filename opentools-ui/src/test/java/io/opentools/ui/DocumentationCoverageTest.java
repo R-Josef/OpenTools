@@ -70,7 +70,7 @@ final class DocumentationCoverageTest {
         DocsPanel panel = reference.get();
 
         assertEquals(86, panel.navigationToolCount());
-        assertEquals(7, panel.navigationCategoryCount());
+        assertEquals(8, panel.navigationCategoryCount());
         assertEquals(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, panel.horizontalScrollPolicy());
         SwingUtilities.invokeAndWait(() -> panel.openTool("fasta.stats"));
         assertEquals("tool:fasta.stats", panel.activeDocument());
@@ -98,7 +98,8 @@ final class DocumentationCoverageTest {
                 "categories/alignment-phylogeny.md",
                 "categories/expression-enrichment.md",
                 "categories/hts.md",
-                "categories/visualization.md"
+                "categories/visualization.md",
+                "categories/plugin.md"
         );
         for (String languageCode : List.of("en_US", "zh_CN")) {
             for (String document : documents) {
@@ -121,7 +122,7 @@ final class DocumentationCoverageTest {
                 "errors-exit-codes.md", "external-tools.md", "release-packages.md", "ui-and-docs.md",
                 "categories/sequence.md", "categories/annotation-bed.md", "categories/table.md",
                 "categories/alignment-phylogeny.md", "categories/expression-enrichment.md",
-                "categories/hts.md", "categories/visualization.md"
+                "categories/hts.md", "categories/visualization.md", "categories/plugin.md"
         );
         Pattern links = Pattern.compile("!?\\[[^]]*]\\(([^)]+)\\)");
         for (String languageCode : List.of("en_US", "zh_CN")) {

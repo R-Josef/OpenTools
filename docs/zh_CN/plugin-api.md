@@ -1,4 +1,4 @@
-# Plugin API 1.0
+# Plugin API 2.0
 
 OpenTools 插件只需要针对一个自包含 JAR 编译：
 
@@ -11,7 +11,9 @@ plugin-sdk/opentools-plugin-api-<version>.jar
 
 插件扩展类型位于 `io.opentools.plugin`；公共执行契约位于
 `io.opentools.api.tool`，例如 `OpenTool`、`ToolDescriptor`、`ToolRequest`、
-`TaskContext` 和 `TaskResult`。这些包由宿主在运行时提供，插件内不应重复打包。
+`ToolExecutionContext` 和 `ToolResult`。交互工具另外提供
+`InteractiveOpenTool`、`ToolPanel` 和 `ToolUiContext`。这些包由宿主在运行时
+提供，插件内不应重复打包。
 
 ## 扩展契约
 
@@ -25,8 +27,26 @@ META-INF/opentools-plugin.json
 宿主创建该类的实例并把 `PluginContext` 传给 `onEnable`。上下文可以注册：
 
 - 通过 `registerTool` 注册无界面工具；
+- 通过注册 `InteractiveOpenTool` 提供自定义交互页面的工具；
 - 通过 `registerPage` 注册桌面页面；
 - 在声明 `data` 能力后使用插件私有目录和日志。
+
+## 交互工具
+
+`OpenTool` 始终保持无界面契约。需要自定义 Swing 页面的工具实现
+`InteractiveOpenTool`，并在 `createPanel(ToolUiContext)` 中返回新的
+`ToolPanel`。
+
+交互页面替代宿主自动生成的参数表单。页面可以使用计时器和键盘事件，但完成后的
+数据必须通过 `ToolUiContext.submit(ToolRequest)` 提交。这样参数校验、作业、
+历史、结果、CLI、MCP 和重试继续共用同一执行契约。
+
+`ToolParameter` 仍然只表示可序列化数据，例如字符串、数字、文件和枚举。不要把
+`JPanel` 或其他活动 Swing 对象放进 `ToolDescriptor`、`ToolParameter` 或
+`ToolRequest`。
+
+切换工具、切换项目或卸载所属插件时，宿主会关闭 `ToolPanel`。使用计时器的页面
+必须在 `close()` 中停止计时器。
 
 ## 编译依赖
 
@@ -79,6 +99,17 @@ Java 插件运行在 OpenTools JVM 内，类加载隔离不是安全沙箱。只
 
 ## 兼容性
 
-Plugin API 1.0 是当前唯一支持的插件扩展契约。主版本必须与宿主一致；插件可以
+Plugin API 2.0 是当前插件扩展契约。主版本必须与宿主一致；插件可以
 请求同主版本中的当前或较旧次版本。本版本不支持旧 Java 面板插件、`.plugin`
 脚本包或 TBtools 插件二进制。
+
+API 2.0 将执行契约统一为 Tool 语义：
+
+| API 1.0 | API 2.0 |
+| --- | --- |
+| `TaskContext` | `ToolExecutionContext` |
+| `TaskResult` | `ToolResult` |
+| `TaskExecutionService` | `ToolExecutionService` |
+| `TaskAutomationService` | `ToolAutomationService` |
+
+针对 1.0 编译的插件需要使用 2.0 API 重新编译。

@@ -1,4 +1,4 @@
-# Plugin API 1.0
+# Plugin API 2.0
 
 OpenTools plugins compile against one self-contained JAR:
 
@@ -12,7 +12,8 @@ runtime, SQLite layer, job service, plugin host, or desktop implementation.
 
 Plugin extension types are under `io.opentools.plugin`. Public execution contracts
 are under `io.opentools.api.tool`, for example `OpenTool`, `ToolDescriptor`,
-`ToolRequest`, `TaskContext`, and `TaskResult`. These packages are loaded from
+`ToolRequest`, `ToolExecutionContext`, and `ToolResult`. Interactive tools add
+`InteractiveOpenTool`, `ToolPanel`, and `ToolUiContext`. These packages are loaded from
 the host at runtime and must not be duplicated inside a plugin.
 
 ## Extension contract
@@ -28,8 +29,27 @@ During enablement the host creates that class and passes a `PluginContext` to
 `onEnable`. The context can register:
 
 - headless tools through `registerTool`;
+- interactive tools by registering an `InteractiveOpenTool`;
 - desktop pages through `registerPage`;
 - private data and logs through the declared `data` capability.
+
+## Interactive tools
+
+`OpenTool` remains a headless contract. A tool that needs a custom Swing page
+implements `InteractiveOpenTool` and returns a fresh `ToolPanel` from
+`createPanel(ToolUiContext)`.
+
+The panel replaces the generated parameter form for that tool. The page may use
+timers and keyboard input, but completed values must be submitted through
+`ToolUiContext.submit(ToolRequest)`. This keeps validation, jobs, history,
+results, CLI, MCP, and retry on the same execution contract.
+
+`ToolParameter` values remain serializable data such as strings, numbers, files,
+and enums. Never place a `JPanel` or another live Swing object in
+`ToolDescriptor`, `ToolParameter`, or `ToolRequest`.
+
+The host closes `ToolPanel` when selection changes, the project changes, or the
+owning plugin unloads. Panels with timers must stop them in `close()`.
 
 ## Compile dependency
 
@@ -86,7 +106,18 @@ source, dependencies, requested capabilities, and licenses.
 
 ## Compatibility
 
-Plugin API 1.0 is the only supported extension contract. The major version must
+Plugin API 2.0 is the current extension contract. The major version must
 match the host. A plugin may request the current minor version or an older minor
 version within the same major version. This release does not support legacy
 Java panel plugins, `.plugin` script packages, or TBtools plugin binaries.
+
+API 2.0 intentionally uses Tool terminology throughout the execution contracts:
+
+| API 1.0 | API 2.0 |
+| --- | --- |
+| `TaskContext` | `ToolExecutionContext` |
+| `TaskResult` | `ToolResult` |
+| `TaskExecutionService` | `ToolExecutionService` |
+| `TaskAutomationService` | `ToolAutomationService` |
+
+Plugins compiled against 1.0 must be rebuilt against 2.0.

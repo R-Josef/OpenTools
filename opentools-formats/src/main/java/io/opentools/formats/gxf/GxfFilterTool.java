@@ -5,15 +5,15 @@ import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationIssue;
 import io.opentools.api.tool.ValidationResult;
 import io.opentools.core.util.OrderedParallelProcessor;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.io.BufferedWriter;
 import java.nio.file.Files;
@@ -65,7 +65,7 @@ public final class GxfFilterTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         ValidationResult result = validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("input")));
         if (request.integer("minStart") > request.integer("maxEnd")) {
             result = result.merge(ValidationResult.of(ValidationIssue.error(
                     "minStart", "Minimum start exceeds maximum end.", "Adjust coordinate limits.")));
@@ -93,9 +93,9 @@ public final class GxfFilterTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path input = request.path("input");
-        Path output = FormatTaskSupport.outputPath(request, context, "filtered.gff3");
+        Path output = FormatToolSupport.outputPath(request, context, "filtered.gff3");
         boolean ignoreCase = request.bool("ignoreCase");
         Set<String> types = AnnotationTaskSupport.tokens(request.string("types"), ignoreCase);
         Set<String> sources = AnnotationTaskSupport.tokens(request.string("sources"), ignoreCase);
@@ -108,7 +108,7 @@ public final class GxfFilterTool extends AbstractOpenTool {
         long[] totals = new long[2];
         Map<String, Long> reasons = new LinkedHashMap<>();
 
-        FormatTaskSupport.writeAtomically(output, writer -> {
+        FormatToolSupport.writeAtomically(output, writer -> {
             long[] localTotals = new long[2];
             Map<String, Long> reasonCounts = new LinkedHashMap<>();
             try (GxfReader reader = new GxfReader(input)) {
@@ -150,7 +150,7 @@ public final class GxfFilterTool extends AbstractOpenTool {
         long inputCount = totals[0];
         long kept = totals[1];
         context.progress(1.0, "Annotation filter completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Retained " + kept + " of " + inputCount + " annotation records",
                 "result.gxf.filter.summary", List.of(kept, inputCount),
                 "Filtered " + (inputCount - kept) + " records.",

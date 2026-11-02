@@ -322,6 +322,9 @@ Copy-Item -LiteralPath (Join-Path $projectRoot "docs\zh_CN") `
 $packagePlugins = Join-Path $imageRoot "plugins"
 New-Item -ItemType Directory -Force -Path $packagePlugins, (Join-Path $packagePlugins "data") | Out-Null
 Copy-Item -LiteralPath (Join-Path $projectRoot "plugins\README.md") -Destination (Join-Path $packagePlugins "README.md")
+Copy-Item -LiteralPath (Join-Path $projectRoot "plugins\plugin-state.json") -Destination (Join-Path $packagePlugins "plugin-state.json")
+Copy-Item -LiteralPath (Join-Path $projectRoot "opentools-example-plugin\target\opentools-example-plugin.jar") `
+    -Destination (Join-Path $packagePlugins "opentools-example-plugin.jar")
 Copy-Item -LiteralPath (Join-Path $projectRoot "skills") -Destination (Join-Path $imageRoot "skills") -Recurse
 Copy-Item -LiteralPath (Join-Path $projectRoot "examples") -Destination (Join-Path $imageRoot "examples") -Recurse
 $pluginSdk = Join-Path $imageRoot "plugin-sdk"

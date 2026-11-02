@@ -5,15 +5,15 @@ import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationIssue;
 import io.opentools.api.tool.ValidationResult;
 import io.opentools.core.util.OrderedParallelProcessor;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -87,7 +87,7 @@ public final class CdsTranslateTool extends AbstractOpenTool {
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Path output = request.path("output");
         if (output == null || output.toString().isBlank()) {
             output = context.defaultOutputPath("translated.fa");
@@ -104,7 +104,7 @@ public final class CdsTranslateTool extends AbstractOpenTool {
                 request.integer("threads"), Files.size(request.path("input")), 16L * 1024 * 1024);
         long[] totals = new long[4];
 
-        FormatTaskSupport.writeAtomically(output, writer -> {
+        FormatToolSupport.writeAtomically(output, writer -> {
             try (FastaReader reader = new FastaReader(request.path("input"))) {
                 OrderedParallelProcessor.process(
                         threads,
@@ -160,7 +160,7 @@ public final class CdsTranslateTool extends AbstractOpenTool {
                 )
         );
         context.progress(1.0, "CDS translation completed");
-        return new TaskResult(
+        return new ToolResult(
                 "Translated " + totals[0] + " sequences",
                 "result.fasta.translate.summary",
                 List.of(totals[0]),

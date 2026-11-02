@@ -5,14 +5,14 @@ import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
 import io.opentools.core.util.SqliteSpillSupport;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.io.BufferedWriter;
 import java.nio.file.Files;
@@ -88,12 +88,12 @@ public final class GxfOverlapTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         return validateParameters(request)
-                .merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+                .merge(FormatToolSupport.validateOutput(request, request.path("input")));
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
-        Path output = FormatTaskSupport.outputPath(request, context, "overlaps.tsv");
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
+        Path output = FormatToolSupport.outputPath(request, context, "overlaps.tsv");
         if (shouldUseDisk(request)) {
             return diskResult(request, output, context);
         }
@@ -120,10 +120,10 @@ public final class GxfOverlapTool extends AbstractOpenTool {
         return Files.size(request.path("input")) >= 8L * 1024 * 1024;
     }
 
-    private static TaskResult memoryResult(
+    private static ToolResult memoryResult(
             ToolRequest request,
             Path output,
-            TaskContext context
+            ToolExecutionContext context
     ) throws Exception {
         Map<String, List<GxfRecord>> bySequence = new LinkedHashMap<>();
         long records = 0;
@@ -144,7 +144,7 @@ public final class GxfOverlapTool extends AbstractOpenTool {
         }
         requireRecords(records);
         long[] totals = new long[2];
-        FormatTaskSupport.writeAtomically(output, writer -> {
+        FormatToolSupport.writeAtomically(output, writer -> {
             writer.write(REPORT_HEADER);
             long pairs = 0;
             int maxPairs = request.integer("maxPairs");
@@ -192,10 +192,10 @@ public final class GxfOverlapTool extends AbstractOpenTool {
                 records, totals[0], totals[1] != 0, "IN_MEMORY"));
     }
 
-    private static TaskResult diskResult(
+    private static ToolResult diskResult(
             ToolRequest request,
             Path output,
-            TaskContext context
+            ToolExecutionContext context
     ) throws Exception {
         Path tempDirectory = context.runDirectory().resolve("tmp");
         Path database = SqliteSpillSupport.createTemporaryDatabase(
@@ -223,7 +223,7 @@ public final class GxfOverlapTool extends AbstractOpenTool {
             Path input,
             Path database,
             long maxTempBytes,
-            TaskContext context
+            ToolExecutionContext context
     ) throws Exception {
         long records = 0;
         try (Connection connection = DriverManager.getConnection(
@@ -280,7 +280,7 @@ public final class GxfOverlapTool extends AbstractOpenTool {
             ToolRequest request,
             Path output,
             long records,
-            TaskContext context
+            ToolExecutionContext context
     ) throws Exception {
         long[] totals = new long[2];
         Comparator<DiskRecord> byEnd = Comparator.comparingLong(DiskRecord::end)
@@ -297,7 +297,7 @@ public final class GxfOverlapTool extends AbstractOpenTool {
                      FROM features
                      ORDER BY seq_id,start,end,record_order
                      """)) {
-            FormatTaskSupport.writeAtomically(output, writer -> {
+            FormatToolSupport.writeAtomically(output, writer -> {
                 writer.write(REPORT_HEADER);
                 long pairs = 0;
                 String activeSequence = null;
@@ -370,10 +370,10 @@ public final class GxfOverlapTool extends AbstractOpenTool {
         return new OverlapStats(records, totals[0], totals[1] != 0, "DISK");
     }
 
-    private static TaskResult result(
+    private static ToolResult result(
             ToolRequest request,
             Path output,
-            TaskContext context,
+            ToolExecutionContext context,
             OverlapStats stats
     ) {
         context.progress(1.0, "Annotation overlap scan completed");
@@ -388,7 +388,7 @@ public final class GxfOverlapTool extends AbstractOpenTool {
                 request.integer("maxTempMegabytes")));
         metrics.put("annotationMemory",
                 "IN_MEMORY".equals(stats.mode()) ? "bounded-records" : "disk-interval-index");
-        return new TaskResult(
+        return new ToolResult(
                 "Found " + stats.pairs() + " overlapping record pairs",
                 "result.gxf.overlap.summary", List.of(stats.pairs()),
                 stats.truncated() ? "Pair output reached maxPairs." : "All pairs were considered.",

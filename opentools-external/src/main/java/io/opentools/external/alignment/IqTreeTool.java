@@ -4,8 +4,8 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
@@ -18,7 +18,7 @@ import io.opentools.external.process.TemporaryFiles;
 import io.opentools.external.tool.ExecutableLocator;
 import io.opentools.external.tool.ExternalToolSpecs;
 import io.opentools.external.tool.ToolStatus;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -46,11 +46,11 @@ public final class IqTreeTool extends AbstractOpenTool {
 
     @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
     @Override public ValidationResult validate(ToolRequest request) {
-        return validateParameters(request).merge(FormatTaskSupport.validateOutput(request, request.path("input")));
+        return validateParameters(request).merge(FormatToolSupport.validateOutput(request, request.path("input")));
     }
 
-    @Override public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
-        Path output = FormatTaskSupport.outputPath(request, context, "iqtree.treefile");
+    @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
+        Path output = FormatToolSupport.outputPath(request, context, "iqtree.treefile");
         ToolStatus tool = new ExecutableLocator(ExternalRuntime.appHome()).resolve(
                 ExternalToolSpecs.IQTREE, null, request.path("executablePath"));
         if (!tool.available() || tool.executable() == null) {
@@ -79,10 +79,10 @@ public final class IqTreeTool extends AbstractOpenTool {
                 throw new ExternalProcessException("IQTREE_OUTPUT_MISSING", "IQ-TREE did not create a treefile.",
                         "Check IQ-TREE output parameters.");
             }
-            FormatTaskSupport.createParent(output);
+            FormatToolSupport.createParent(output);
             Files.move(tree, output, StandardCopyOption.REPLACE_EXISTING);
             context.progress(1.0, "IQ-TREE completed");
-            return new TaskResult("IQ-TREE phylogeny completed", "result.iqtree.summary", List.of(),
+            return new ToolResult("IQ-TREE phylogeny completed", "result.iqtree.summary", List.of(),
                     "Model " + request.string("model") + "; " + tool.version(),
                     "result.iqtree.detail", List.of(tool.version()),
                     new ResultTable(List.of("Metric", "Value"), List.of(

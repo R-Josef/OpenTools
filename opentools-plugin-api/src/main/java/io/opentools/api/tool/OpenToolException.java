@@ -1,14 +1,14 @@
 package io.opentools.api.tool;
 
 /**
- * Structured task failure with a stable code and optional recovery suggestion.
+ * Structured tool failure with a stable code and optional recovery suggestion.
  */
 public class OpenToolException extends RuntimeException {
     private final String code;
     private final String suggestion;
 
     /**
-     * Creates a structured task exception.
+     * Creates a structured tool exception.
      *
      * @param code stable error code
      * @param message user-facing message
@@ -21,7 +21,7 @@ public class OpenToolException extends RuntimeException {
     }
 
     /**
-     * Creates a structured task exception with a cause.
+     * Creates a structured tool exception with a cause.
      *
      * @param code stable error code
      * @param message user-facing message

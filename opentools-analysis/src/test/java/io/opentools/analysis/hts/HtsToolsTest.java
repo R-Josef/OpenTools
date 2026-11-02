@@ -10,8 +10,8 @@ import htsjdk.variant.vcf.VCFFileReader;
 import io.opentools.api.tool.CancellationToken;
 import io.opentools.api.tool.OpenTool;
 import io.opentools.api.tool.OpenToolException;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import org.junit.jupiter.api.Test;
@@ -43,7 +43,7 @@ final class HtsToolsTest {
                 r2\t4\t*\t0\t0\t*\t*\t0\t0\tNNNN\tIIII
                 """);
         Path stats = tempDir.resolve("stats.tsv");
-        TaskResult statsResult = run("hts.sam-stats", Map.of("input", sam, "output", stats));
+        ToolResult statsResult = run("hts.sam-stats", Map.of("input", sam, "output", stats));
         assertEquals(2L, statsResult.metrics().get("records"));
         assertEquals(1L, statsResult.metrics().get("mapped"));
 
@@ -75,13 +75,13 @@ final class HtsToolsTest {
                 chr1\t20\t.\tAT\tA\t10\tPASS\t.\tGT\t./.
                 """);
         Path stats = tempDir.resolve("vcf-stats.tsv");
-        TaskResult statsResult = run("hts.vcf.stats", Map.of("input", vcf, "output", stats));
+        ToolResult statsResult = run("hts.vcf.stats", Map.of("input", vcf, "output", stats));
         assertEquals(2L, statsResult.metrics().get("variants"));
         assertEquals(1L, statsResult.metrics().get("snps"));
         assertEquals(1L, statsResult.metrics().get("indels"));
 
         Path filtered = tempDir.resolve("filtered.vcf");
-        TaskResult filterResult = run("hts.vcf.filter", Map.of(
+        ToolResult filterResult = run("hts.vcf.filter", Map.of(
                 "input", vcf, "minQual", 20.0, "maxMissing", 0.5,
                 "biallelicOnly", true, "output", filtered));
         assertEquals(1L, filterResult.metrics().get("retained"));
@@ -111,7 +111,7 @@ final class HtsToolsTest {
 
         run("hts.vcf.stats", Map.of(
                 "input", vcf, "threads", 1, "output", sequential));
-        TaskResult result = run("hts.vcf.stats", Map.of(
+        ToolResult result = run("hts.vcf.stats", Map.of(
                 "input", vcf, "threads", 3, "output", parallel));
 
         assertEquals(Files.readString(sequential), Files.readString(parallel));
@@ -124,7 +124,7 @@ final class HtsToolsTest {
         createIndexedBam(bam);
 
         Path subset = tempDir.resolve("indexed-subset.bam");
-        TaskResult subsetResult = run("hts.bam.subset", Map.of(
+        ToolResult subsetResult = run("hts.bam.subset", Map.of(
                 "input", bam,
                 "regions", "chr1:1-5\nchr1:3-8",
                 "output", subset,
@@ -137,7 +137,7 @@ final class HtsToolsTest {
         Path bed = tempDir.resolve("indexed-regions.bed");
         Files.writeString(bed, "chr1\t0\t10\n");
         Path coverage = tempDir.resolve("indexed-coverage.bedgraph");
-        TaskResult coverageResult = run("hts.bam.coverage", Map.of(
+        ToolResult coverageResult = run("hts.bam.coverage", Map.of(
                 "input", bam,
                 "regions", bed,
                 "output", coverage
@@ -147,7 +147,7 @@ final class HtsToolsTest {
         assertTrue(Files.readString(coverage).contains("chr1\t0\t4\t1"));
 
         Path parallelCoverage = tempDir.resolve("parallel-coverage.bedgraph");
-        TaskResult parallelCoverageResult = run("hts.bam.coverage", Map.of(
+        ToolResult parallelCoverageResult = run("hts.bam.coverage", Map.of(
                 "input", bam,
                 "regions", bed,
                 "threads", 3,
@@ -158,7 +158,7 @@ final class HtsToolsTest {
         assertEquals(Files.readString(coverage), Files.readString(parallelCoverage));
 
         Path bedCoverage = tempDir.resolve("indexed-bed-coverage.tsv");
-        TaskResult bedResult = run("bed.coverage", Map.of(
+        ToolResult bedResult = run("bed.coverage", Map.of(
                 "alignment", bam,
                 "regions", bed,
                 "output", bedCoverage
@@ -197,7 +197,7 @@ final class HtsToolsTest {
         }
 
         Path subset = tempDir.resolve("cram-subset.bam");
-        TaskResult result = run("hts.bam.subset", Map.of(
+        ToolResult result = run("hts.bam.subset", Map.of(
                 "input", cram,
                 "reference", reference,
                 "regions", "chr1:1-10",
@@ -255,7 +255,7 @@ final class HtsToolsTest {
                 "output", sequential,
                 "createIndex", false
         ));
-        TaskResult result = run("hts.bam.subset", Map.of(
+        ToolResult result = run("hts.bam.subset", Map.of(
                 "input", bam,
                 "regions", "chr1:20-30\nchr1:1-10\nchr1:20-30",
                 "threads", 3,
@@ -416,7 +416,7 @@ final class HtsToolsTest {
         assertTrue(Files.readString(rawOutput).contains("\t1.333333\t15"));
 
         Path deduplicatedOutput = tempDir.resolve("deduplicated-pair-coverage.tsv");
-        TaskResult result = run("bed.coverage", Map.of(
+        ToolResult result = run("bed.coverage", Map.of(
                 "alignment", sam,
                 "regions", bed,
                 "countOverlappingPairsOnce", true,
@@ -505,7 +505,7 @@ final class HtsToolsTest {
     void vcfFilterCreatesTbiAndCsiIndexesOnRequest() throws Exception {
         Path vcf = writeIndexableVcf();
         Path tabixOutput = tempDir.resolve("indexed.vcf.gz");
-        TaskResult tabix = run("hts.vcf.filter", Map.of(
+        ToolResult tabix = run("hts.vcf.filter", Map.of(
                 "input", vcf,
                 "output", tabixOutput,
                 "indexType", "AUTO"
@@ -520,7 +520,7 @@ final class HtsToolsTest {
         }
 
         Path bcfOutput = tempDir.resolve("indexed.bcf");
-        TaskResult csi = run("hts.vcf.filter", Map.of(
+        ToolResult csi = run("hts.vcf.filter", Map.of(
                 "input", vcf,
                 "output", bcfOutput,
                 "indexType", "AUTO"
@@ -586,7 +586,7 @@ final class HtsToolsTest {
     void readsAndFiltersBcfInput() throws Exception {
         Path sourceVcf = writeIndexableVcf();
         Path sourceBcf = tempDir.resolve("source.bcf");
-        TaskResult created = run("hts.vcf.filter", Map.of(
+        ToolResult created = run("hts.vcf.filter", Map.of(
                 "input", sourceVcf,
                 "output", sourceBcf,
                 "indexType", "NONE"
@@ -594,7 +594,7 @@ final class HtsToolsTest {
         assertEquals(2L, created.metrics().get("inputVariants"));
 
         Path bcfStats = tempDir.resolve("bcf-stats.tsv");
-        TaskResult stats = run("hts.vcf.stats", Map.of(
+        ToolResult stats = run("hts.vcf.stats", Map.of(
                 "input", sourceBcf,
                 "output", bcfStats
         ));
@@ -603,7 +603,7 @@ final class HtsToolsTest {
         assertEquals(1L, stats.metrics().get("indels"));
 
         Path indexedVcf = tempDir.resolve("bcf-filtered.vcf.gz");
-        TaskResult filtered = run("hts.vcf.filter", Map.of(
+        ToolResult filtered = run("hts.vcf.filter", Map.of(
                 "input", sourceBcf,
                 "output", indexedVcf,
                 "minQual", 20.0,
@@ -645,7 +645,7 @@ final class HtsToolsTest {
                 "output", sequential,
                 "indexType", "NONE"
         ));
-        TaskResult result = run("hts.vcf.filter", Map.of(
+        ToolResult result = run("hts.vcf.filter", Map.of(
                 "input", vcf,
                 "threads", 3,
                 "minQual", 20.0,
@@ -792,11 +792,11 @@ final class HtsToolsTest {
         }
     }
 
-    private TaskResult run(String id, Map<String, Object> supplied) throws Exception {
+    private ToolResult run(String id, Map<String, Object> supplied) throws Exception {
         return run(id, supplied, new CancellationToken());
     }
 
-    private TaskResult run(
+    private ToolResult run(
             String id,
             Map<String, Object> supplied,
             CancellationToken cancellationToken
@@ -816,7 +816,7 @@ final class HtsToolsTest {
         var validation = tool.validate(request);
         assertTrue(validation.valid(), validation.issues().toString());
         Path output = Files.createDirectories(tempDir.resolve("out"));
-        return tool.execute(request, new TaskContext("hts", tempDir, output, output,
+        return tool.execute(request, new ToolExecutionContext("hts", tempDir, output, output,
                 ignored -> { }, ignored -> { }, cancellationToken));
     }
 }

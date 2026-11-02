@@ -4,14 +4,14 @@ import io.opentools.api.tool.AbstractOpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ResultTable;
-import io.opentools.api.tool.TaskContext;
-import io.opentools.api.tool.TaskResult;
+import io.opentools.api.tool.ToolExecutionContext;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
 import io.opentools.formats.Compression;
-import io.opentools.formats.FormatTaskSupport;
+import io.opentools.formats.FormatToolSupport;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -50,11 +50,11 @@ public final class GoLevelTool extends AbstractOpenTool {
 
     @Override
     public ValidationResult validate(ToolRequest request) {
-        return validateParameters(request).merge(FormatTaskSupport.validateOutput(request, request.path("hierarchy")));
+        return validateParameters(request).merge(FormatToolSupport.validateOutput(request, request.path("hierarchy")));
     }
 
     @Override
-    public TaskResult execute(ToolRequest request, TaskContext context) throws Exception {
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         Hierarchy hierarchy = readHierarchy(request.path("hierarchy"));
         Map<String, List<String>> info = new LinkedHashMap<>(hierarchy.info());
         if (request.path("termInfo") != null) {
@@ -62,8 +62,8 @@ public final class GoLevelTool extends AbstractOpenTool {
         }
         LevelResult levelResult = levels(hierarchy.parents());
         Map<String, Integer> levels = levelResult.levels();
-        Path output = FormatTaskSupport.outputPath(request, context, "go-levels.tsv");
-        FormatTaskSupport.writeAtomically(output, writer -> {
+        Path output = FormatToolSupport.outputPath(request, context, "go-levels.tsv");
+        FormatToolSupport.writeAtomically(output, writer -> {
             writer.write("term\tname\tnamespace\tlevel\tparents\n");
             for (Map.Entry<String, Integer> entry : levels.entrySet().stream()
                     .sorted(Map.Entry.<String, Integer>comparingByValue()
@@ -89,7 +89,7 @@ public final class GoLevelTool extends AbstractOpenTool {
         metrics.put("altIds", hierarchy.altIds());
         metrics.put("unresolvedParents", hierarchy.unresolvedParents());
         metrics.put("cycleOrUnreachableTerms", levelResult.unreachableTerms());
-        return new TaskResult(
+        return new ToolResult(
                 "Calculated levels for " + levels.size() + " GO terms",
                 "result.go.level.summary", List.of(levels.size()),
                 "Format: " + hierarchy.format()

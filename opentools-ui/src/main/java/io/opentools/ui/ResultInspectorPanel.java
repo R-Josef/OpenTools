@@ -3,7 +3,7 @@ package io.opentools.ui;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.opentools.core.job.JobRecord;
-import io.opentools.core.job.TaskExecutionService;
+import io.opentools.core.job.ToolExecutionService;
 import io.opentools.core.i18n.LanguageManager;
 
 import javax.swing.BorderFactory;
@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Locale;
 
 final class ResultInspectorPanel extends JPanel {
-    private TaskExecutionService executionService;
+    private ToolExecutionService executionService;
     private final LanguageManager language;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final JComboBox<JobItem> jobs = new JComboBox<>();
@@ -45,7 +45,7 @@ final class ResultInspectorPanel extends JPanel {
     private final int plotTabIndex;
     private JobRecord current;
 
-    ResultInspectorPanel(TaskExecutionService executionService, LanguageManager language) {
+    ResultInspectorPanel(ToolExecutionService executionService, LanguageManager language) {
         this.executionService = executionService;
         this.language = language;
         UiAccessibility.name(table, language.text("results.tab.data", "Result data table"));
@@ -100,7 +100,7 @@ final class ResultInspectorPanel extends JPanel {
         dataView.add(new JScrollPane(table), BorderLayout.CENTER);
         plotViewer = new PlotViewerPanel(language);
         views.addTab(language.text("results.tab.data", "Data"), dataView);
-        views.addTab(language.text("results.tab.plot", "Plot"), plotViewer);
+        views.addTab(language.text("results.tab.visualization", "Visualization"), plotViewer);
         plotTabIndex = views.indexOfComponent(plotViewer);
         views.setEnabledAt(plotTabIndex, false);
         views.setTabLayoutPolicy(JTabbedPane.WRAP_TAB_LAYOUT);
@@ -120,7 +120,7 @@ final class ResultInspectorPanel extends JPanel {
     }
 
     void refresh() {
-        TaskExecutionService requestedService = executionService;
+        ToolExecutionService requestedService = executionService;
         Thread.ofVirtual().start(() -> {
             try {
                 List<JobRecord> recent = requestedService.recentJobs(50);
@@ -157,7 +157,7 @@ final class ResultInspectorPanel extends JPanel {
         });
     }
 
-    void rebind(TaskExecutionService executionService) {
+    void rebind(ToolExecutionService executionService) {
         this.executionService = executionService;
         current = null;
         jobs.removeAllItems();
@@ -225,6 +225,7 @@ final class ResultInspectorPanel extends JPanel {
     private void loadPlot(JsonNode root) {
         Path preview = null;
         Path full = null;
+        Path image = null;
         for (JsonNode artifact : root.path("artifacts")) {
             String mediaType = artifact.path("mediaType").asText("");
             String pathText = artifact.path("path").asText("");
@@ -240,15 +241,21 @@ final class ResultInspectorPanel extends JPanel {
             } else if (mediaType.equals("application/vnd.opentools.plot+json")
                     || mediaType.equals("application/json") && path.getFileName().toString().endsWith(".plot.json")) {
                 full = path;
+            } else if (mediaType.startsWith("image/")) {
+                image = path;
             }
         }
         Path selected = preview != null ? preview : full;
-        if (selected == null) {
+        if (selected == null && image == null) {
             clearPlot();
             return;
         }
         try {
-            plotViewer.load(selected);
+            if (selected != null) {
+                plotViewer.load(selected);
+            } else {
+                plotViewer.loadImage(image);
+            }
             views.setEnabledAt(plotTabIndex, true);
             views.setSelectedIndex(plotTabIndex);
             if (preview != null && !preview.equals(full)) {
