@@ -19,7 +19,7 @@ and attributes. Annotation repair applies only explicitly safe transformations.
 
 BED3 and BED3+ are supported. The first fields are `chrom`, `start`, and `end`,
 with `0 <= start < end`. Strand is `+` or `-`; additional fields are interpreted
-by the selected task.
+by the selected tool.
 
 ## Delimited text
 
@@ -30,7 +30,7 @@ and semicolons; ambiguous data should use an explicit delimiter.
 ## SAM, BAM, and CRAM
 
 These are read with HTSJDK. CRAM may need a matching reference FASTA. Indexed
-BAM/CRAM reads use BAI/CRAI when available; some tasks fall back to a linear scan.
+BAM/CRAM reads use BAI/CRAI when available; some tools fall back to a linear scan.
 
 ## VCF and BCF
 
@@ -46,6 +46,6 @@ reported as diagnostics.
 
 ## Images and tables
 
-Plot tasks can emit PNG, SVG, PDF, and JSON plot models or data. PDF Chinese text
+Plot tools can emit PNG, SVG, PDF, and JSON plot models or data. PDF Chinese text
 depends on available embeddable fonts; PNG and SVG preserve Unicode labels.
-Table previews are bounded, while task artifacts contain complete output data.
+Table previews are bounded, while tool artifacts contain complete output data.

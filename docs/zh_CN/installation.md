@@ -54,7 +54,7 @@ OpenTools.app/Contents/MacOS/OpenToolsCLI --version
 ## 通用 JAR
 
 通用 JAR 需要 Java 21。应用、语言和工具资源应保持发布目录结构。外部分析工具
-需由用户安装，并通过包内 `tools/`、任务参数、环境变量或 `PATH` 提供。
+需由用户安装，并通过包内 `tools/`、工具参数、环境变量或 `PATH` 提供。
 
 ```powershell
 java -jar opentools.jar

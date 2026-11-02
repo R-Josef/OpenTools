@@ -44,7 +44,7 @@ final class DocumentationCoverageTest {
     void everyBuiltInTaskHasCompleteChineseMarkdown() {
         assertEquals(86, registry.list().size());
         for (ToolDescriptor tool : registry.list()) {
-            String markdown = TaskDocumentation.render(tool, language);
+            String markdown = ToolDocumentation.render(tool, language);
             assertTrue(markdown.contains("## 用途与适用场景"), tool.id());
             assertTrue(markdown.contains("## 输入格式"), tool.id());
             assertTrue(markdown.contains("## 输出格式"), tool.id());
@@ -69,11 +69,11 @@ final class DocumentationCoverageTest {
         SwingUtilities.invokeAndWait(() -> reference.set(new DocsPanel(registry, language)));
         DocsPanel panel = reference.get();
 
-        assertEquals(86, panel.navigationTaskCount());
+        assertEquals(86, panel.navigationToolCount());
         assertEquals(7, panel.navigationCategoryCount());
         assertEquals(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, panel.horizontalScrollPolicy());
-        SwingUtilities.invokeAndWait(() -> panel.openTask("fasta.stats"));
-        assertEquals("task:fasta.stats", panel.activeDocument());
+        SwingUtilities.invokeAndWait(() -> panel.openTool("fasta.stats"));
+        assertEquals("tool:fasta.stats", panel.activeDocument());
     }
 
     @Test
@@ -84,7 +84,7 @@ final class DocumentationCoverageTest {
                 "installation.md",
                 "cli.md",
                 "mcp.md",
-                "task-reference.md",
+                "tool-reference.md",
                 "file-formats.md",
                 "faq.md",
                 "plugin-development.md",
@@ -117,7 +117,7 @@ final class DocumentationCoverageTest {
     void publicMarkdownLocalLinksResolveWithoutTraversalOrNetworkImages() throws Exception {
         List<String> documents = List.of(
                 "README.md", "quick-start.md", "installation.md", "cli.md", "mcp.md",
-                "task-reference.md", "file-formats.md", "faq.md", "plugin-development.md",
+                "tool-reference.md", "file-formats.md", "faq.md", "plugin-development.md",
                 "errors-exit-codes.md", "external-tools.md", "release-packages.md", "ui-and-docs.md",
                 "categories/sequence.md", "categories/annotation-bed.md", "categories/table.md",
                 "categories/alignment-phylogeny.md", "categories/expression-enrichment.md",
@@ -131,7 +131,7 @@ final class DocumentationCoverageTest {
                 while (matcher.find()) {
                     String target = matcher.group(1).trim();
                     if (target.startsWith("http://") || target.startsWith("https://")
-                            || target.startsWith("#") || target.startsWith("task:")) {
+                            || target.startsWith("#") || target.startsWith("tool:")) {
                         assertFalse(target.contains("]("), document);
                         continue;
                     }
@@ -178,7 +178,7 @@ final class DocumentationCoverageTest {
     void englishTaskFallbackIsExplicitAndNeverBlank() {
         LanguageManager english = new LanguageManager(findProjectRoot(), "en_US");
         ToolDescriptor tool = registry.find("fasta.stats").orElseThrow().descriptor();
-        String markdown = TaskDocumentation.render(tool, english);
+        String markdown = ToolDocumentation.render(tool, english);
 
         assertTrue(markdown.contains("## Purpose and use cases"));
         assertTrue(markdown.contains("## Key parameters, defaults, and ranges"));

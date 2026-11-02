@@ -6,10 +6,10 @@ OpenTools 插件只需要针对一个自包含 JAR 编译：
 plugin-sdk/opentools-plugin-api-<version>.jar
 ```
 
-该 JAR 包含插件入口接口和编写无界任务所需的公共任务契约，不包含 OpenTools
+该 JAR 包含插件入口接口和编写无界工具所需的公共执行契约，不包含 OpenTools
 运行时、SQLite、作业服务、插件宿主或桌面界面实现。
 
-插件扩展类型位于 `io.opentools.plugin`；公共任务契约位于
+插件扩展类型位于 `io.opentools.plugin`；公共执行契约位于
 `io.opentools.api.tool`，例如 `OpenTool`、`ToolDescriptor`、`ToolRequest`、
 `TaskContext` 和 `TaskResult`。这些包由宿主在运行时提供，插件内不应重复打包。
 
@@ -24,7 +24,7 @@ META-INF/opentools-plugin.json
 描述文件指向实现 `io.opentools.plugin.OpenToolsPlugin` 的主类。插件启用时，
 宿主创建该类的实例并把 `PluginContext` 传给 `onEnable`。上下文可以注册：
 
-- 通过 `registerTool` 注册无界面任务；
+- 通过 `registerTool` 注册无界面工具；
 - 通过 `registerPage` 注册桌面页面；
 - 在声明 `data` 能力后使用插件私有目录和日志。
 
@@ -71,7 +71,7 @@ plugin-sdk/
 ## 运行时边界
 
 插件的私有类和依赖采用 child-first 类加载；OpenTools 则从宿主类加载器共享
-公共 API 和任务契约，确保宿主和插件看到相同的类身份。因此插件 JAR 只需要包含
+公共 API 和执行契约，确保宿主和插件看到相同的类身份。因此插件 JAR 只需要包含
 自身实现和并非由 API 提供的依赖。
 
 Java 插件运行在 OpenTools JVM 内，类加载隔离不是安全沙箱。只应安装并启用经过

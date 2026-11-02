@@ -58,7 +58,7 @@ signed and notarized organizational build.
 
 The general JAR requires Java 21. Keep the application, language, documentation,
 and plugin directories from the release. External analysis tools must be
-provided separately through package `tools/`, explicit task paths,
+provided separately through package `tools/`, explicit tool paths,
 `OPENTOOLS_*` variables, or `PATH`.
 
 ```powershell

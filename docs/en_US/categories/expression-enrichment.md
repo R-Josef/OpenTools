@@ -1,7 +1,7 @@
 # Expression and enrichment
 
-Expression tasks normalize matrices, calculate correlation and PCA, and prepare
-differential-expression input. Enrichment tasks support offline GO levels,
+Expression tools normalize matrices, calculate correlation and PCA, and prepare
+differential-expression input. Enrichment tools support offline GO levels,
 hypergeometric tests, Benjamini-Hochberg correction, and KEGG.
 
 ## Cautions
@@ -12,4 +12,4 @@ hypergeometric tests, Benjamini-Hochberg correction, and KEGG.
 - KEGG enrichment requires a matching background and annotation table.
 - Multiple-testing results need effect-size and study-design interpretation.
 
-The in-app Docs tree exposes all 7 tasks.
+The in-app Docs tree exposes all 7 tools.

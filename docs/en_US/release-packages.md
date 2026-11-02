@@ -2,11 +2,11 @@
 
 ## General JAR
 
-Use this package when you already have Java 21, need Java-native tasks, manage
+Use this package when you already have Java 21, need Java-native tools, manage
 your own analysis tools, or deploy CLI/MCP workloads.
 
 It contains no platform binaries. External discovery order is package `tools/`,
-explicit task paths, `OPENTOOLS_*` variables, then `PATH`.
+explicit tool paths, `OPENTOOLS_*` variables, then `PATH`.
 
 The distribution also includes a self-contained Plugin API JAR under
 `plugin-sdk/`, together with a Javadoc JAR and browsable HTML. The API is a

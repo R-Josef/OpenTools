@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-final class TaskDocumentation {
-    private TaskDocumentation() {
+final class ToolDocumentation {
+    private ToolDocumentation() {
     }
 
     static String render(ToolDescriptor tool, LanguageManager language) {
@@ -25,11 +25,11 @@ final class TaskDocumentation {
 
         markdown.append(chinese ? "## 用途与适用场景\n\n" : "## Purpose and use cases\n\n");
         markdown.append(description).append(chinese
-                ? " 该任务适合在 OpenTools 项目中执行可复现、可追踪的单步骤分析；结果会与输入哈希、参数和运行日志一起保存。\n\n"
-                : " Use this task for a reproducible, traceable single-step analysis in an OpenTools project. Results are stored with input hashes, normalized parameters, and run logs.\n\n");
+                ? " 该工具适合在 OpenTools 项目中执行可复现、可追踪的单步骤分析；结果会与输入哈希、参数和运行日志一起保存。\n\n"
+                : " Use this tool for a reproducible, traceable single-step analysis in an OpenTools project. Results are stored with input hashes, normalized parameters, and run logs.\n\n");
 
         markdown.append(chinese ? "## 输入格式\n\n" : "## Input formats\n\n");
-        markdown.append(formats(tool.inputFormats(), chinese, "该任务不声明固定输入格式，请在参数说明中确认输入。"))
+        markdown.append(formats(tool.inputFormats(), chinese, "该工具不声明固定输入格式，请在参数说明中确认输入。"))
                 .append("\n\n");
         markdown.append(chinese ? "## 输出格式\n\n" : "## Output formats\n\n");
         markdown.append(formats(tool.outputFormats(), chinese, "输出由参数与运行目录决定。"))
@@ -37,7 +37,7 @@ final class TaskDocumentation {
 
         markdown.append(chinese ? "## 关键参数、默认值与范围\n\n" : "## Key parameters, defaults, and ranges\n\n");
         if (tool.parameters().isEmpty()) {
-            markdown.append(chinese ? "该任务没有参数。\n\n" : "This task has no parameters.\n\n");
+            markdown.append(chinese ? "该工具没有参数。\n\n" : "This tool has no parameters.\n\n");
         } else {
             for (ToolParameter parameter : tool.parameters()) {
                 markdown.append("### ")
@@ -124,8 +124,8 @@ final class TaskDocumentation {
         String category = tool.category().toLowerCase(Locale.ROOT);
         if (category.contains("sequence")) {
             notes.add(chinese
-                    ? "FASTA/FASTQ 按记录读取；单条超大记录仍可能占用较多内存。坐标任务使用 1-based inclusive。"
-                    : "FASTA/FASTQ are processed record by record; one very large record may still require substantial memory. Coordinate tasks use 1-based inclusive positions.");
+                    ? "FASTA/FASTQ 按记录读取；单条超大记录仍可能占用较多内存。坐标工具使用 1-based inclusive。"
+                    : "FASTA/FASTQ are processed record by record; one very large record may still require substantial memory. Coordinate tools use 1-based inclusive positions.");
         } else if (category.contains("genome annotation") || category.equals("annotation")) {
             notes.add(chinese
                     ? "GFF3/GTF 使用 1-based inclusive，BED 使用 0-based half-open；基因组和注释的序列名、长度及方向必须兼容。"
@@ -140,8 +140,8 @@ final class TaskDocumentation {
                     : "CRAM may require a matching reference. Indexed BAM/CRAM queries are usually faster. VCF indexes require a sequence dictionary and sorted records.");
         } else if (category.equals("visualization")) {
             notes.add(chinese
-                    ? "输入列名和数值类型必须匹配参数；超大矩阵可能进行有界显示抽样，但完整导出使用任务数据路径。"
-                    : "Input column names and numeric types must match the parameters. Very large matrices may use bounded display sampling while complete exports use task data.");
+                    ? "输入列名和数值类型必须匹配参数；超大矩阵可能进行有界显示抽样，但完整导出使用工具数据路径。"
+                    : "Input column names and numeric types must match the parameters. Very large matrices may use bounded display sampling while complete exports use tool data.");
         } else if (category.equals("expression") || category.equals("enrichment")) {
             notes.add(chinese
                     ? "行 ID、样本列和数值解析必须完整；统计结果依赖输入注释版本和实验设计。"
@@ -153,8 +153,8 @@ final class TaskDocumentation {
                     : "External tool versions, memory, threads, and timeouts affect results. Check tool paths before running and retain the complete log.");
         } else {
             notes.add(chinese
-                    ? "输入格式、列名、坐标或外部资源不匹配时任务会在发布输出前失败。"
-                    : "The task fails before publishing outputs when formats, columns, coordinates, or external resources do not match.");
+                    ? "输入格式、列名、坐标或外部资源不匹配时工具会在发布输出前失败。"
+                    : "The tool fails before publishing outputs when formats, columns, coordinates, or external resources do not match.");
         }
 
         if (tool.id().startsWith("alignment.blast") || tool.id().equals("alignment.diamond")
@@ -162,8 +162,8 @@ final class TaskDocumentation {
                 || tool.id().equals("alignment.trim") || tool.id().equals("alignment.iqtree")
                 || tool.id().equals("mcscan.run")) {
             notes.add(chinese
-                    ? "该任务依赖外部工具。请使用便携包内固定版本，或通过显式路径、OPENTOOLS_* 环境变量或 PATH 提供兼容程序。"
-                    : "This task depends on an external executable. Use the pinned portable-package version, an explicit path, an OPENTOOLS_* variable, or a compatible executable on PATH.");
+                    ? "该工具依赖外部程序。请使用便携包内固定版本，或通过显式路径、OPENTOOLS_* 环境变量或 PATH 提供兼容程序。"
+                    : "This tool depends on an external executable. Use the pinned portable-package version, an explicit path, an OPENTOOLS_* variable, or a compatible executable on PATH.");
         }
         if (tool.id().contains("overlap") || tool.id().contains("transpose")
                 || tool.id().contains("heatmap")) {
@@ -181,7 +181,7 @@ final class TaskDocumentation {
 
     private static String formats(List<String> formats, boolean chinese, String fallback) {
         if (formats.isEmpty()) {
-            return chinese ? fallback : "The task does not declare a fixed format; confirm the inputs in the parameter descriptions.";
+            return chinese ? fallback : "The tool does not declare a fixed format; confirm the inputs in the parameter descriptions.";
         }
         return formats.stream().map(format -> "`" + format + "`")
                 .reduce((left, right) -> left + (chinese ? "、" : ", ") + right)

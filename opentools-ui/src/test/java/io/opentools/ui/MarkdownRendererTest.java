@@ -72,7 +72,7 @@ final class MarkdownRendererTest {
                 ![local](assets/screenshots/tools-catalog.jpg)
                 ![remote](https://example.org/image.png)
                 [external](https://example.org/help)
-                [task](task:fasta.stats)
+                [tool](tool:fasta.stats)
                 """;
 
         String html = MarkdownRenderer.render(markdown, "README.md");
@@ -80,6 +80,6 @@ final class MarkdownRendererTest {
         assertTrue(html.contains("src=\"assets/screenshots/tools-catalog.jpg\""));
         assertFalse(html.contains("example.org/image.png"));
         assertTrue(html.contains("href=\"https://example.org/help\""));
-        assertTrue(html.contains("href=\"opentools-task:fasta.stats\""));
+        assertTrue(html.contains("href=\"opentools-tool:fasta.stats\""));
     }
 }

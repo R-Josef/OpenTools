@@ -1,6 +1,6 @@
 # Tables
 
-Table tasks cover preview, filtering, column selection, joins, transpose,
+Table tools cover preview, filtering, column selection, joins, transpose,
 deduplication, pivot, and regex replacement. The shared reader supports quoting
 and multiline fields.
 
@@ -12,4 +12,4 @@ and multiline fields.
 - DISK/AUTO transpose uses temporary SQLite and needs writable disk space.
 - Record-level table parallelism is explicit opt-in; AUTO may remain sequential.
 
-The in-app Docs tree exposes all 8 tasks.
+The in-app Docs tree exposes all 8 tools.

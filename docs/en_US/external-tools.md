@@ -1,6 +1,6 @@
 # External tools
 
-Java-native tasks do not need external executables. The following adapters call
+Java-native tools do not need external executables. The following adapters call
 independent programs:
 
 | Tool | Purpose | Portable directory |
@@ -16,7 +16,7 @@ independent programs:
 ## Discovery order
 
 1. package `tools/`;
-2. explicit task directory or executable;
+2. explicit tool directory or executable;
 3. `OPENTOOLS_*` environment variable;
 4. the system `PATH` inherited by the running process.
 

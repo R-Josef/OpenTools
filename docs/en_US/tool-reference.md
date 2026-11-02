@@ -1,7 +1,7 @@
-# Task reference
+# Tool reference
 
-OpenTools `0.8.1-SNAPSHOT` registers 86 built-in tasks. The in-app Docs tree lists
-all of them. Each task page is generated from the active language files and
+OpenTools `0.8.1-SNAPSHOT` registers 86 built-in tools. The in-app Docs tree lists
+all of them. Each tool page is generated from the active language files and
 `ToolDescriptor`, including:
 
 - purpose and appropriate use cases;
@@ -12,7 +12,7 @@ all of them. Each task page is generated from the active language files and
 
 ## Categories
 
-| Category | Entry | Tasks |
+| Category | Entry | Tools |
 | --- | --- | --- |
 | Sequence | [Sequence](categories/sequence.md) | 13 |
 | Annotation and BED | [Genome annotation / Annotation](categories/annotation-bed.md) | 15 |
@@ -22,12 +22,12 @@ all of them. Each task page is generated from the active language files and
 | HTS | [HTS](categories/hts.md) | 6 |
 | Visualization | [Visualization](categories/visualization.md) | 20 |
 
-Inspect tasks from the terminal with:
+Inspect tools from the terminal with:
 
 ```powershell
 OpenToolsCLI.exe tools list --json
-OpenToolsCLI.exe tools describe <task-id> --schema
+OpenToolsCLI.exe tools describe <tool-id> --schema
 ```
 
-Plugin-provided tasks appear in the catalog but do not count toward the 86
+Plugin-provided tools appear in the catalog but do not count toward the 86
 built-in baseline.

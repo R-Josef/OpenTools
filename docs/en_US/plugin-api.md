@@ -6,11 +6,11 @@ OpenTools plugins compile against one self-contained JAR:
 plugin-sdk/opentools-plugin-api-<version>.jar
 ```
 
-The JAR contains the plugin entry-point interfaces and the public task
+The JAR contains the plugin entry-point interfaces and the public execution
 contracts used to build headless tools. It does not contain the OpenTools
 runtime, SQLite layer, job service, plugin host, or desktop implementation.
 
-Plugin extension types are under `io.opentools.plugin`. Public task contracts
+Plugin extension types are under `io.opentools.plugin`. Public execution contracts
 are under `io.opentools.api.tool`, for example `OpenTool`, `ToolDescriptor`,
 `ToolRequest`, `TaskContext`, and `TaskResult`. These packages are loaded from
 the host at runtime and must not be duplicated inside a plugin.
@@ -75,7 +75,7 @@ or resolve the `-javadoc.jar` artifact.
 ## Runtime boundary
 
 Plugins use child-first loading for their private classes and dependencies.
-OpenTools shares the public API and task contracts from the host loader so a
+OpenTools shares the public API and execution contracts from the host loader so a
 plugin and the host use identical class identities. The plugin JAR should
 therefore contain only its own implementation and dependencies that are not
 provided by the API.

@@ -21,7 +21,7 @@ OpenToolsCLI.exe --app-home C:\work\opentools-app run fasta.stats `
 Automation resolves relative paths against the project root. MCP and batch
 operations can add explicit allowed workspaces.
 
-## Task parameters
+## Tool parameters
 
 Use `--param key=value`. Parameter IDs, types, defaults, and options are defined
 by `tools describe <id> --schema`.

@@ -143,11 +143,11 @@ final class MainFrame extends JFrame {
         brand.add(brandText, BorderLayout.CENTER);
         header.add(brand, BorderLayout.WEST);
 
-        globalSearch.setToolTipText(t("app.search.placeholder", "Search tasks, formats, or keywords"));
-        UiAccessibility.name(globalSearch, t("app.search.placeholder", "Search tasks, formats, or keywords"));
+        globalSearch.setToolTipText(t("app.search.placeholder", "Search tools, formats, or keywords"));
+        UiAccessibility.name(globalSearch, t("app.search.placeholder", "Search tools, formats, or keywords"));
         globalSearch.putClientProperty(
                 "JTextField.placeholderText",
-                t("app.search.placeholder", "Search tasks, formats, or keywords")
+                t("app.search.placeholder", "Search tools, formats, or keywords")
         );
         globalSearch.addActionListener(ignored -> {
             showView(TOOLS);
@@ -227,7 +227,7 @@ final class MainFrame extends JFrame {
         homeRecent.setForeground(new Color(94, 100, 105));
         summary.add(homeSummary);
         summary.add(homeRecent);
-        JButton openTools = new JButton(t("home.open_tools", "Open task catalog"));
+        JButton openTools = new JButton(t("home.open_tools", "Open tool catalog"));
         openTools.addActionListener(ignored -> showView(TOOLS));
         JButton openDocs = new JButton(t("home.open_docs", "Open documentation"));
         openDocs.addActionListener(ignored -> showView(DOCS));
@@ -697,7 +697,7 @@ final class MainFrame extends JFrame {
                 + escape(System.getProperty("os.name") + " " + System.getProperty("os.version")) + "<br><br>"
                 + "<b>" + escape(t("settings.project_dir", "Project directory")) + "</b><br>"
                 + escape(session.project().root().toString()) + "<br><br>"
-                + "<b>" + escape(t("settings.task_count", "Task count")) + "</b><br>"
+                + "<b>" + escape(t("settings.tool_count", "Tool count")) + "</b><br>"
                 + session.registry().list().size() + "<br><br>"
                 + "<b>" + escape(t("settings.app_dir", "Application directory")) + "</b><br>"
                 + escape(appRoot.toString())
@@ -761,7 +761,7 @@ final class MainFrame extends JFrame {
         catalogPanel.reload();
         status.setText(t(
                 "status.plugin_scan_complete",
-                "Plugin scan complete: {0} entries, {1} tasks",
+                "Plugin scan complete: {0} entries, {1} tools",
                 session.plugins().list().size(),
                 session.registry().list().size()
         ));

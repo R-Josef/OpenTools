@@ -12,4 +12,4 @@ trimAl、Newick、IQ-TREE、MCScanX 和 Ka/Ks。
 - IQ-TREE 和大型比对可能运行很久，必须有可写运行目录和足够磁盘空间；
 - MCScanX 输入需要一致的基因/序列坐标和可解析 homology 结果。
 
-在应用内 Docs 中展开“比对与系统发育”可打开全部 17 个相关任务。
+在应用内 Docs 中展开“比对与系统发育”可打开全部 17 个相关工具。

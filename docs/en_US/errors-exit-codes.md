@@ -4,10 +4,10 @@
 
 | Exit code | Meaning | Typical case |
 | --- | --- | --- |
-| `0` | Success or queued | Task completed or `--no-wait` submitted |
-| `2` | Input or parameter error | Missing file, unknown task, schema failure |
+| `0` | Success or queued | Run succeeded or `--no-wait` submitted |
+| `2` | Input or parameter error | Missing file, unknown tool, schema failure |
 | `3` | External dependency error | Tool missing or cannot start |
-| `4` | Execution failure | Data error, task exception, partial completion |
+| `4` | Execution failure | Data error, tool execution exception, partial completion |
 | `5` | Cancelled | Job or external process cancelled |
 | `6` | Internal error | Unclassified host exception |
 
@@ -59,7 +59,7 @@
 - Invalid or missing parameters: JSON-RPC `-32602`
 - Unknown method: `-32601`
 - Invalid JSON: `-32700`
-- Task failure: `tools/call` returns `isError=true` with structured details
+- Tool failure: `tools/call` returns `isError=true` with structured details
 
 Start with the message and suggestion, then check the field-specific issue,
 Environment Check, `manifest.json`, and `run.log`.

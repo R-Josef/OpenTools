@@ -92,9 +92,9 @@ final class DocsPanel extends JPanel {
 
         filter.putClientProperty(
                 "JTextField.placeholderText",
-                t("docs.search", "Search documentation and tasks")
+                t("docs.search", "Search documentation and tools")
         );
-        UiAccessibility.name(filter, t("docs.search", "Search documentation and tasks"));
+        UiAccessibility.name(filter, t("docs.search", "Search documentation and tools"));
         filter.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent event) {
@@ -168,7 +168,7 @@ final class DocsPanel extends JPanel {
                 String name = localizedName(tool);
                 if (query.isEmpty() || groupMatches || name.toLowerCase(Locale.ROOT).contains(query)
                         || tool.id().contains(query)) {
-                    matchingTools.add(node(new DocChoice("task:" + tool.id(), name, DocKind.TASK)));
+                    matchingTools.add(node(new DocChoice("tool:" + tool.id(), name, DocKind.TOOL)));
                 }
             }
             if (query.isEmpty() || groupMatches || !matchingTools.isEmpty()) {
@@ -230,7 +230,7 @@ final class DocsPanel extends JPanel {
                     && treeNode.getUserObject() instanceof DocChoice choice) {
                 switch (choice.kind()) {
                     case DOCUMENT, CATEGORY -> openDocument(choice.route());
-                    case TASK -> openTask(choice.route().substring("task:".length()));
+                    case TOOL -> openTool(choice.route().substring("tool:".length()));
                 }
             }
         });
@@ -259,7 +259,7 @@ final class DocsPanel extends JPanel {
 
     private static DefaultMutableTreeNode node(DocChoice choice) {
         DefaultMutableTreeNode node = new DefaultMutableTreeNode(choice);
-        node.setAllowsChildren(choice.kind() != DocKind.TASK);
+        node.setAllowsChildren(choice.kind() != DocKind.TOOL);
         return node;
     }
 
@@ -274,8 +274,8 @@ final class DocsPanel extends JPanel {
         activeDocument = normalized;
         try {
             String markdown = DocResources.read(docsLanguage, normalized);
-            if (CategoryTasks.isCategory(normalized)) {
-                markdown += CategoryTasks.render(normalized, registry, language);
+            if (CategoryTools.isCategory(normalized)) {
+                markdown += CategoryTools.render(normalized, registry, language);
             }
             String html = MarkdownRenderer.render(markdown, normalized);
             setDocument(html, DocResources.url(docsLanguage, normalized), normalized);
@@ -286,16 +286,16 @@ final class DocsPanel extends JPanel {
         }
     }
 
-    void openTask(String toolId) {
+    void openTool(String toolId) {
         registry.find(toolId).ifPresentOrElse(tool -> {
-            activeDocument = "task:" + toolId;
-            String markdown = TaskDocumentation.render(tool.descriptor(), language);
+            activeDocument = "tool:" + toolId;
+            String markdown = ToolDocumentation.render(tool.descriptor(), language);
             setDocument(
                     MarkdownRenderer.render(markdown, "README.md"),
                     null,
-                    t("docs.task_location", "Task reference · {0}", toolId)
+                    t("docs.tool_location", "Tool reference · {0}", toolId)
             );
-        }, () -> openDocument("task-reference.md"));
+        }, () -> openDocument("tool-reference.md"));
     }
 
     private void setDocument(String html, java.net.URL base, String label) {
@@ -314,9 +314,9 @@ final class DocsPanel extends JPanel {
         if (description == null || description.isBlank()) {
             return;
         }
-        if (description.startsWith("opentools-task:")) {
-            String target = description.substring("opentools-task:".length());
-            openTask(target);
+        if (description.startsWith("opentools-tool:")) {
+            String target = description.substring("opentools-tool:".length());
+            openTool(target);
             return;
         }
         if (description.startsWith("#")) {
@@ -363,8 +363,8 @@ final class DocsPanel extends JPanel {
         return value;
     }
 
-    int navigationTaskCount() {
-        return countNodes(navigation.getModel().getRoot(), DocKind.TASK);
+    int navigationToolCount() {
+        return countNodes(navigation.getModel().getRoot(), DocKind.TOOL);
     }
 
     int navigationCategoryCount() {
@@ -401,7 +401,7 @@ final class DocsPanel extends JPanel {
     private enum DocKind {
         DOCUMENT,
         CATEGORY,
-        TASK
+        TOOL
     }
 
     private record DocChoice(String route, String label, DocKind kind) {
@@ -418,8 +418,8 @@ final class DocsPanel extends JPanel {
         }
     }
 
-    private static final class CategoryTasks {
-        private CategoryTasks() {
+    private static final class CategoryTools {
+        private CategoryTools() {
         }
 
         static boolean isCategory(String route) {
@@ -435,13 +435,13 @@ final class DocsPanel extends JPanel {
                             String.CASE_INSENSITIVE_ORDER))
                     .toList();
             StringBuilder markdown = new StringBuilder("\n## ")
-                    .append(language.text("docs.tasks_in_category", "Tasks in this category"))
+                    .append(language.text("docs.tools_in_category", "Tools in this category"))
                     .append("\n\n");
             for (ToolDescriptor tool : tools) {
                 markdown.append("- [")
                         .append(language.text("tool." + tool.id() + ".name", tool.name())
                                 .replace("[", "\\[").replace("]", "\\]"))
-                        .append("](task:").append(tool.id()).append(") `")
+                        .append("](tool:").append(tool.id()).append(") `")
                         .append(tool.id()).append("`\n");
             }
             markdown.append('\n');

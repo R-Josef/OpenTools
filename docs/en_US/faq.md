@@ -14,7 +14,7 @@ Neither package requires conda.
 
 Run Environment Check in Settings. In the portable package, confirm `tools/` was
 not removed. Developer builds can set the corresponding `OPENTOOLS_*` variable,
-choose an explicit task path, or add a compatible executable to `PATH`.
+choose an explicit tool path, or add a compatible executable to `PATH`.
 
 ## Why is the first BLAST run slower?
 
@@ -49,6 +49,6 @@ current user's permissions. Only enable trusted plugins.
 
 ## What should a bug report contain?
 
-Include the OpenTools version, task ID, OS, error code, minimal reproducible
+Include the OpenTools version, tool ID, OS, error code, minimal reproducible
 input, and sanitized `manifest.json` or `run.log`. Do not include secrets or
 restricted research data.

@@ -3,7 +3,7 @@
 Visualization includes generic scatter, line, bar, stacked bar, box, and violin
 plots, plus PCA, correlation heatmap, volcano, sequence logo, gene location,
 domain, motif, circos, and eFP. Heatmap, Venn/UpSet, and gene structure are also
-standalone tasks with image and plot-model outputs.
+standalone tools with image and plot-model outputs.
 
 ## Cautions
 
@@ -13,4 +13,4 @@ standalone tasks with image and plot-model outputs.
 - Clustering, maximum intersections, dimensions, and DPI have schema limits.
 - Color and threshold parameters are part of reproducibility.
 
-The in-app Docs tree exposes all 20 tasks.
+The in-app Docs tree exposes all 20 tools.

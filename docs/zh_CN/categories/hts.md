@@ -1,6 +1,6 @@
 # HTS/BAM/VCF
 
-HTS 任务覆盖 SAM/BAM/CRAM 统计、区域子集、覆盖度、VCF/BCF 统计与筛选、BED 平均
+HTS 工具覆盖 SAM/BAM/CRAM 统计、区域子集、覆盖度、VCF/BCF 统计与筛选、BED 平均
 覆盖度。已测试百万级记录和 1 GB 级本地输入，但实际容量取决于机器和参数。
 
 ## 注意事项
@@ -13,4 +13,4 @@ HTS 任务覆盖 SAM/BAM/CRAM 统计、区域子集、覆盖度、VCF/BCF 统计
 
 内部压力结果不随公开用户文档分发；用户应基于本机数据做容量验证。
 
-在应用内 Docs 中展开“HTS/BAM/VCF”可打开全部 6 个任务。
+在应用内 Docs 中展开“HTS/BAM/VCF”可打开全部 6 个工具。

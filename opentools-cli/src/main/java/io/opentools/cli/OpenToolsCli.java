@@ -201,7 +201,7 @@ public final class OpenToolsCli implements AutoCloseable {
 
     @Command(
             name = "tools",
-            description = "Discover available tasks",
+            description = "Discover available tools",
             subcommands = {ToolsCommand.ListCommand.class, ToolsCommand.DescribeCommand.class}
     )
     static final class ToolsCommand implements Runnable {
@@ -213,7 +213,7 @@ public final class OpenToolsCli implements AutoCloseable {
             root.out().println("Use `tools list` or `tools describe <tool-id>`.");
         }
 
-        @Command(name = "list", description = "List registered tasks")
+        @Command(name = "list", description = "List registered tools")
         static final class ListCommand implements Callable<Integer> {
             @ParentCommand
             private ToolsCommand parent;
@@ -891,7 +891,7 @@ public final class OpenToolsCli implements AutoCloseable {
                 root.out().println("OS: " + report.get("os"));
                 root.out().println("Project: " + report.get("projectName"));
                 root.out().println("Project root: " + report.get("projectRoot"));
-                root.out().println("Registered tasks: " + report.get("tasks"));
+                root.out().println("Registered tools: " + report.get("tasks"));
                 root.out().println("Plugin entries: " + report.get("plugins"));
                 root.out().println("Language: " + report.get("language"));
                 root.out().println("External tools:");

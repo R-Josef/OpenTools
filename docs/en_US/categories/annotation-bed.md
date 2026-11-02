@@ -1,6 +1,6 @@
 # Annotation and BED
 
-Annotation tasks cover GFF3/GTF inspection, filtering, conversion, overlap,
+Annotation tools cover GFF3/GTF inspection, filtering, conversion, overlap,
 representative transcripts, ID mapping, merge/split, safe repair, gene density,
 and sequence extraction. BED statistics, BED/GFF conversion, Pfam import, and
 eggNOG import are also in this category.
@@ -13,4 +13,4 @@ eggNOG import are also in this category.
 - Dense interval and disk-spill modes need adequate temporary space.
 - Safe repair does not invent missing biological attributes.
 
-The in-app Docs tree exposes all 15 related tasks.
+The in-app Docs tree exposes all 15 related tools.

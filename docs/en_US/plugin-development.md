@@ -50,7 +50,7 @@ Compile with Java 21 and this JAR on the compiler class path, but do not bundle
 it into the plugin. The host provides the same contracts at runtime.
 
 Maven plugins should depend on `opentools-plugin-api` with `provided` scope.
-The API JAR contains both extension interfaces and the public task contracts
+The API JAR contains both extension interfaces and the public execution contracts
 needed to implement a plugin tool.
 
 See [Plugin API 1.0](plugin-api.md) for the complete compile, runtime, Javadoc,
@@ -67,7 +67,7 @@ capabilities, and license before use.
 - valid API and dependency declarations;
 - minimal capabilities;
 - traversal-safe archives and no unpacking bomb;
-- complete task schemas;
+- complete tool schemas;
 - shared GUI, CLI, MCP contracts;
 - disable and rollback coverage;
 - complete license and third-party notices.

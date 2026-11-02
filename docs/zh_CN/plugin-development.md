@@ -1,6 +1,6 @@
 # 插件开发者指南
 
-OpenTools 插件使用 Plugin API 1.0，通过独立类加载器注册任务和页面。插件 JAR
+OpenTools 插件使用 Plugin API 1.0，通过独立类加载器注册工具和页面。插件 JAR
 需要 `META-INF/opentools-plugin.json`。
 
 ## 最小描述
@@ -56,7 +56,7 @@ plugin-sdk/
 JAR。宿主会在运行时提供相同契约。
 
 Maven 插件应使用 `provided` scope 依赖 `opentools-plugin-api`。API JAR
-同时包含扩展接口和实现插件任务所需的公共任务契约。
+同时包含扩展接口和实现插件工具所需的公共执行契约。
 
 完整编译方式、运行时边界、Javadoc 和兼容策略见
 [Plugin API 1.0](plugin-api.md)。
@@ -70,14 +70,14 @@ OpenTools 默认禁用插件，但不把不受信任代码变成安全代码。�
 ## 数据与日志
 
 插件只能使用宿主分配的私有数据目录，不写入应用资源或其他插件目录。不要记录
-凭据、研究数据全文或 MCP token。插件失败应从共享任务注册表撤销并保留诊断。
+凭据、研究数据全文或 MCP token。插件失败应从共享工具注册表撤销并保留诊断。
 
 ## 发布检查
 
 - API 版本和依赖合法；
 - 能力最小化；
 - 无路径穿越或解压炸弹行为；
-- 任务参数有完整 Schema；
-- 任务、GUI、CLI、MCP 使用同一执行契约；
+- 工具参数有完整 Schema；
+- 工具、GUI、CLI、MCP 使用同一执行契约；
 - 许可证和第三方声明完整；
 - 有禁用、失败回滚和升级测试。

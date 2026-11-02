@@ -66,15 +66,15 @@ final class ToolCatalogPanel extends JPanel {
         setLayout(new BorderLayout(12, 0));
         setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
         this.form = new ToolFormPanel(executionService, language, afterSubmit);
-        UiAccessibility.name(filter, language.text("tools.search_placeholder", "Search tasks"));
-        UiAccessibility.name(list, language.text("tools.title", "Task catalog"));
+        UiAccessibility.name(filter, language.text("tools.search_placeholder", "Search tools"));
+        UiAccessibility.name(list, language.text("tools.title", "Tool catalog"));
 
         JPanel sidebar = new JPanel(new BorderLayout(0, 8));
-        JLabel title = new JLabel(language.text("tools.title", "Task catalog"));
+        JLabel title = new JLabel(language.text("tools.title", "Tool catalog"));
         title.setFont(title.getFont().deriveFont(title.getFont().getSize2D() + 5f));
         filter.putClientProperty(
                 "JTextField.placeholderText",
-                language.text("tools.search_placeholder", "Search tasks, formats, or aliases")
+                language.text("tools.search_placeholder", "Search tools, formats, or aliases")
         );
         filter.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             @Override
@@ -137,14 +137,14 @@ final class ToolCatalogPanel extends JPanel {
                 ));
                 JLabel categoryName = new JLabel(localizedCategory(value.categoryHeader()));
                 categoryName.setFont(categoryName.getFont().deriveFont(java.awt.Font.BOLD));
-                JLabel categoryCount = new JLabel(taskCount(value.categoryCount()));
+                JLabel categoryCount = new JLabel(toolCount(value.categoryCount()));
                 categoryCount.setForeground(new Color(105, 111, 116));
                 header.add(categoryName, BorderLayout.WEST);
                 header.add(categoryCount, BorderLayout.EAST);
                 UiAccessibility.name(
                         header,
                         localizedCategory(value.categoryHeader()) + ", "
-                                + taskCount(value.categoryCount())
+                                + toolCount(value.categoryCount())
                 );
                 return header;
             }
@@ -216,10 +216,10 @@ final class ToolCatalogPanel extends JPanel {
                 model.addElement(CatalogRow.header(category, values.size()));
                 values.forEach(tool -> model.addElement(CatalogRow.tool(tool)));
             });
-            String taskCount = taskCount(tools.size());
+            String toolCount = toolCount(tools.size());
             count.setText(activeCategory == null
-                    ? taskCount
-                    : localizedCategory(activeCategory) + " · " + taskCount);
+                    ? toolCount
+                    : localizedCategory(activeCategory) + " · " + toolCount);
             if (selected != null) {
                 for (int i = 0; i < model.size(); i++) {
                     CatalogRow row = model.get(i);
@@ -343,10 +343,10 @@ final class ToolCatalogPanel extends JPanel {
         return language.text(key, category);
     }
 
-    private String taskCount(int count) {
+    private String toolCount(int count) {
         return count == 1
-                ? language.text("tools.count_one", "{0} task", count)
-                : language.text("tools.count", "{0} tasks", count);
+                ? language.text("tools.count_one", "{0} tool", count)
+                : language.text("tools.count", "{0} tools", count);
     }
 
     private static int categoryRank(String category) {

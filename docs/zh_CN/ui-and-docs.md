@@ -1,6 +1,6 @@
 # UI 与 Docs 开发
 
-应用内 `Docs` 是一级 Swing 页面。左侧目录树支持滚动，包含分类和全部内置任务；
+应用内 `Docs` 是一级 Swing 页面。左侧目录树支持滚动，包含分类和全部内置工具；
 右侧是受限的 Markdown 阅读区。
 
 ## 多语言资源
@@ -22,7 +22,7 @@ docs/en_US/README.md
 - 脚本、`javascript:`、绝对路径、远程图片、文件 URL 和 `..` 路径不会生效。
 - 本地链接在 Docs 页面内切换；HTTP(S) 链接交给系统浏览器。
 - 标题生成锚点，重复标题获得稳定后缀。
-- 任务参数表来自 `ToolDescriptor` 与当前语言键。
+- 工具参数表来自 `ToolDescriptor` 与当前语言键。
 - 没有随包指南的自定义语言会明确回退到英文。
 
 ## 视觉验证
@@ -31,11 +31,11 @@ docs/en_US/README.md
 
 ![Docs 宽屏布局](assets/screenshots/docs-wide.png)
 
-![任务文档](assets/screenshots/docs-task.png)
+![工具文档](assets/screenshots/docs-task.png)
 
 ![150% 应用缩放](assets/screenshots/docs-scale150.png)
 
-检查覆盖常规窗口、宽屏、长任务目录、窗口缩放、图片渲染和 150% 应用缩放。
+检查覆盖常规窗口、宽屏、长工具目录、窗口缩放、图片渲染和 150% 应用缩放。
 目录树独立滚动，正文在右侧自动换行，不与控件重叠。
 
 ## 测试范围
@@ -43,7 +43,7 @@ docs/en_US/README.md
 - 两种语言目录都包含全部公开指南与本地资源；
 - 所有本地 Markdown 链接可解析；
 - 不安全链接与远程图片被拒绝；
-- 86 个任务都有生成页面；
+- 86 个工具都有生成页面；
 - 导航数量和源分类完整；
 - JAR 与便携 ZIP 内确有文档和截图；
 - Docs 渲染完全不需要网络。

@@ -2,26 +2,26 @@
 
 [English](README.md) | 简体中文
 
-OpenTools 是一个本地优先、任务驱动的开源生物信息学工作台。它把常用序列、
-注释、表格、比对、表达、富集、HTS 和可视化任务放进同一个可搜索界面，并让
-同一套任务定义同时服务于 Windows 桌面、CLI 和 MCP。
+OpenTools 是一个本地优先、工具驱动的开源生物信息学工作台。它把常用序列、
+注释、表格、比对、表达、富集、HTS 和可视化工具放进同一个可搜索界面，并让
+同一套工具定义同时服务于 Windows 桌面、CLI 和 MCP。
 
 项目面向 Windows 科研用户、生物信息分析人员和插件开发者。数据默认留在本机，
 不要求登录或上传。OpenTools 自身以 GPL-3.0-or-later 发布；随包分发的第三方
 程序保留各自许可证，详见 [第三方声明](THIRD_PARTY_NOTICES.md)。
 
-![OpenTools 任务目录](docs/zh_CN/assets/screenshots/tools-catalog.jpg)
+![OpenTools 工具目录](docs/zh_CN/assets/screenshots/tools-catalog.jpg)
 
 ## 功能概览
 
-- 86 个内置任务，覆盖 FASTA/FASTQ、GFF3/GTF、BED、表格、BLAST/DIAMOND、
+- 86 个内置工具，覆盖 FASTA/FASTQ、GFF3/GTF、BED、表格、BLAST/DIAMOND、
   HMMER、多序列比对、系统发育、比较基因组、表达与富集、SAM/BAM/CRAM、
   VCF/BCF、统计图和交互式结果查看。
 - 项目、作业、输入哈希、参数、日志和结果清单统一保存，可重试并复制等价 CLI 命令。
-- GUI、CLI 和 MCP 共用 `ToolDescriptor`、参数校验、任务执行和结果模型。
-- 内置 Docs 页面离线渲染用户文档，并为全部 86 个任务动态生成参数、范围、
+- GUI、CLI 和 MCP 共用 `ToolDescriptor`、参数校验、工具执行和结果模型。
+- 内置 Docs 页面离线渲染用户文档，并为全部 86 个工具动态生成参数、范围、
   示例和失败边界说明。
-- Java 原生任务可直接运行；BLAST+、DIAMOND、HMMER、MUSCLE、trimAl、
+- Java 原生工具可直接运行；BLAST+、DIAMOND、HMMER、MUSCLE、trimAl、
   IQ-TREE 和 MCScanX 通过外部工具适配器调用。
 
 ## 快速入口
@@ -30,8 +30,8 @@ OpenTools 是一个本地优先、任务驱动的开源生物信息学工作台�
 | --- | --- |
 | Windows 便携包 | `OpenTools.exe` / `OpenToolsCLI.exe`，自带精简 Java 运行时和 Windows x64 工具 |
 | 通用 JAR | 面向已有 Java 21 和分析工具的用户，不捆绑平台二进制 |
-| [应用内 Docs](docs/zh_CN/README.md) | 快速开始、分类任务、格式、CLI/MCP、FAQ |
-| [CLI](docs/zh_CN/cli.md) | 任务发现、校验、运行、作业和 JSON 自动化 |
+| [应用内 Docs](docs/zh_CN/README.md) | 快速开始、分类工具、格式、CLI/MCP、FAQ |
+| [CLI](docs/zh_CN/cli.md) | 工具发现、校验、运行、作业和 JSON 自动化 |
 | [MCP](docs/zh_CN/mcp.md) | stdio 与仅限本机的认证 HTTP 接入 |
 | [插件开发](docs/zh_CN/plugin-development.md) | Plugin API、生命周期和示例 |
 
@@ -39,7 +39,7 @@ OpenTools 是一个本地优先、任务驱动的开源生物信息学工作台�
 
 OpenTools 采用分层发布：
 
-1. **通用 JAR**：可在 Java 21 环境运行全部 Java 内置任务。外部工具从包内
+1. **通用 JAR**：可在 Java 21 环境运行全部 Java 内置工具。外部程序从包内
    `tools/`、显式路径、环境变量或 `PATH` 发现，不包含任何平台二进制。
 2. **Windows x64 便携整合包**：解压后通过 `OpenTools.exe` 启动，自带运行时和
    固定版本的 Windows 工具。目标是无需安装 Java、conda 或 MSYS2。
@@ -61,7 +61,7 @@ Developer ID 签名尚未包含。
    `OpenTools.app`。
 4. 终端和 MCP 分别使用 `OpenToolsCLI.exe`、`bin/OpenToolsCLI` 或
    `OpenTools.app/Contents/MacOS/OpenToolsCLI`。
-5. 首次启动会创建或打开本地项目，可从 Home 打开任务目录或 Docs。
+5. 首次启动会创建或打开本地项目，可从 Home 打开工具目录或 Docs。
 
 不要只复制单个启动器；运行时、应用和工具目录必须保持在同一发布目录。
 
@@ -88,7 +88,7 @@ mvn clean verify
 
 便携包优先从自身 `tools/` 目录发现工具。开发者版还可使用：
 
-- 任务中的显式可执行文件或目录参数；
+- 工具中的显式可执行文件或目录参数；
 - `OPENTOOLS_BLASTN`、`OPENTOOLS_BLASTP`、`OPENTOOLS_MAKEBLASTDB`、
   `OPENTOOLS_DIAMOND`、`OPENTOOLS_HMMSCAN`、`OPENTOOLS_HMMSEARCH`、
   `OPENTOOLS_MUSCLE`、`OPENTOOLS_TRIMAL`、`OPENTOOLS_IQTREE` 和
@@ -115,7 +115,7 @@ OpenTools 使用 [GNU GPL v3.0 or later](LICENSE)。第三方可执行程序作�
 - [文档语言入口](docs/README.md)
 - [用户文档首页](docs/zh_CN/README.md)
 - [快速开始](docs/zh_CN/quick-start.md)
-- [任务参考](docs/zh_CN/task-reference.md)
+- [工具参考](docs/zh_CN/tool-reference.md)
 - [文件格式](docs/zh_CN/file-formats.md)
 - [错误与退出码](docs/zh_CN/errors-exit-codes.md)
 - [常见问题](docs/zh_CN/faq.md)

@@ -10,7 +10,7 @@
 | --- | --- |
 | 第一次运行 | [快速开始](quick-start.md) |
 | 安装或升级 | [安装与运行](installation.md) |
-| 查找任务 | [任务参考](task-reference.md) |
+| 查找工具 | [工具参考](tool-reference.md) |
 | 理解输入输出 | [文件格式](file-formats.md) |
 | 命令行或 Agent | [CLI](cli.md)、[MCP](mcp.md) |
 | 配置外部程序 | [外部工具](external-tools.md) |
@@ -33,6 +33,6 @@
 - [外部工具](external-tools.md)
 - [FAQ](faq.md)
 
-内置 Docs 还会在左侧目录中列出全部 86 个任务。任务页的参数名称、说明、默认值、
+内置 Docs 还会在左侧目录中列出全部 86 个工具。工具页的参数名称、说明、默认值、
 类型、选项和范围来自当前注册的 `ToolDescriptor` 与语言文件，避免文档和实际
 Schema 长期分离。

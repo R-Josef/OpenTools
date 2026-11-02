@@ -118,8 +118,8 @@ final class ToolFormPanel extends JPanel {
         validateButton.addActionListener(ignored -> validateOnly());
         runButton.addActionListener(ignored -> submit());
         getInputMap(WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
-                .put(KeyStroke.getKeyStroke("ctrl ENTER"), "run-task");
-        getActionMap().put("run-task", new AbstractAction() {
+                .put(KeyStroke.getKeyStroke("ctrl ENTER"), "run-tool");
+        getActionMap().put("run-tool", new AbstractAction() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent event) {
                 if (runButton.isEnabled()) {
@@ -143,10 +143,10 @@ final class ToolFormPanel extends JPanel {
         validateButton.setEnabled(tool != null);
         runButton.setEnabled(tool != null);
         if (tool == null) {
-            title.setText(language.text("tools.select_task", "Select a task"));
+            title.setText(language.text("tools.select_tool", "Select a tool"));
             description.setText(language.text(
-                    "tools.select_task_hint",
-                    "Choose a task from the catalog to configure it."
+                    "tools.select_tool_hint",
+                    "Choose a tool from the catalog to configure it."
             ));
             fileHint.setText(" ");
             validationArea.setText("");

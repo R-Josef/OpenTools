@@ -1,6 +1,6 @@
 # MCP 接入
 
-OpenTools 的 MCP 服务复用与 GUI、CLI 相同的任务注册、校验、作业存储和执行层。
+OpenTools 的 MCP 服务复用与 GUI、CLI 相同的工具注册、校验、作业存储和执行层。
 支持 stdio 和只绑定 loopback 的认证 HTTP。
 
 ## stdio
@@ -63,4 +63,4 @@ HTTP 只允许本机循环地址、受控 Origin、请求大小上限和固定�
 - 自动化拒绝 `overwrite=true`，应使用新的输出路径。
 - HTTP 没有 TLS，只适合同机客户端。
 - stdio 的访问控制由父进程负责。
-- MCP 不解锁隐藏任务，也不绕过对应 CLI/GUI 校验。
+- MCP 不解锁隐藏工具，也不绕过对应 CLI/GUI 校验。

@@ -1,7 +1,7 @@
 # Sequence processing
 
-Sequence tasks cover FASTA/FASTQ statistics, filtering, conversion, extraction,
-ORF prediction, and CDS translation. Most record-oriented tasks stream input and
+Sequence tools cover FASTA/FASTQ statistics, filtering, conversion, extraction,
+ORF prediction, and CDS translation. Most record-oriented tools stream input and
 accept gzip-compressed files.
 
 ## Cautions
@@ -10,6 +10,6 @@ accept gzip-compressed files.
 - One very large record can still require substantial memory.
 - Automatic sequence typing is alphabet-based.
 - FASTQ AUTO cannot distinguish Phred+64 from Solexa+64 in every file.
-- Use a `.gz` output suffix only with tasks that support compressed output.
+- Use a `.gz` output suffix only with tools that support compressed output.
 
-The in-app Docs tree exposes all 13 built-in sequence tasks.
+The in-app Docs tree exposes all 13 built-in sequence tools.

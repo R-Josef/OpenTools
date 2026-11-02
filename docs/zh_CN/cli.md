@@ -18,12 +18,12 @@ opentools --app-home C:\work\opentools-app run fasta.stats `
   --param input=C:\data\genome.fa
 ```
 
-自动化工作区默认是项目根。相对路径按项目根解析；MCP 和批量任务还可显式添加
+自动化工作区默认是项目根。相对路径按项目根解析；MCP 和批量作业还可显式添加
 `--workspace`。
 
 ## 参数
 
-每个任务使用 `--param key=value`。参数 ID、类型、默认值和可选值以
+每个工具使用 `--param key=value`。参数 ID、类型、默认值和可选值以
 `tools describe <id> --schema` 为准。
 
 ```powershell

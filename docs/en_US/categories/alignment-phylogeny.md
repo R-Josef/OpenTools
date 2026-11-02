@@ -12,4 +12,4 @@ MUSCLE, trimAl, Newick operations, IQ-TREE, MCScanX, and Ka/Ks.
 - Large phylogenies and alignments can run for a long time.
 - MCScanX inputs need consistent gene/sequence coordinates and homology files.
 
-The in-app Docs tree exposes all 17 related tasks.
+The in-app Docs tree exposes all 17 related tools.

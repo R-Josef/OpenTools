@@ -19,17 +19,17 @@ A project contains:
 
 Wait for queued and running jobs to finish before switching projects.
 
-## 3. Find a task
+## 3. Find a tool
 
-Open Tasks from the main navigation. The left side groups tasks by category and
-supports global search. Selecting a task shows required, optional, and advanced
+Open Tools from the main navigation. The left side groups tools by category and
+supports global search. Selecting a tool shows required, optional, and advanced
 parameters on the right.
 
 ## 4. Validate and run
 
 1. Choose the input file.
 2. Confirm the detected format.
-3. Set task parameters. A blank output usually means the run directory.
+3. Set tool parameters. A blank output usually means the run directory.
 4. Select **Validate** and resolve errors or warnings.
 5. Select **Run** and monitor the job in Jobs or Results.
 

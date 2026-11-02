@@ -2,29 +2,29 @@
 
 English | [简体中文](README.zh-CN.md)
 
-OpenTools is a local-first, task-driven bioinformatics workbench for Windows and
+OpenTools is a local-first, tool-driven bioinformatics workbench for Windows and
 Java 21. It brings common sequence, annotation, table, alignment, expression,
-enrichment, HTS, and visualization tasks into one searchable workspace. The same
-task definitions power the desktop app, CLI, and MCP server.
+enrichment, HTS, and visualization tools into one searchable workspace. The same
+tool definitions power the desktop app, CLI, and MCP server.
 
 The project is designed for bench scientists, bioinformatics analysts, and plugin
 developers. Research data stays local by default. OpenTools is licensed under
 GPL-3.0-or-later; bundled third-party programs retain their own licenses.
 
-![OpenTools task catalog](docs/en_US/assets/screenshots/tools-catalog.jpg)
+![OpenTools tool catalog](docs/en_US/assets/screenshots/tools-catalog.jpg)
 
 ## Features
 
-- 86 built-in tasks covering FASTA/FASTQ, GFF3/GTF, BED, tables, BLAST/DIAMOND,
+- 86 built-in tools covering FASTA/FASTQ, GFF3/GTF, BED, tables, BLAST/DIAMOND,
   HMMER, multiple sequence alignment, phylogeny, comparative genomics,
   expression, enrichment, SAM/BAM/CRAM, VCF/BCF, and plotting.
 - Projects, jobs, input hashes, parameters, logs, and result manifests are
   persisted together for reproducible reruns.
-- GUI, CLI, and MCP share `ToolDescriptor`, validation, task execution, and
+- GUI, CLI, and MCP share `ToolDescriptor`, validation, tool execution, and
   result contracts.
 - The in-app Docs view follows the active UI language and renders bundled
   Markdown fully offline.
-- Java-native tasks require no external executable. BLAST+, DIAMOND, HMMER,
+- Java-native tools require no external executable. BLAST+, DIAMOND, HMMER,
   MUSCLE, trimAl, IQ-TREE, and MCScanX are available through external adapters.
 
 ## Quick links
@@ -33,14 +33,14 @@ GPL-3.0-or-later; bundled third-party programs retain their own licenses.
 | --- | --- |
 | Windows portable package | `OpenTools.exe` GUI and `OpenToolsCLI.exe`; private Java runtime and Windows x64 tools |
 | General JAR | Java 21 users with separately managed analysis tools |
-| [User documentation](docs/en_US/README.md) | Quick start, task reference, formats, CLI/MCP, FAQ |
+| [User documentation](docs/en_US/README.md) | Quick start, tool reference, formats, CLI/MCP, FAQ |
 | [CLI](docs/en_US/cli.md) | Discovery, validation, execution, jobs, and JSON output |
 | [MCP](docs/en_US/mcp.md) | stdio and authenticated loopback HTTP |
 | [Plugin development](docs/en_US/plugin-development.md) | Plugin API, lifecycle, and examples |
 
 ## Release packages
 
-1. **General JAR**: runs Java-native tasks and discovers external executables
+1. **General JAR**: runs Java-native tools and discovers external executables
    from package `tools/`, explicit paths, `OPENTOOLS_*` variables, or `PATH`.
 2. **Windows x64 portable package**: starts from `OpenTools.exe`, includes a
    private Java runtime and pinned Windows tools, and does not require conda or
@@ -94,7 +94,7 @@ OpenTools. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and the package
 - [Language selector](docs/README.md)
 - [English user guide](docs/en_US/README.md)
 - [中文用户指南](docs/zh_CN/README.md)
-- [Task reference](docs/en_US/task-reference.md)
+- [Tool reference](docs/en_US/tool-reference.md)
 - [UI and Docs development](docs/en_US/ui-and-docs.md)
 - [Changelog](CHANGELOG.md)
 

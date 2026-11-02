@@ -4,7 +4,7 @@
 
 FASTA 记录由 `>` 标题和序列行组成；FASTQ 使用四行记录。输入可选用 gzip。
 FASTA 子序列和 GFF 区间使用 1-based inclusive 坐标。BED 使用 0-based half-open
-坐标。任务不会静默把两种坐标语义混用。
+坐标。工具不会静默把两种坐标语义混用。
 
 FASTQ 质量编码支持 Phred+33、Phred+64 和 Solexa+64。AUTO 不能在所有数据中区分
 Phred+64 与 Solexa+64，必要时显式选择。
@@ -12,13 +12,13 @@ Phred+64 与 Solexa+64，必要时显式选择。
 ## GFF3 与 GTF
 
 GFF3/GTF 使用 1-based inclusive 坐标。序列名必须与参考 FASTA 一致。读取器会
-报告列数、坐标、strand、phase 和属性结构问题。注释修复任务只执行有明确策略的
+报告列数、坐标、strand、phase 和属性结构问题。注释修复工具只执行有明确策略的
 安全修复，不静默猜测缺失业务字段。
 
 ## BED
 
 支持 BED3 和 BED3+。前三个字段是 `chrom`、`start`、`end`，其中
-`0 <= start < end`。strand 为 `+` 或 `-`；其他扩展列按任务说明读取。
+`0 <= start < end`。strand 为 `+` 或 `-`；其他扩展列按工具说明读取。
 
 ## 分隔文本
 
@@ -28,7 +28,7 @@ TSV/CSV 支持 RFC 4180 风格引号、双引号转义和跨行字段。第一�
 ## SAM、BAM、CRAM
 
 SAM/BAM/CRAM 通过 HTSJDK 读取。CRAM 在参考未内嵌时需要 reference FASTA。
-有索引时，区域子集和覆盖度会优先使用 BAI/CRAI；无索引时部分任务退回线性扫描。
+有索引时，区域子集和覆盖度会优先使用 BAI/CRAI；无索引时部分工具退回线性扫描。
 
 ## VCF 与 BCF
 
@@ -42,5 +42,5 @@ SAM/BAM/CRAM 通过 HTSJDK 读取。CRAM 在参考未内嵌时需要 reference F
 
 ## 图像与表格产物
 
-绘图任务可输出 PNG、SVG、PDF 和 JSON PlotModel/数据。PDF 中文字体取决于可用系统
-字体；PNG 和 SVG 能独立保留 Unicode 标签。表格预览有界，完整导出以任务产物为准。
+绘图工具可输出 PNG、SVG、PDF 和 JSON PlotModel/数据。PDF 中文字体取决于可用系统
+字体；PNG 和 SVG 能独立保留 Unicode 标签。表格预览有界，完整导出以工具产物为准。

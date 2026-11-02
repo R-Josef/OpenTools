@@ -12,7 +12,7 @@ Windows 便携包不需要。通用 JAR 需要 Java 21；两类发布物都不�
 ## 为什么外部工具显示缺失？
 
 先运行 Settings 中的 External Tools Check。如果使用便携包，确认 `tools/` 未删除；
-开发者版可设置对应 `OPENTOOLS_*` 变量或在任务中选择路径。也检查可执行文件是否
+开发者版可设置对应 `OPENTOOLS_*` 变量或在工具中选择路径。也检查可执行文件是否
 与当前操作系统和架构兼容。
 
 ## 为什么 BLAST 第一次比后续慢？
@@ -25,7 +25,7 @@ OpenTools 会按 subject 哈希、BLAST 版本、程序和数据库类型构建�
 索引要求 `##contig` 字典和字典顺序记录。压缩 VCF 使用 TBI，BCF 使用 CSI；
 普通未压缩 VCF 默认不索引。
 
-## 为什么 CRAM 任务要求参考 FASTA？
+## 为什么 CRAM 工具要求参考 FASTA？
 
 CRAM 可能只保存参考差异。若参考未内嵌，读取或写出依赖必须提供匹配的 reference。
 
@@ -46,5 +46,5 @@ CRAM 可能只保存参考差异。若参考未内嵌，读取或写出依赖必
 
 ## 如何报告问题？
 
-提供 OpenTools 版本、任务 ID、操作系统、错误码、可复现最小输入和脱敏后的
+提供 OpenTools 版本、工具 ID、操作系统、错误码、可复现最小输入和脱敏后的
 `manifest.json`/`run.log`。不要提交密钥、token 或未经许可的研究数据。

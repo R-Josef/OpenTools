@@ -10,7 +10,7 @@ same Markdown directory when the interface language is English.
 | --- | --- |
 | First run | [Quick start](quick-start.md) |
 | Install or upgrade | [Installation and updates](installation.md) |
-| Find a task | [Task reference](task-reference.md) |
+| Find a tool | [Tool reference](tool-reference.md) |
 | Understand input and output | [File formats](file-formats.md) |
 | Use the terminal or an agent | [CLI](cli.md), [MCP](mcp.md) |
 | Configure external programs | [External tools](external-tools.md) |
@@ -33,6 +33,6 @@ same Markdown directory when the interface language is English.
 - [External tools](external-tools.md)
 - [FAQ](faq.md)
 
-The left navigation in the in-app Docs view lists all 86 built-in tasks. Task
+The left navigation in the in-app Docs view lists all 86 built-in tools. Tool
 parameter names, descriptions, defaults, types, options, and ranges come from
 the active `ToolDescriptor` and language files.

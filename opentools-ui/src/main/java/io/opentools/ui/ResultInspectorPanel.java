@@ -116,7 +116,7 @@ final class ResultInspectorPanel extends JPanel {
         openResult.addActionListener(ignored -> open(current == null ? null : current.runDirectory().resolve("result.json")));
         openManifest.addActionListener(ignored -> open(current == null ? null : current.runDirectory().resolve("manifest.json")));
         exportTable.addActionListener(ignored -> exportTable());
-        summary.setText(language.text("results.empty", "Run a task to see its result here."));
+        summary.setText(language.text("results.empty", "Run a tool to see its result here."));
     }
 
     void refresh() {
@@ -254,7 +254,7 @@ final class ResultInspectorPanel extends JPanel {
             if (preview != null && !preview.equals(full)) {
                 views.setToolTipTextAt(plotTabIndex, language.text(
                         "results.plot_preview",
-                        "A bounded preview is shown; exported task files use the complete matrix."
+                        "A bounded preview is shown; exported tool files use the complete matrix."
                 ));
             }
         } catch (Exception ex) {

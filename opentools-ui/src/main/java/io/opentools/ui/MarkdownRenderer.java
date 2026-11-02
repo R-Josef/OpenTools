@@ -49,7 +49,7 @@ final class MarkdownRenderer {
             return "external";
         }
         if (isTaskTarget(trimmed)) {
-            return "task";
+            return "tool";
         }
         return "local";
     }
@@ -250,8 +250,8 @@ final class MarkdownRenderer {
         if ("external".equals(type)) {
             return target;
         }
-        if ("task".equals(type)) {
-            return "opentools-task:" + target.substring("task:".length());
+        if ("tool".equals(type)) {
+            return "opentools-tool:" + target.substring("tool:".length());
         }
         if ("anchor".equals(type)) {
             String anchor = target.substring(1);
@@ -416,7 +416,7 @@ final class MarkdownRenderer {
     }
 
     private static boolean isTaskTarget(String target) {
-        return target.startsWith("task:") && target.matches("^task:[a-z0-9][a-z0-9._-]*$");
+        return target.startsWith("tool:") && target.matches("^tool:[a-z0-9][a-z0-9._-]*$");
     }
 
     private static boolean isSafeAnchor(String anchor) {

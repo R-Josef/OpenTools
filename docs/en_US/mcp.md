@@ -1,6 +1,6 @@
 # MCP integration
 
-OpenTools exposes the same task registry, validation, job store, and execution
+OpenTools exposes the same tool registry, validation, job store, and execution
 service used by the GUI and CLI. MCP supports stdio and authenticated loopback
 HTTP.
 
