@@ -1,6 +1,6 @@
 # Tool reference
 
-OpenTools `0.9.0-SNAPSHOT` registers 88 built-in tools. The in-app Docs tree lists
+OpenTools `0.9.0-SNAPSHOT` registers 89 built-in tools. The in-app Docs tree lists
 all of them. Each tool page can start with a conventional Markdown guide and
 then continues with a generated reference from the active language files and
 `ToolDescriptor`. The generated section includes:
@@ -23,7 +23,7 @@ Plugin guide path:
 META-INF/opentools/docs/<language>/tool/<Tool ID>.md
 ```
 
-All 88 built-in tools ship with English and Chinese guides. Guides are discovered
+All 89 built-in tools ship with English and Chinese guides. Guides are discovered
 automatically and no documentation registration API is required. Without a
 guide, only the generated reference is shown.
 
@@ -31,7 +31,7 @@ guide, only the generated reference is shown.
 
 | Category | Entry | Tools |
 | --- | --- | --- |
-| Sequence | [Sequence](categories/sequence.md) | 13 |
+| Sequence | [Sequence](categories/sequence.md) | 14 |
 | Annotation and BED | [Genome annotation / Annotation](categories/annotation-bed.md) | 15 |
 | Tables | [Table](categories/table.md) | 8 |
 | Alignment and phylogeny | [Alignment / Phylogeny / Comparative genomics](categories/alignment-phylogeny.md) | 18 |
@@ -48,4 +48,4 @@ OpenToolsCLI.exe tools describe <tool-id> --schema
 ```
 
 Plugin-provided tools and their discovered guides appear at runtime but do not
-count toward the 88 built-in baseline.
+count toward the 89 built-in baseline.

@@ -26,33 +26,164 @@ final class PlotCollinearityTool extends AbstractOpenTool {
     private static final ToolDescriptor DESCRIPTOR = PlotToolSupport.descriptor(
             "plot.collinearity",
             "Collinearity Plot",
-            "Plot imported MCScanX collinearity pairs grouped by block.",
+            "Plot MCScanX collinearity pairs as gene-order dots between two annotated genomes.",
             List.of(
                     ToolParameter.requiredFile("input", "Collinearity table", "Output from mcscan.import."),
+                    ToolParameter.requiredFile("annotationA", "Genome A annotation",
+                            "GFF3/GTF genes for the first genome; IDs must match gene_a."),
+                    ToolParameter.requiredFile("annotationB", "Genome B annotation",
+                            "GFF3/GTF genes for the second genome; IDs must match gene_b."),
                     ToolParameter.string("blockColumn", "Block column", "Block identifier column.", "block"),
-                    ToolParameter.string("pairColumn", "Pair column", "Pair order column.", "pair_index")
+                    ToolParameter.string("geneAColumn", "Genome A gene column", "Gene ID column for genome A.", "gene_a"),
+                    ToolParameter.string("geneBColumn", "Genome B gene column", "Gene ID column for genome B.", "gene_b"),
+                    ToolParameter.integer("maxBlocks", "Colored blocks",
+                            "Top blocks by pair count are colored; remaining pairs are grouped as other.", 20, 1, 200)
             ),
             "Collinearity"
     );
 
     @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
-    @Override public ValidationResult validate(ToolRequest request) { return PlotToolSupport.validate(request); }
+
+    @Override public ValidationResult validate(ToolRequest request) {
+        ValidationResult result = validateParameters(request).merge(PlotToolSupport.validate(request));
+        for (String parameter : List.of("annotationA", "annotationB")) {
+            if (!java.nio.file.Files.isRegularFile(request.path(parameter))) {
+                result = result.merge(ValidationResult.of(io.opentools.api.tool.ValidationIssue.error(
+                        parameter, "Annotation file not found: " + request.path(parameter),
+                        "Choose a GFF3 or GTF file with gene features.")));
+            }
+        }
+        return result;
+    }
 
     @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
-        var table = PlotToolSupport.readTable(request.path("input"), null);
-        int block = table.requiredColumn(request.string("blockColumn"));
-        int pair = table.requiredColumn(request.string("pairColumn"));
-        Map<String, GenericPlotData.GenericSeries.Builder> groups = new LinkedHashMap<>();
+        Genome genomeA = readGenome(request.path("annotationA"));
+        Genome genomeB = readGenome(request.path("annotationB"));
+        PlotToolSupport.PlotTable table = PlotToolSupport.readTable(request.path("input"), null);
+        int blockColumn = table.requiredColumn(request.string("blockColumn"));
+        int geneA = table.requiredColumn(request.string("geneAColumn"));
+        int geneB = table.requiredColumn(request.string("geneBColumn"));
+        int maxBlocks = Math.max(1, request.integer("maxBlocks"));
+
+        List<Pair> pairs = new java.util.ArrayList<>();
+        Map<String, Integer> blockCounts = new LinkedHashMap<>();
+        int unmapped = 0;
         for (var row : table.rows()) {
-            String name = PlotToolSupport.cell(row, block);
-            double value = PlotToolSupport.number(row, pair);
-            groups.computeIfAbsent(name, GenericPlotData.GenericSeries.Builder::new).add(value, value);
+            context.cancellationToken().throwIfCancelled();
+            String block = PlotToolSupport.cell(row, blockColumn);
+            String idA = PlotToolSupport.cell(row, geneA);
+            String idB = PlotToolSupport.cell(row, geneB);
+            Integer x = genomeA.order().get(idA);
+            Integer y = genomeB.order().get(idB);
+            if (x == null || y == null) {
+                unmapped++;
+                continue;
+            }
+            String group = block.isBlank() ? "unassigned" : block;
+            pairs.add(new Pair(group, x + 0.5, y + 0.5));
+            blockCounts.merge(group, 1, Integer::sum);
         }
-        GenericPlotData data = new GenericPlotData("SCATTER", "Collinear pair order",
-                "Collinear pair order", List.of(), groups.values().stream()
-                .map(GenericPlotData.GenericSeries.Builder::build).toList());
-        return PlotToolSupport.renderGeneric(this, request, context, data,
-                "collinearity", request.string("title"), groups.size());
+        if (pairs.isEmpty()) {
+            throw new io.opentools.api.tool.OpenToolException(
+                    "COLLINEARITY_EMPTY",
+                    "No collinearity pairs matched gene IDs in both annotations.",
+                    "Check that gene_a/gene_b use the same IDs as the GFF3/GTF ID or gene_id attributes."
+            );
+        }
+        List<String> topBlocks = blockCounts.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed()
+                        .thenComparing(Map.Entry.comparingByKey()))
+                .limit(maxBlocks)
+                .map(Map.Entry::getKey)
+                .toList();
+        Map<String, GenericPlotData.GenericSeries.Builder> groups = new LinkedHashMap<>();
+        for (Pair pair : pairs) {
+            String group = topBlocks.contains(pair.block()) ? "Block " + pair.block() : "Other blocks";
+            groups.computeIfAbsent(group, GenericPlotData.GenericSeries.Builder::new)
+                    .add(pair.x(), pair.y());
+        }
+        GenericPlotData data = new GenericPlotData("SCATTER", "Genome A gene order",
+                "Genome B gene order", List.of(), groups.values().stream()
+                .map(GenericPlotData.GenericSeries.Builder::build).toList(),
+                (double) genomeA.total(), (double) genomeB.total());
+        context.log("Collinearity: " + pairs.size() + " plotted pairs, " + unmapped + " unmapped");
+        ToolResult base = PlotToolSupport.renderGeneric(this, request, context, data,
+                "collinearity", request.string("title"), pairs.size(), blockCounts.size());
+        Map<String, Object> metrics = new LinkedHashMap<>(base.metrics());
+        metrics.put("pairs", pairs.size());
+        metrics.put("unmapped", unmapped);
+        metrics.put("blocks", blockCounts.size());
+        metrics.put("genesA", genomeA.total());
+        metrics.put("genesB", genomeB.total());
+        metrics.put("chromosomesA", genomeA.chromosomes());
+        metrics.put("chromosomesB", genomeB.chromosomes());
+        metrics.put("maxBlocks", maxBlocks);
+        return new ToolResult(base.summary(), base.summaryArguments(), base.detail(),
+                base.detailArguments(), base.table(), base.artifacts(), metrics);
+    }
+
+    private static Genome readGenome(java.nio.file.Path path) throws Exception {
+        Map<String, Integer> order = new LinkedHashMap<>();
+        Map<String, List<Gene>> bySequence = new LinkedHashMap<>();
+        Map<String, Gene> seen = new LinkedHashMap<>();
+        try (var reader = new io.opentools.formats.gxf.GxfReader(path, true)) {
+            io.opentools.formats.gxf.GxfRecord record;
+            while ((record = reader.next()) != null) {
+                if (!isGeneFeature(record.type())) {
+                    continue;
+                }
+                String id = normalizeGeneId(record.firstAttribute("ID", "gene_id", "Name", "locus_tag"));
+                if (id == null || id.isBlank() || seen.containsKey(id)) {
+                    continue;
+                }
+                Gene gene = new Gene(id, record.seqId(), record.start(), record.end());
+                seen.put(id, gene);
+                bySequence.computeIfAbsent(record.seqId(), ignored -> new java.util.ArrayList<>()).add(gene);
+            }
+        }
+        if (seen.isEmpty()) {
+            throw new io.opentools.api.tool.OpenToolException(
+                    "COLLINEARITY_ANNOTATION_EMPTY",
+                    "No gene features were found in " + path.getFileName() + ".",
+                    "Use GFF3/GTF genes with ID or gene_id attributes."
+            );
+        }
+        int offset = 0;
+        for (List<Gene> genes : bySequence.values()) {
+            genes.sort(java.util.Comparator.comparingLong(Gene::start).thenComparing(Gene::id));
+            for (Gene gene : genes) {
+                order.put(gene.id(), offset++);
+            }
+        }
+        return new Genome(Map.copyOf(order), offset, bySequence.size());
+    }
+
+    private static boolean isGeneFeature(String type) {
+        return type.equalsIgnoreCase("gene")
+                || type.equalsIgnoreCase("mRNA")
+                || type.equalsIgnoreCase("transcript");
+    }
+
+    private static String normalizeGeneId(String id) {
+        if (id == null) {
+            return null;
+        }
+        String value = id.trim();
+        for (String prefix : List.of("gene:", "transcript:", "mRNA:")) {
+            if (value.startsWith(prefix)) {
+                return value.substring(prefix.length());
+            }
+        }
+        return value;
+    }
+
+    private record Gene(String id, String sequence, long start, long end) {
+    }
+
+    private record Genome(Map<String, Integer> order, int total, int chromosomes) {
+    }
+
+    private record Pair(String block, double x, double y) {
     }
 }
 

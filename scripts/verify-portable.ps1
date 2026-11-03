@@ -134,13 +134,13 @@ function Invoke-Tool {
 
 $tools = Invoke-PortableCli -Arguments @("tools", "list", "--json")
 $toolsJson = $tools.Stdout | ConvertFrom-Json
-if (-not $toolsJson.ok -or $toolsJson.data.Count -ne 88) {
-    throw "Portable package did not expose 88 built-in tasks."
+if (-not $toolsJson.ok -or $toolsJson.data.Count -ne 89) {
+    throw "Portable package did not expose 89 built-in tasks."
 }
 
 $doctor = Invoke-PortableCli -Arguments @("doctor", "--json")
 $doctorJson = $doctor.Stdout | ConvertFrom-Json
-if ($doctorJson.data.tasks -ne 88) {
+if ($doctorJson.data.tasks -ne 89) {
     throw "Doctor reported an unexpected task count."
 }
 foreach ($tool in $doctorJson.data.externalTools) {

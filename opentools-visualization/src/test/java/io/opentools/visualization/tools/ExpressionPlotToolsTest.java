@@ -114,8 +114,29 @@ final class ExpressionPlotToolsTest {
                 1	100	geneB	geneY	1
                 2	80	geneC	geneZ	0
                 """);
+        Path annotationA = tempDir.resolve("collinearity-a.gff3");
+        Files.writeString(annotationA, """
+                ##gff-version 3
+                chr1	test	gene	1	100	.	+	.	ID=geneA
+                chr1	test	gene	200	300	.	+	.	ID=geneB
+                chr1	test	gene	400	500	.	+	.	ID=geneC
+                """);
+        Path annotationB = tempDir.resolve("collinearity-b.gff3");
+        Files.writeString(annotationB, """
+                ##gff-version 3
+                chr1	test	gene	1	100	.	+	.	ID=geneX
+                chr1	test	gene	200	300	.	+	.	ID=geneY
+                chr1	test	gene	400	500	.	+	.	ID=geneZ
+                """);
         run("plot.collinearity", Map.of(
-                "input", collinearity, "output", tempDir.resolve("collinearity-plot")));
+                "input", collinearity,
+                "annotationA", annotationA,
+                "annotationB", annotationB,
+                "blockColumn", "block",
+                "geneAColumn", "gene_a",
+                "geneBColumn", "gene_b",
+                "maxBlocks", 20,
+                "output", tempDir.resolve("collinearity-plot")));
         assertTrue(Files.isRegularFile(tempDir.resolve("collinearity-plot.png")));
 
         Path points = tempDir.resolve("points.tsv");
