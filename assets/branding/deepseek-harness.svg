@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 120" role="img" aria-label="Developed with DeepSeek Harness">
+  <title>Developed with DeepSeek Harness</title>
+  <rect x="2" y="2" width="716" height="116" rx="24" fill="#102F36"/>
+  <rect x="10" y="10" width="700" height="100" rx="18" fill="none" stroke="#1B4A52" stroke-width="4"/>
+  <g stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M62 82V38M62 60H104M104 38V82" stroke="#62D6CF" stroke-width="9"/>
+    <circle cx="62" cy="38" r="11" fill="#C6F36B"/>
+    <circle cx="104" cy="60" r="11" fill="#F4A94D"/>
+    <circle cx="62" cy="82" r="11" fill="#F5F1E8"/>
+  </g>
+  <text x="140" y="57" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="32" font-weight="700" fill="#F5F1E8">DeepSeek Harness</text>
+  <text x="140" y="88" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="18" fill="#9FB8BC">agentic coding harness · clean-room workflow</text>
+</svg>

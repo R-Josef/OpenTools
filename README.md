@@ -13,6 +13,16 @@ GPL-3.0-or-later; bundled third-party programs retain their own licenses.
 
 ![OpenTools tool catalog](docs/en_US/assets/screenshots/tools-catalog.jpg)
 
+## Developed with DeepSeek Harness
+
+![DeepSeek Harness](assets/branding/deepseek-harness.svg)
+
+OpenTools is developed and maintained with **DeepSeek Harness**, DeepSeek's
+agentic coding harness. Harness agents inspect the repository, run the test
+suite, and prepare focused, reviewable changes under the project's clean-room
+and licensing rules. DeepSeek Harness is a development tool, not a runtime
+dependency: release packages contain no agent or model code.
+
 ## Features
 
 - 86 built-in tools covering FASTA/FASTQ, GFF3/GTF, BED, tables, BLAST/DIAMOND,
@@ -20,6 +30,8 @@ GPL-3.0-or-later; bundled third-party programs retain their own licenses.
   expression, enrichment, SAM/BAM/CRAM, VCF/BCF, and plotting.
 - Projects, jobs, input hashes, parameters, logs, and result manifests are
   persisted together for reproducible reruns.
+- Jobs run through a bounded queue with persisted progress, cooperative
+  cancellation, and startup recovery for runs interrupted by an abnormal exit.
 - GUI, CLI, and MCP share `ToolDescriptor`, validation, tool execution, and
   result contracts.
 - The bundled default plugin adds an interactive Coin Runner tool whose

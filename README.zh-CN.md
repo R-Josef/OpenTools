@@ -12,12 +12,22 @@ OpenTools 是一个本地优先、工具驱动的开源生物信息学工作台�
 
 ![OpenTools 工具目录](docs/zh_CN/assets/screenshots/tools-catalog.jpg)
 
+## 使用 DeepSeek Harness 开发
+
+![DeepSeek Harness](assets/branding/deepseek-harness.svg)
+
+OpenTools 使用 **DeepSeek Harness**（DeepSeek 的 Agent 编程运行环境）开发和维护。
+Harness Agent 负责检索仓库、运行测试并准备可审阅的改动；所有改动仍遵循项目的
+净室与许可规则，并经过人工复核。DeepSeek Harness 只是开发工具，不是运行时依赖：
+发布包中不包含任何 Agent 或模型代码。
+
 ## 功能概览
 
 - 86 个内置工具，覆盖 FASTA/FASTQ、GFF3/GTF、BED、表格、BLAST/DIAMOND、
   HMMER、多序列比对、系统发育、比较基因组、表达与富集、SAM/BAM/CRAM、
   VCF/BCF、统计图和交互式结果查看。
 - 项目、作业、输入哈希、参数、日志和结果清单统一保存，可重试并复制等价 CLI 命令。
+- 作业经过有界队列调度，进度持久化，支持取消，并在异常退出后恢复中断状态。
 - GUI、CLI 和 MCP 共用 `ToolDescriptor`、参数校验、工具执行和结果模型。
 - 随包默认插件提供可交互的“金币跑酷”工具，结束后的数据会进入正式作业和结果链路。
 - 内置 Docs 页面离线渲染用户文档，并为全部 86 个工具动态生成参数、范围、
