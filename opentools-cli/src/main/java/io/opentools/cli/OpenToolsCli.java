@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import io.opentools.core.i18n.ErrorText;
+import io.opentools.core.i18n.ValidationText;
 import io.opentools.core.job.JobRecord;
 import io.opentools.core.job.JobStatus;
 import io.opentools.core.job.ToolValidationException;
@@ -384,11 +385,24 @@ public final class OpenToolsCli implements AutoCloseable {
         }
 
         private void printValidation(ValidationResult validation, boolean json) throws Exception {
+            java.util.Map<String, String> titles = new java.util.LinkedHashMap<>();
+            ToolDescriptor descriptor = root.runtime().registry().find(toolId)
+                    .map(tool -> tool.descriptor()).orElse(null);
+            if (descriptor != null) {
+                for (ToolParameter parameter : descriptor.parameters()) {
+                    titles.put(parameter.id(),
+                            root.runtime().toolText().parameterTitle(descriptor, parameter));
+                }
+            }
+            var language = root.runtime().language();
+            java.util.List<ValidationIssue> localized = validation.issues().stream()
+                    .map(issue -> ValidationText.localize(language, titles, issue))
+                    .toList();
             if (json) {
-                root.writeJsonFailure(JsonEnvelope.validationFailure(validation.issues()));
+                root.writeJsonFailure(JsonEnvelope.validationFailure(localized));
                 return;
             }
-            for (ValidationIssue issue : validation.issues()) {
+            for (ValidationIssue issue : localized) {
                 root.err().println(issue.severity() + " [" + issue.field() + "] " + issue.message());
                 if (issue.suggestion() != null && !issue.suggestion().isBlank()) {
                     root.err().println("  " + issue.suggestion());

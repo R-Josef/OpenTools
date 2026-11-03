@@ -8,10 +8,18 @@ independent programs:
 | NCBI BLAST+ | Local sequence alignment and database creation | `tools/blast/bin` |
 | DIAMOND | Fast protein alignment | `tools/diamond` |
 | HMMER | hmmscan, hmmsearch, and HMM preparation | `tools/hmmer/bin` |
+| MEME | Motif discovery | `tools/meme/bin` |
+| MAST | Motif scanning | `tools/meme/bin` |
 | MUSCLE | Multiple sequence alignment | `tools/muscle` |
 | trimAl | Alignment trimming | `tools/trimal` |
 | IQ-TREE | Maximum-likelihood phylogeny | `tools/iqtree/bin` |
 | MCScanX | Collinearity and duplicate-gene classification | `tools/mcscanx` |
+
+MEME and MAST are distributed by the MEME Suite. The official Windows option is
+WSL/Docker, so the Windows portable package does not bundle a native MEME build;
+Linux/macOS packages can use `tools/meme/bin`. Detection reports a clear missing
+diagnostic until the executables are available. Check the MEME Suite license
+before redistributing its binaries.
 
 Remote BLAST is Java-native: it calls the NCBI BLAST URL API over HTTPS and does
 not need a local executable or database. It uploads the query only when the task
@@ -44,6 +52,8 @@ OPENTOOLS_TBLASTX
 OPENTOOLS_DIAMOND
 OPENTOOLS_HMMSCAN
 OPENTOOLS_HMMSEARCH
+OPENTOOLS_MEME
+OPENTOOLS_MAST
 OPENTOOLS_MUSCLE
 OPENTOOLS_TRIMAL
 OPENTOOLS_IQTREE

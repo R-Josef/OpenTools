@@ -102,8 +102,7 @@ public final class MemeRunTool extends AbstractOpenTool {
                     "-mod", "zoops",
                     "-nmotifs", Integer.toString(Math.max(1, request.integer("motifs"))),
                     "-minw", Integer.toString(request.integer("minMotifWidth")),
-                    "-maxw", Integer.toString(request.integer("maxMotifWidth")),
-                    "-p", Integer.toString(Math.max(1, request.integer("threads")))));
+                    "-maxw", Integer.toString(request.integer("maxMotifWidth"))));
             command.add("PROTEIN".equalsIgnoreCase(request.string("molecule")) ? "-protein" : "-dna");
             command.addAll(ExternalArguments.parseRestricted(request.string("extraArgs"), ExternalArguments.RESERVED_OPTIONS));
             ProcessResult process = new ProcessRunner().run(

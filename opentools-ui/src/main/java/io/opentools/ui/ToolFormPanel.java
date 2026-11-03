@@ -6,6 +6,7 @@ import io.opentools.core.job.JobRecord;
 import io.opentools.core.job.ToolExecutionService;
 import io.opentools.core.job.ToolValidationException;
 import io.opentools.core.i18n.LanguageManager;
+import io.opentools.core.i18n.ValidationText;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolDescriptor;
@@ -503,11 +504,16 @@ final class ToolFormPanel extends JPanel {
             return;
         }
         StringBuilder text = new StringBuilder();
+        Map<String, String> titles = new LinkedHashMap<>();
+        for (ToolParameter parameter : tool.parameters()) {
+            titles.put(parameter.id(), toolText.parameterTitle(tool, parameter));
+        }
         for (ValidationIssue issue : result.issues()) {
-            text.append(issue.severity()).append(" [").append(issue.field()).append("] ")
-                    .append(issue.message()).append('\n');
-            if (issue.suggestion() != null && !issue.suggestion().isBlank()) {
-                text.append("  ").append(issue.suggestion()).append('\n');
+            ValidationIssue localized = ValidationText.localize(language, titles, issue);
+            text.append(localized.severity()).append(" [").append(localized.field()).append("] ")
+                    .append(localized.message()).append('\n');
+            if (localized.suggestion() != null && !localized.suggestion().isBlank()) {
+                text.append("  ").append(localized.suggestion()).append('\n');
             }
         }
         validationArea.setText(text.toString());

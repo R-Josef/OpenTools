@@ -7,6 +7,11 @@
 - `workflow watch` and `workflow schedule` provide opt-in directory
   triggers and fixed-interval runs; watched files substitute `${watch.file}`
   and `${watch.name}` in the workflow JSON.
+- Parameter-validation messages for required files, paths, ranges, integers, and
+  decimals localize through `ValidationText` in the GUI form and CLI.
+- `meme.run` no longer passes the unsupported `-p` flag to MEME builds without
+  parallel support. MEME/MAST are included in the Settings external-tool check.
+- Fix the Workflows view bottom toolbar being hidden by the run log.
 - FASTA base counting removes `Character.toUpperCase` and a second canonical
   test per base; in-memory transpose writes fields directly instead of allocating
   a temporary row list. Add a reproducible performance benchmark page.

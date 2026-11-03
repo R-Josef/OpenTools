@@ -106,7 +106,6 @@ final class WorkflowPanel extends JPanel {
         toolbar.add(delete);
         toolbar.add(validate);
         toolbar.add(run);
-        add(toolbar, BorderLayout.SOUTH);
 
         saved.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         saved.setBorder(BorderFactory.createTitledBorder(session.language().text("workflows.saved", "Saved workflows")));
@@ -139,7 +138,10 @@ final class WorkflowPanel extends JPanel {
         log.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         JScrollPane logScroll = new JScrollPane(log);
         logScroll.setBorder(BorderFactory.createTitledBorder(session.language().text("workflows.log", "Run log")));
-        add(logScroll, BorderLayout.PAGE_END);
+        JPanel bottom = new JPanel(new BorderLayout(0, 8));
+        bottom.add(toolbar, BorderLayout.NORTH);
+        bottom.add(logScroll, BorderLayout.CENTER);
+        add(bottom, BorderLayout.SOUTH);
 
         create.addActionListener(ignored -> {
             editor.setText(TEMPLATE);

@@ -7,10 +7,16 @@ OpenTools 的 Java 工具不需要外部程序。以下工具调用独立第三�
 | NCBI BLAST+ | 本地核酸/蛋白比对、建库 | `tools/blast/bin` |
 | DIAMOND | 快速蛋白比对 | `tools/diamond` |
 | HMMER | hmmscan、hmmsearch、HMM 数据库准备 | `tools/hmmer/bin` |
+| MEME | 基序发现 | `tools/meme/bin` |
+| MAST | 基序扫描 | `tools/meme/bin` |
 | MUSCLE | 多序列比对 | `tools/muscle` |
 | trimAl | 比对修剪 | `tools/trimal` |
 | IQ-TREE | 最大似然系统发育 | `tools/iqtree/bin` |
 | MCScanX | 共线性与重复基因分类 | `tools/mcscanx` |
+
+MEME 与 MAST 由 MEME Suite 提供。Windows 官方方案是 WSL/Docker，因此 Windows
+便携包不内置原生 MEME；Linux/macOS 包可使用 `tools/meme/bin`。在可执行文件
+可用之前，Settings 会明确报告缺失。重新分发其二进制前请检查 MEME Suite 许可。
 
 远程 BLAST 是 Java 原生实现：通过 HTTPS 调用 NCBI BLAST URL API，不需要本地
 可执行文件或数据库。只有任务显式设置 `allowUpload=true` 时才会上传查询序列。
@@ -42,6 +48,8 @@ OPENTOOLS_TBLASTX
 OPENTOOLS_DIAMOND
 OPENTOOLS_HMMSCAN
 OPENTOOLS_HMMSEARCH
+OPENTOOLS_MEME
+OPENTOOLS_MAST
 OPENTOOLS_MUSCLE
 OPENTOOLS_TRIMAL
 OPENTOOLS_IQTREE
