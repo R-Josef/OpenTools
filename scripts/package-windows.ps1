@@ -117,7 +117,8 @@ function Expand-Artifact {
             Expand-Archive -LiteralPath $Path -DestinationPath $Destination
         }
         "tar.gz" {
-            & tar.exe -xf $Path -C $Destination
+            $windowsTar = Join-Path $env:SystemRoot "System32\tar.exe"
+            & $windowsTar -xf $Path -C $Destination
             if ($LASTEXITCODE -ne 0) {
                 throw "Could not extract tar archive: $Path"
             }
