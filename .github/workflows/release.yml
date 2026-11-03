@@ -111,11 +111,28 @@ jobs:
           update: true
           install: make gcc
           path-type: inherit
+      - uses: cygwin/cygwin-install-action@v7
+        id: cygwin
+        with:
+          packages: >-
+            gcc-core,gcc-g++,make,perl,autoconf,automake,libtool,pkg-config,
+            libxml2-devel,libxslt-devel,zlib-devel,libpng-devel,libgd-devel,
+            freetype-devel,expat-devel,curl,tar,gzip,bzip2,python3,patch,
+            perl-XML-Parser
+      - name: Build MEME for Windows
+        shell: pwsh
+        run: |
+          $root = "${{ steps.cygwin.outputs.root }}"
+          $bash = Join-Path $root "bin\bash.exe"
+          $cygpath = Join-Path $root "bin\cygpath.exe"
+          $workspace = & $cygpath -u "$env:GITHUB_WORKSPACE"
+          $output = & $cygpath -u "$env:GITHUB_WORKSPACE\target\meme-cygwin"
+          & $bash -lc "cd '$workspace' && MEME_SHA256=0406FB7B1DC27F6AAB3D6D3A29ECDF617BBDD946690CFA97CA2129BC210BFD12 bash scripts/build-meme-cygwin.sh '$output'"
       - name: Build Windows package
         shell: pwsh
         env:
           OPENTOOLS_MSYS2_ROOT: ${{ steps.msys2.outputs.msys2-location }}
-        run: ./scripts/package-windows.ps1
+        run: ./scripts/package-windows.ps1 -MemeDirectory "$env:GITHUB_WORKSPACE\target\meme-cygwin"
       - uses: actions/upload-artifact@v4
         with:
           name: windows-x64
