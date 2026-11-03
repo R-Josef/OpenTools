@@ -46,6 +46,8 @@ final class ResultInspectorPanel extends JPanel {
     private final PlotViewerPanel plotViewer;
     private final int plotTabIndex;
     private JobRecord current;
+    private JsonNode currentResult;
+    private boolean plotLoaded;
 
     ResultInspectorPanel(ToolExecutionService executionService, LanguageManager language) {
         this(executionService, language, ToolTextResolver.hostOnly(language));
@@ -115,6 +117,11 @@ final class ResultInspectorPanel extends JPanel {
         plotTabIndex = views.indexOfComponent(plotViewer);
         views.setEnabledAt(plotTabIndex, false);
         views.setTabLayoutPolicy(JTabbedPane.WRAP_TAB_LAYOUT);
+        views.addChangeListener(ignored -> {
+            if (views.getSelectedIndex() == plotTabIndex && !plotLoaded && currentResult != null) {
+                loadPlot(currentResult);
+            }
+        });
 
         JPanel content = new JPanel(new BorderLayout(0, 10));
         content.add(top, BorderLayout.NORTH);
@@ -185,75 +192,137 @@ final class ResultInspectorPanel extends JPanel {
 
     private void loadSelected() {
         JobItem item = (JobItem) jobs.getSelectedItem();
-        current = item == null ? null : item.job;
-        if (current == null) {
+        JobRecord job = item == null ? null : item.job;
+        current = job;
+        currentResult = null;
+        plotLoaded = false;
+        if (job == null) {
             return;
         }
-        paths.setText(language.text("results.run_directory", "Run directory: {0}", current.runDirectory()));
-        paths.setToolTipText(current.runDirectory().toString());
-        Path resultPath = current.runDirectory().resolve("result.json");
+        paths.setText(language.text("results.run_directory", "Run directory: {0}", job.runDirectory()));
+        paths.setToolTipText(job.runDirectory().toString());
+        Path resultPath = job.runDirectory().resolve("result.json");
         if (!Files.isRegularFile(resultPath)) {
             summary.setText(language.text(
                     "results.no_result",
                     "Run status: {0}\nThe result file has not been generated yet.",
-                    localizedStatus(current)
-            ) + (current.errorMessage() == null ? "" : "\n" + current.errorMessage()));
+                    localizedStatus(job)
+            ) + (job.errorMessage() == null ? "" : "\n" + job.errorMessage()));
             tableModel.setDataVector(new Object[0][0], new Object[0]);
             clearPlot();
             return;
         }
-        try {
-            JsonNode root = objectMapper.readTree(resultPath.toFile());
-            String summaryText = localizedResultText(root, "summary");
-            String detail = localizedResultText(root, "detail");
-            summary.setText(language.text("results.status", "Status: {0}", localizedStatus(current))
-                    + "\n" + language.text("results.summary", "Summary: {0}", summaryText)
-                    + (detail.isBlank() ? "" : "\n" + language.text("results.detail", "Detail: {0}", detail))
-                    + "\n" + language.text("results.manifest", "Input hashes and parameters: manifest.json"));
-            JsonNode tableNode = root.path("table");
-            List<String> columns = new ArrayList<>();
-            tableNode.path("columns").forEach(node -> {
-                String value = node.asText();
-                columns.add(toolText.text(
-                        current.toolId(),
-                        "table.column." + normalizeKey(value),
-                        toolText.text(
-                                current.toolId(),
-                                "result." + current.toolId() + ".column." + normalizeKey(value),
-                                value
-                        )
-                ));
-            });
-            Object[][] rows = new Object[tableNode.path("rows").size()][columns.size()];
-            int rowIndex = 0;
-            for (JsonNode row : tableNode.path("rows")) {
-                for (int column = 0; column < columns.size(); column++) {
-                    String value = row.path(column).asText("");
-                    rows[rowIndex][column] = toolText.text(
-                            current.toolId(),
-                            "table.value." + normalizeKey(value),
+        Thread.ofVirtual().start(() -> {
+            try {
+                JsonNode root = objectMapper.readTree(resultPath.toFile());
+                String summaryText = localizedResultText(root, "summary");
+                String detail = localizedResultText(root, "detail");
+                JsonNode tableNode = root.path("table");
+                List<String> columns = new ArrayList<>();
+                tableNode.path("columns").forEach(node -> {
+                    String value = node.asText();
+                    columns.add(toolText.text(
+                            job.toolId(),
+                            "table.column." + normalizeKey(value),
                             toolText.text(
-                                    current.toolId(),
-                                    "result." + current.toolId() + ".value." + normalizeKey(value),
+                                    job.toolId(),
+                                    "result." + job.toolId() + ".column." + normalizeKey(value),
                                     value
                             )
-                    );
+                    ));
+                });
+                Object[][] rows = new Object[tableNode.path("rows").size()][columns.size()];
+                int rowIndex = 0;
+                for (JsonNode row : tableNode.path("rows")) {
+                    for (int column = 0; column < columns.size(); column++) {
+                        String value = row.path(column).asText("");
+                        rows[rowIndex][column] = toolText.text(
+                                job.toolId(),
+                                "table.value." + normalizeKey(value),
+                                toolText.text(
+                                        job.toolId(),
+                                        "result." + job.toolId() + ".value." + normalizeKey(value),
+                                        value
+                                )
+                        );
+                    }
+                    rowIndex++;
                 }
-                rowIndex++;
+                SwingUtilities.invokeLater(() -> {
+                    if (current != job) {
+                        return;
+                    }
+                    currentResult = root;
+                    summary.setText(language.text("results.status", "Status: {0}", localizedStatus(job))
+                            + "\n" + language.text("results.summary", "Summary: {0}", summaryText)
+                            + (detail.isBlank() ? "" : "\n" + language.text("results.detail", "Detail: {0}", detail))
+                            + "\n" + language.text("results.manifest", "Input hashes and parameters: manifest.json"));
+                    tableModel.setDataVector(rows, columns.toArray());
+                    preparePlotTab(root);
+                });
+            } catch (Exception ex) {
+                SwingUtilities.invokeLater(() -> {
+                    if (current != job) {
+                        return;
+                    }
+                    summary.setText(language.text(
+                            "results.parse_failure",
+                            "The result file exists but could not be parsed: {0}",
+                            rootMessage(ex)
+                    ));
+                    tableModel.setDataVector(new Object[0][0], new Object[0]);
+                    clearPlot();
+                });
             }
-            tableModel.setDataVector(rows, columns.toArray());
-            loadPlot(root);
-        } catch (Exception ex) {
-            summary.setText(language.text(
-                    "results.parse_failure",
-                    "The result file exists but could not be parsed: {0}",
-                    rootMessage(ex)
+        });
+    }
+
+    private void preparePlotTab(JsonNode root) {
+        boolean hasPlot = false;
+        for (JsonNode artifact : root.path("artifacts")) {
+            String mediaType = artifact.path("mediaType").asText("");
+            String path = artifact.path("path").asText("");
+            if (!path.isBlank()
+                    && (mediaType.startsWith("image/")
+                    || mediaType.contains("plot-preview")
+                    || mediaType.contains("plot+json"))) {
+                hasPlot = true;
+                break;
+            }
+        }
+        views.setEnabledAt(plotTabIndex, hasPlot);
+        if (!hasPlot) {
+            return;
+        }
+        Path preview = null;
+        Path full = null;
+        for (JsonNode artifact : root.path("artifacts")) {
+            String mediaType = artifact.path("mediaType").asText("");
+            String pathText = artifact.path("path").asText("");
+            if (pathText.isBlank()) {
+                continue;
+            }
+            Path path = Path.of(pathText);
+            if (!Files.isRegularFile(path)) {
+                continue;
+            }
+            if (mediaType.equals("application/vnd.opentools.plot-preview+json")) {
+                preview = path;
+            } else if (mediaType.equals("application/vnd.opentools.plot+json")
+                    || mediaType.equals("application/json") && path.getFileName().toString().endsWith(".plot.json")) {
+                full = path;
+            }
+        }
+        if (preview != null && !preview.equals(full)) {
+            views.setToolTipTextAt(plotTabIndex, language.text(
+                    "results.plot_preview",
+                    "A bounded preview is shown; exported tool files use the complete matrix."
             ));
-            clearPlot();
         }
     }
 
     private void loadPlot(JsonNode root) {
+        plotLoaded = true;
         Path preview = null;
         Path full = null;
         Path image = null;
@@ -288,7 +357,6 @@ final class ResultInspectorPanel extends JPanel {
                 plotViewer.loadImage(image);
             }
             views.setEnabledAt(plotTabIndex, true);
-            views.setSelectedIndex(plotTabIndex);
             if (preview != null && !preview.equals(full)) {
                 views.setToolTipTextAt(plotTabIndex, language.text(
                         "results.plot_preview",
@@ -304,6 +372,8 @@ final class ResultInspectorPanel extends JPanel {
     private void clearPlot() {
         plotViewer.clear();
         views.setEnabledAt(plotTabIndex, false);
+        plotLoaded = false;
+        currentResult = null;
         if (views.getSelectedIndex() == plotTabIndex) {
             views.setSelectedIndex(0);
         }

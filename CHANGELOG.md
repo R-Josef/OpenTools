@@ -4,6 +4,8 @@
 
 ### Added
 
+- The Results panel parses result tables off the EDT and loads the visualization
+  only when its tab is selected.
 - `plot.synteny` draws multi-genome chord/ribbon links from a cross-genome
   pair table and a combined GFF3/GTF annotation, with block colors and a link cap.
 - `plot.circos` now renders a real circular ideogram: one arc per sequence,
