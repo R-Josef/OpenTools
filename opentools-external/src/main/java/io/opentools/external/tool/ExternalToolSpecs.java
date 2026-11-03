@@ -59,6 +59,22 @@ public final class ExternalToolSpecs {
             List.of("--version"),
             List.of("tools/iqtree/bin", "tools/iqtree")
     );
+    public static final ExecutableSpec MEME = new ExecutableSpec(
+            "annotation.meme",
+            "MEME",
+            "OPENTOOLS_MEME",
+            List.of("meme"),
+            List.of("-version"),
+            List.of("tools/meme/bin", "tools/meme")
+    );
+    public static final ExecutableSpec MAST = new ExecutableSpec(
+            "annotation.mast",
+            "MAST",
+            "OPENTOOLS_MAST",
+            List.of("mast"),
+            List.of("-version"),
+            List.of("tools/meme/bin", "tools/meme")
+    );
     public static final ExecutableSpec MCSCANX = new ExecutableSpec(
             "comparative.mcscanx",
             "MCScanX",

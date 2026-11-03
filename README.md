@@ -31,7 +31,7 @@ packages contain no agent or model code.
 
 ## Features
 
-- 90 built-in tools covering FASTA/FASTQ, GFF3/GTF, BED, tables, local and remote
+- 92 built-in tools covering FASTA/FASTQ, GFF3/GTF, BED, tables, local and remote
   BLAST, DIAMOND, HMMER, multiple sequence alignment, phylogeny, comparative
   genomics, expression, enrichment, SAM/BAM/CRAM, VCF/BCF, and plotting.
 - Projects, jobs, input hashes, parameters, logs, and result manifests are
@@ -44,6 +44,7 @@ packages contain no agent or model code.
   placeholders, with cycle checks and stop/continue failure policies.
 - Collinearity plots use real GFF3/GTF gene order; SSR mining reports perfect
   microsatellite loci; primer check predicts amplicons with IUPAC-aware matching.
+- MEME motif discovery and MAST scanning integrate with an installed MEME Suite.
 - GUI, CLI, and MCP share `ToolDescriptor`, validation, tool execution, and
   result contracts.
 - The bundled default plugin adds an interactive Coin Runner tool whose
@@ -51,7 +52,7 @@ packages contain no agent or model code.
 - The in-app Docs view follows the active UI language and renders bundled
   Markdown fully offline.
 - Java-native tools require no external executable. BLAST+, DIAMOND, HMMER,
-  MUSCLE, trimAl, IQ-TREE, and MCScanX are available through external adapters.
+  MEME/MAST, MUSCLE, trimAl, IQ-TREE, and MCScanX are available through external adapters.
 
 ## Quick links
 

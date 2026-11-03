@@ -7,6 +7,9 @@
 - Cross-process job cancellation: `jobs cancel` and MCP `opentools_cancel_job`
   mark active jobs in the shared project database; the owning process polls the
   request and records `CANCELLED`.
+- `meme.run` and `mast.run`: MEME motif discovery and MAST scanning through
+  installed MEME Suite executables, with XML capture, secure parsing, motif and
+  hit TSV summaries, and external-tool diagnostics.
 - `sequence.primer-check`:  electronic PCR against a genome FASTA with a
   tab-separated primer table, IUPAC bases, configurable mismatches and product
   window, nearest-downstream amplicon reporting, and truncation caps.
@@ -45,7 +48,7 @@
   replacing the `param` node with `parameter`, fixes plugin metadata to
   `plugin.name/description`, derives result keys from the Tool ID, and locates
   tool guides at `docs/<language>/tool/<Tool ID>.md`.
-- Detailed English and Chinese beginner guides now cover all 90 built-in tools,
+- Detailed English and Chinese beginner guides now cover all 92 built-in tools,
   including input sketches, parameter selection, result interpretation,
   failure boundaries, and related next steps.
 - Bundled default example plugin with the interactive Coin Runner tool, JSON

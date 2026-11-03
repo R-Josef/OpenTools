@@ -18,6 +18,8 @@ import io.opentools.external.comparative.McscanRunTool;
 import io.opentools.external.annotation.EggnogImportTool;
 import io.opentools.external.annotation.HmmerSearchTool;
 import io.opentools.external.annotation.HmmsearchTool;
+import io.opentools.external.annotation.MastRunTool;
+import io.opentools.external.annotation.MemeRunTool;
 import io.opentools.external.annotation.PfamImportTool;
 import io.opentools.external.tool.ExecutableLocator;
 import io.opentools.external.tool.ExternalToolSpecs;
@@ -39,6 +41,8 @@ public final class ExternalTools {
         registry.register(new BlastRegionsTool());
         registry.register(new HmmerSearchTool());
         registry.register(new HmmsearchTool());
+        registry.register(new MemeRunTool());
+        registry.register(new MastRunTool());
         registry.register(new PfamImportTool());
         registry.register(new EggnogImportTool());
         registry.register(new MuscleTool());
@@ -58,6 +62,8 @@ public final class ExternalTools {
                 ExternalToolSpecs.DIAMOND,
                 ExternalToolSpecs.HMMSCAN,
                 ExternalToolSpecs.HMMSEARCH,
+                ExternalToolSpecs.MEME,
+                ExternalToolSpecs.MAST,
                 ExternalToolSpecs.MUSCLE,
                 ExternalToolSpecs.TRIMAL,
                 ExternalToolSpecs.IQTREE,
