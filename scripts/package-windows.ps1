@@ -361,6 +361,7 @@ if ($MemeDirectory) {
         }
     }
     $memeDestination = Join-Path $toolsRoot "meme"
+    New-Item -ItemType Directory -Force -Path $memeDestination | Out-Null
     Copy-Item -Path (Join-Path $memeRoot "*") -Destination $memeDestination -Recurse -Force
     $memeLicenseDir = Join-Path $licensesRoot "tools\meme"
     New-Item -ItemType Directory -Force -Path $memeLicenseDir | Out-Null
