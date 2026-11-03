@@ -4,6 +4,9 @@
 
 ### Added
 
+- `sequence.primer-check`: electronic PCR against a genome FASTA with a
+  tab-separated primer table, IUPAC bases, configurable mismatches and product
+  window, nearest-downstream amplicon reporting, and truncation caps.
 - `sequence.ssr`: perfect SSR mining from FASTA with configurable motif length,
   minimum repeats, and locus cap; reports 1-based coordinates and per-motif counts.
 - `plot.collinearity` now plots MCScanX pairs as a gene-order dot plot between
@@ -39,7 +42,7 @@
   replacing the `param` node with `parameter`, fixes plugin metadata to
   `plugin.name/description`, derives result keys from the Tool ID, and locates
   tool guides at `docs/<language>/tool/<Tool ID>.md`.
-- Detailed English and Chinese beginner guides now cover all 89 built-in tools,
+- Detailed English and Chinese beginner guides now cover all 90 built-in tools,
   including input sketches, parameter selection, result interpretation,
   failure boundaries, and related next steps.
 - Bundled default example plugin with the interactive Coin Runner tool, JSON
