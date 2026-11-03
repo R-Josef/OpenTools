@@ -95,7 +95,7 @@ public final class MastRunTool extends AbstractOpenTool {
             command.addAll(List.of("-oc", outDir.getFileName().toString(), "-nostatus"));
             command.addAll(ExternalArguments.parseRestricted(request.string("extraArgs"), ExternalArguments.RESERVED_OPTIONS));
             ProcessResult process = new ProcessRunner().run(
-                    command, work, Map.of(),
+                    command, work, MemeRuntimeSupport.environment(mast.executable()),
                     Duration.ofMinutes(Math.max(1, request.integer("timeoutMinutes"))),
                     context.cancellationToken(), context::log);
             Path xml = outDir.resolve("mast.xml");
@@ -110,7 +110,7 @@ public final class MastRunTool extends AbstractOpenTool {
                 }
                 fallback.add("-hit_list");
                 ProcessResult hitList = new ProcessRunner().run(
-                        fallback, work, Map.of(),
+                        fallback, work, MemeRuntimeSupport.environment(mast.executable()),
                         Duration.ofMinutes(Math.max(1, request.integer("timeoutMinutes"))),
                         context.cancellationToken(), context::log);
                 if (!hitList.succeeded()) {

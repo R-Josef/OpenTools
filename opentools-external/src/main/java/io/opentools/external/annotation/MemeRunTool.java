@@ -107,7 +107,7 @@ public final class MemeRunTool extends AbstractOpenTool {
             command.add("PROTEIN".equalsIgnoreCase(request.string("molecule")) ? "-protein" : "-dna");
             command.addAll(ExternalArguments.parseRestricted(request.string("extraArgs"), ExternalArguments.RESERVED_OPTIONS));
             ProcessResult process = new ProcessRunner().run(
-                    command, work, Map.of(),
+                    command, work, MemeRuntimeSupport.environment(meme.executable()),
                     Duration.ofMinutes(Math.max(1, request.integer("timeoutMinutes"))),
                     context.cancellationToken(), context::log);
             Path xml = outDir.resolve("meme.xml");
