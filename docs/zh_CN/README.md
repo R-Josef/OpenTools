@@ -13,6 +13,7 @@
 | 查找工具 | [工具参考](tool-reference.md) |
 | 理解输入输出 | [文件格式](file-formats.md) |
 | 命令行或 Agent | [CLI](cli.md)、[MCP](mcp.md) |
+| 把任务串成 DAG | [工作流](workflow.md) |
 | 配置外部程序 | [外部工具](external-tools.md) |
 | 开发插件 | [插件开发者指南](plugin-development.md) |
 | Plugin API 与 Javadoc | [Plugin API 2.1](plugin-api.md) |
@@ -31,6 +32,7 @@
 - [可视化](categories/visualization.md)
 - [插件工具](categories/plugin.md)
 - [CLI 与 MCP](cli.md)
+- [工作流](workflow.md)
 - [外部工具](external-tools.md)
 - [FAQ](faq.md)
 

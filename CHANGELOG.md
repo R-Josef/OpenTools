@@ -4,6 +4,10 @@
 
 ### Added
 
+- Dependency-ordered JSON workflows run through `opentools workflow run` and
+  MCP `opentools_run_workflow`: cycle detection, `${step.output}`,
+  `${step.output[N]}`, `${step.metric.KEY}`, and `${step.runId}` placeholders,
+  per-step artifacts and metrics, and stop/continue failure policies.
 - `resource.manage`: versioned local GO/KEGG resource packs with immutable
   import, SHA-256 and entry counts, active-pack switching, and rollback by
   reactivating a retained pack. `go.enrich`, `go.level`, and `kegg.enrich`

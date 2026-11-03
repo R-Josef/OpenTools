@@ -53,6 +53,7 @@ final class McpToolServerTest {
         JsonNode tools = server.handle(request("tools/list", Map.of()));
         assertTrue(tools.path("result").path("tools").toString().contains("opentools_submit_job"));
         assertTrue(tools.path("result").path("tools").toString().contains("opentools_read_result"));
+        assertTrue(tools.path("result").path("tools").toString().contains("opentools_run_workflow"));
         String described = callTool("opentools_describe_tool", Map.of("toolId", "fasta.filter")).toString();
         assertTrue(described.contains("fasta.filter"));
         assertTrue(described.contains("includeRegex"));

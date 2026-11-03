@@ -56,6 +56,10 @@ shared logs, or chat transcripts.
 A successful submission only means the job is queued. Wait for `SUCCEEDED`
 before reading results.
 
+For multi-step DAGs, use `opentools_run_workflow` with a workspace path to a
+workflow JSON file. It returns per-step status, run IDs, artifacts, and metrics;
+see [Workflows](workflow.md).
+
 ## Security boundaries
 
 - Inputs, outputs, and directories are restricted to allowed workspaces.

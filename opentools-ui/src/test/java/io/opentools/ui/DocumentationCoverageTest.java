@@ -107,6 +107,7 @@ final class DocumentationCoverageTest {
                 "installation.md",
                 "cli.md",
                 "mcp.md",
+                "workflow.md",
                 "tool-reference.md",
                 "file-formats.md",
                 "faq.md",
@@ -142,7 +143,7 @@ final class DocumentationCoverageTest {
     void publicMarkdownLocalLinksResolveWithoutTraversalOrNetworkImages() throws Exception {
         List<String> documents = new ArrayList<>(List.of(
                 "README.md", "quick-start.md", "installation.md", "cli.md", "mcp.md",
-                "tool-reference.md", "file-formats.md", "faq.md", "plugin-development.md",
+                "workflow.md", "tool-reference.md", "file-formats.md", "faq.md", "plugin-development.md",
                 "errors-exit-codes.md", "external-tools.md", "release-packages.md", "ui-and-docs.md",
                 "categories/sequence.md", "categories/annotation-bed.md", "categories/table.md",
                 "categories/alignment-phylogeny.md", "categories/expression-enrichment.md",

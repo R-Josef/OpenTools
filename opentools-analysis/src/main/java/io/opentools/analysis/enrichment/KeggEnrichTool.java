@@ -47,7 +47,7 @@ public final class KeggEnrichTool extends AbstractOpenTool {
     public ValidationResult validate(ToolRequest request) {
         ValidationResult result = validateParameters(request)
                 .merge(FormatToolSupport.validateOutput(request, request.path("annotations")));
-        String resourceId = request.string("resourceId").trim();
+        String resourceId = request.string("resourceId") == null ? "" : request.string("resourceId").trim();
         if (resourceId.isEmpty() && request.path("annotations") == null) {
             result = result.merge(ValidationResult.of(ValidationIssue.error(
                     "annotations", "Provide a gene-pathway file or select a KEGG resource pack.",
@@ -78,7 +78,7 @@ public final class KeggEnrichTool extends AbstractOpenTool {
     public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         ResourcePacks.Pack pack = null;
         Path mappingPath = request.path("annotations");
-        String resourceId = request.string("resourceId").trim();
+        String resourceId = request.string("resourceId") == null ? "" : request.string("resourceId").trim();
         if (!resourceId.isEmpty()) {
             pack = ResourcePacks.open().find(resourceId).orElseThrow(() -> new OpenToolException(
                     "RESOURCE_NOT_FOUND",

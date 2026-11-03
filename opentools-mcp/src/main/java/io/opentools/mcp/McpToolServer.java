@@ -162,6 +162,16 @@ public final class McpToolServer {
         );
         addTool(
                 tools,
+                "opentools_run_workflow",
+                "Run a dependency-ordered workflow from a workspace JSON file. "
+                        + "Supports ${step.output}, ${step.output[0]}, ${step.metric.KEY}, and ${step.runId} placeholders.",
+                schema(
+                        Map.of("path", property("string", "Workspace path to the workflow JSON")),
+                        List.of("path")
+                )
+        );
+        addTool(
+                tools,
                 "opentools_retry_job",
                 "Retry a job with its stored effective parameters.",
                 schema(Map.of("runId", property("string", "Run ID")), List.of("runId"))
@@ -208,6 +218,9 @@ public final class McpToolServer {
                                 arguments,
                                 ToolAutomationService.BatchSpec.class
                         )
+                );
+                case "opentools_run_workflow" -> automation.runWorkflow(
+                        Path.of(requiredText(arguments, "path"))
                 );
                 case "opentools_retry_job" -> automation.retry(requiredText(arguments, "runId"));
                 case "opentools_detect_format" -> automation.detectFormat(

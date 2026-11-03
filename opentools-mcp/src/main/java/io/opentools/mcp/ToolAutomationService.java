@@ -1,6 +1,7 @@
 package io.opentools.mcp;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.opentools.core.automation.ToolContracts;
 import io.opentools.core.job.JobRecord;
 import io.opentools.core.job.JobStatus;
@@ -14,12 +15,20 @@ import io.opentools.formats.FormatDetector;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class ToolAutomationService {
+    private static final Pattern WORKFLOW_PLACEHOLDER = Pattern.compile(
+            "\\$\\{([A-Za-z0-9_-]+)\\.(output(?:\\[\\d+])?|metric\\.[A-Za-z0-9_.-]+|runId)\\}");
     private final AutomationRuntime runtime;
 
     public ToolAutomationService(AutomationRuntime runtime) {
@@ -209,6 +218,333 @@ public final class ToolAutomationService {
         return response;
     }
 
+    public Map<String, Object> runWorkflow(Path workflowFile) throws Exception {
+        Path normalized = runtime.workspacePolicy().resolvePath(workflowFile.toString());
+        if (!runtime.workspacePolicy().isAllowed(normalized)) {
+            throw new AutomationException(
+                    "PATH_OUTSIDE_WORKSPACE",
+                    "Workflow file is outside the allowed workspace: " + normalized,
+                    "Place the workflow under the project or an allowed workspace root."
+            );
+        }
+        if (!Files.isRegularFile(normalized)) {
+            throw new AutomationException(
+                    "WORKFLOW_NOT_FOUND",
+                    "Workflow file does not exist: " + normalized,
+                    "Check the path and try again."
+            );
+        }
+        if (Files.size(normalized) > 10L * 1024 * 1024) {
+            throw new AutomationException(
+                    "WORKFLOW_FILE_TOO_LARGE",
+                    "Workflow file exceeds the 10 MB limit.",
+                    "Reduce embedded text parameters or split the workflow."
+            );
+        }
+        WorkflowSpec spec = JsonSupport.MAPPER.readValue(normalized.toFile(), WorkflowSpec.class);
+        return runWorkflow(spec);
+    }
+
+    public Map<String, Object> runWorkflow(WorkflowSpec spec) throws Exception {
+        if (spec.steps().size() > 100) {
+            throw new AutomationException(
+                    "WORKFLOW_TOO_LARGE",
+                    "A workflow may contain at most 100 steps.",
+                    "Split the workflow into smaller files."
+            );
+        }
+        Map<String, WorkflowStep> byId = new LinkedHashMap<>();
+        for (WorkflowStep step : spec.steps()) {
+            if (step.id() == null || step.id().isBlank()) {
+                throw new AutomationException(
+                        "WORKFLOW_STEP_ID_MISSING",
+                        "Every workflow step needs a non-blank id.",
+                        "Add an id such as stats or plot."
+                );
+            }
+            if (byId.putIfAbsent(step.id(), step) != null) {
+                throw new AutomationException(
+                        "WORKFLOW_STEP_ID_DUPLICATE",
+                        "Duplicate workflow step id: " + step.id(),
+                        "Use unique ids for every step."
+                );
+            }
+        }
+        for (WorkflowStep step : spec.steps()) {
+            for (String dependency : step.dependsOn()) {
+                if (!byId.containsKey(dependency)) {
+                    throw new AutomationException(
+                            "WORKFLOW_DEPENDENCY_MISSING",
+                            "Step " + step.id() + " depends on unknown step " + dependency + ".",
+                            "Check the dependsOn list."
+                    );
+                }
+            }
+        }
+        List<String> order = topologicalOrder(spec.steps(), byId);
+        Map<String, StepOutput> completed = new LinkedHashMap<>();
+        Map<String, String> statuses = new LinkedHashMap<>();
+        List<Map<String, Object>> stepResults = new ArrayList<>();
+        boolean stopped = false;
+
+        for (String id : order) {
+            WorkflowStep step = byId.get(id);
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("id", id);
+            entry.put("toolId", step.toolId());
+            boolean dependencyFailed = step.dependsOn().stream()
+                    .anyMatch(dependency -> !"SUCCEEDED".equals(statuses.get(dependency)));
+            if (stopped || dependencyFailed) {
+                statuses.put(id, "SKIPPED");
+                entry.put("status", "SKIPPED");
+                entry.put("errorCode", dependencyFailed ? "WORKFLOW_DEPENDENCY_FAILED" : "WORKFLOW_STOPPED");
+                stepResults.add(entry);
+                continue;
+            }
+            try {
+                Map<String, Object> parameters = resolveParameters(step.parameters(), completed);
+                ValidationReport report = validate(step.toolId(), parameters);
+                entry.put("validation", report);
+                if (!report.valid()) {
+                    throw validationException(report);
+                }
+                Map<String, Object> submitted = submit(step.toolId(), report.parameters());
+                String runId = String.valueOf(submitted.get("runId"));
+                JobRecord job = awaitWorkflowJob(runId);
+                entry.put("runId", runId);
+                entry.put("status", job.status().name());
+                if (job.status() != JobStatus.SUCCEEDED) {
+                    throw new AutomationException(
+                            job.errorCode() == null ? "WORKFLOW_STEP_FAILED" : job.errorCode(),
+                            job.errorMessage() == null
+                                    ? "Workflow step " + id + " ended with " + job.status() + "."
+                                    : job.errorMessage(),
+                            "Inspect the step run directory and log."
+                    );
+                }
+                StepOutput output = readStepOutput(runId);
+                completed.put(id, output);
+                statuses.put(id, "SUCCEEDED");
+                entry.put("outputs", output.outputs());
+                entry.put("metrics", output.metrics());
+            } catch (AutomationException ex) {
+                statuses.put(id, "FAILED");
+                entry.put("status", "FAILED");
+                entry.put("errorCode", ex.code());
+                entry.put("errorMessage", ex.getMessage());
+                entry.put("issues", ex.issues());
+                if (!spec.continueOnError()) {
+                    stopped = true;
+                }
+            } catch (Exception ex) {
+                statuses.put(id, "FAILED");
+                entry.put("status", "FAILED");
+                entry.put("errorCode", "WORKFLOW_STEP_FAILED");
+                entry.put("errorMessage", ex.getMessage());
+                if (!spec.continueOnError()) {
+                    stopped = true;
+                }
+            }
+            stepResults.add(entry);
+        }
+
+        long succeeded = statuses.values().stream().filter("SUCCEEDED"::equals).count();
+        long failed = statuses.values().stream().filter("FAILED"::equals).count();
+        long skipped = statuses.values().stream().filter("SKIPPED"::equals).count();
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("name", spec.name());
+        response.put("continueOnError", spec.continueOnError());
+        response.put("total", spec.steps().size());
+        response.put("succeeded", succeeded);
+        response.put("failed", failed);
+        response.put("skipped", skipped);
+        response.put("stoppedOnError", stopped);
+        response.put("steps", stepResults);
+        return response;
+    }
+
+    private List<String> topologicalOrder(
+            List<WorkflowStep> steps,
+            Map<String, WorkflowStep> byId
+    ) throws AutomationException {
+        Map<String, Integer> indegree = new LinkedHashMap<>();
+        Map<String, List<String>> children = new LinkedHashMap<>();
+        for (WorkflowStep step : steps) {
+            indegree.put(step.id(), step.dependsOn().size());
+            children.put(step.id(), new ArrayList<>());
+        }
+        for (WorkflowStep step : steps) {
+            for (String dependency : step.dependsOn()) {
+                if (dependency.equals(step.id())) {
+                    throw new AutomationException(
+                            "WORKFLOW_CYCLE",
+                            "Step " + step.id() + " depends on itself.",
+                            "Remove the self-dependency."
+                    );
+                }
+                children.get(dependency).add(step.id());
+            }
+        }
+        Deque<String> ready = new ArrayDeque<>();
+        for (WorkflowStep step : steps) {
+            if (indegree.get(step.id()) == 0) {
+                ready.add(step.id());
+            }
+        }
+        List<String> order = new ArrayList<>();
+        while (!ready.isEmpty()) {
+            String id = ready.removeFirst();
+            order.add(id);
+            for (String child : children.get(id)) {
+                int remaining = indegree.merge(child, -1, Integer::sum);
+                if (remaining == 0) {
+                    ready.addLast(child);
+                }
+            }
+        }
+        if (order.size() != byId.size()) {
+            throw new AutomationException(
+                    "WORKFLOW_CYCLE",
+                    "The workflow contains a dependency cycle.",
+                    "Remove cyclic dependsOn edges."
+            );
+        }
+        return order;
+    }
+
+    private JobRecord awaitWorkflowJob(String runId) throws Exception {
+        JobRecord job = runtime.execution().find(runId);
+        long deadline = System.nanoTime() + 3_600_000_000_000L;
+        while ((job.status() == JobStatus.QUEUED || job.status() == JobStatus.RUNNING)
+                && System.nanoTime() < deadline) {
+            Thread.sleep(200);
+            job = runtime.execution().find(runId);
+        }
+        if (job.status() == JobStatus.QUEUED || job.status() == JobStatus.RUNNING) {
+            throw new AutomationException(
+                    "WORKFLOW_TIMEOUT",
+                    "Workflow step exceeded the one-hour automation timeout: " + runId,
+                    "Inspect the running job or split the workload."
+            );
+        }
+        return job;
+    }
+
+    private StepOutput readStepOutput(String runId) throws Exception {
+        JobRecord job = runtime.execution().find(runId);
+        Path resultPath = job.runDirectory().resolve("result.json");
+        if (!Files.isRegularFile(resultPath)) {
+            throw new AutomationException(
+                    "WORKFLOW_RESULT_MISSING",
+                    "Successful workflow step has no result.json: " + runId,
+                    "Inspect the run directory."
+            );
+        }
+        JsonNode root = JsonSupport.MAPPER.readTree(resultPath.toFile());
+        List<String> outputs = new ArrayList<>();
+        for (JsonNode artifact : root.path("artifacts")) {
+            String path = artifact.path("path").asText("");
+            if (!path.isBlank()) {
+                outputs.add(path);
+            }
+        }
+        Map<String, Object> metrics = JsonSupport.MAPPER.convertValue(
+                root.path("metrics"),
+                new TypeReference<LinkedHashMap<String, Object>>() {
+                }
+        );
+        return new StepOutput(runId, List.copyOf(outputs), Map.copyOf(metrics));
+    }
+
+    private Map<String, Object> resolveParameters(
+            Map<String, Object> parameters,
+            Map<String, StepOutput> completed
+    ) throws Exception {
+        Map<String, Object> resolved = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+            resolved.put(entry.getKey(), resolveValue(entry.getValue(), completed));
+        }
+        return resolved;
+    }
+
+    private Object resolveValue(Object value, Map<String, StepOutput> completed) throws Exception {
+        if (value instanceof String text) {
+            return resolveText(text, completed);
+        }
+        if (value instanceof Map<?, ?> map) {
+            Map<String, Object> copy = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                copy.put(String.valueOf(entry.getKey()), resolveValue(entry.getValue(), completed));
+            }
+            return copy;
+        }
+        if (value instanceof List<?> list) {
+            List<Object> copy = new ArrayList<>();
+            for (Object item : list) {
+                copy.add(resolveValue(item, completed));
+            }
+            return copy;
+        }
+        return value;
+    }
+
+    private String resolveText(String text, Map<String, StepOutput> completed) throws Exception {
+        Matcher matcher = WORKFLOW_PLACEHOLDER.matcher(text);
+        StringBuilder resolved = new StringBuilder();
+        while (matcher.find()) {
+            String stepId = matcher.group(1);
+            String expression = matcher.group(2);
+            StepOutput output = completed.get(stepId);
+            if (output == null) {
+                throw new AutomationException(
+                        "WORKFLOW_DEPENDENCY_NOT_READY",
+                        "Placeholder references a step that has not succeeded: " + stepId,
+                        "Check dependsOn and earlier failures."
+                );
+            }
+            String replacement;
+            if (expression.equals("runId")) {
+                replacement = output.runId();
+            } else if (expression.startsWith("metric.")) {
+                String key = expression.substring("metric.".length());
+                Object metric = output.metrics().get(key);
+                if (metric == null) {
+                    throw new AutomationException(
+                            "WORKFLOW_METRIC_MISSING",
+                            "Step " + stepId + " has no metric " + key + ".",
+                            "Check the step result metrics."
+                    );
+                }
+                replacement = String.valueOf(metric);
+            } else {
+                int index = 0;
+                if (expression.startsWith("output[")) {
+                    String number = expression.substring("output[".length(), expression.length() - 1);
+                    try {
+                        index = Integer.parseInt(number);
+                    } catch (NumberFormatException ex) {
+                        throw new AutomationException(
+                                "WORKFLOW_PLACEHOLDER_INVALID",
+                                "Invalid output index: " + expression,
+                                "Use output or output[0]."
+                        );
+                    }
+                }
+                if (index < 0 || index >= output.outputs().size()) {
+                    throw new AutomationException(
+                            "WORKFLOW_OUTPUT_MISSING",
+                            "Step " + stepId + " has no artifact at index " + index + ".",
+                            "Check the step artifacts or use a different index."
+                    );
+                }
+                replacement = output.outputs().get(index);
+            }
+            matcher.appendReplacement(resolved, Matcher.quoteReplacement(replacement));
+        }
+        matcher.appendTail(resolved);
+        return resolved.toString();
+    }
+
     private ToolDescriptor tool(String toolId) throws AutomationException {
         return runtime.registry().find(toolId)
                 .map(tool -> tool.descriptor())
@@ -297,6 +633,30 @@ public final class ToolAutomationService {
                 throw new IllegalArgumentException("A batch may contain at most 100 jobs");
             }
         }
+    }
+
+    public record WorkflowSpec(String name, boolean continueOnError, List<WorkflowStep> steps) {
+        public WorkflowSpec {
+            name = name == null || name.isBlank() ? "workflow" : name;
+            steps = steps == null ? List.of() : List.copyOf(steps);
+        }
+    }
+
+    public record WorkflowStep(
+            String id,
+            String toolId,
+            Map<String, Object> parameters,
+            List<String> dependsOn
+    ) {
+        public WorkflowStep {
+            parameters = parameters == null
+                    ? Map.of()
+                    : java.util.Collections.unmodifiableMap(new LinkedHashMap<>(parameters));
+            dependsOn = dependsOn == null ? List.of() : List.copyOf(dependsOn);
+        }
+    }
+
+    private record StepOutput(String runId, List<String> outputs, Map<String, Object> metrics) {
     }
 
     public record BatchItem(String toolId, Map<String, Object> parameters, boolean dryRun) {

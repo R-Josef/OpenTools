@@ -57,6 +57,9 @@ HTTP 只允许本机循环地址、受控 Origin、请求大小上限和固定�
 
 成功提交只表示作业已排队。必须等到 `SUCCEEDED` 后再读取结果。
 
+多步骤 DAG 使用 `opentools_run_workflow`，参数为工作区内的 workflow JSON 路径。
+它返回逐步骤状态、运行 ID、产物和指标；格式见[工作流](workflow.md)。
+
 ## 安全边界
 
 - 输入、输出和目录默认限制在工作区。

@@ -30,7 +30,10 @@ the token into project files, logs, or shared messages.
 - `opentools_retry_job`: retry from stored effective parameters.
 - `opentools_read_result`: read the persisted result document.
 - `opentools_list_jobs`: list recent project jobs.
-- `opentools_run_batch`: validate or run a sequential batch.
+- `opentools_run_batch`: validate or run a sequential batch of independent jobs.
+- `opentools_run_workflow`: run a DAG from a workspace workflow JSON path; steps
+  can consume `${step.output}`, `${step.output[N]}`, `${step.metric.KEY}`,
+  and `${step.runId}` placeholders.
 - `opentools_detect_format`: inspect a file in the allowed workspace.
 
 Tool failures return MCP `isError: true` with structured

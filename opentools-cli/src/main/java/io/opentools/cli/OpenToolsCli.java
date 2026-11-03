@@ -59,7 +59,8 @@ import java.util.concurrent.Callable;
                 OpenToolsCli.DoctorCommand.class,
                 OpenToolsCli.ProjectCommand.class,
                 OpenToolsCli.McpCommand.class,
-                OpenToolsCli.BatchCommand.class
+                OpenToolsCli.BatchCommand.class,
+                OpenToolsCli.WorkflowCommand.class
         }
 )
 public final class OpenToolsCli implements AutoCloseable {
@@ -1080,6 +1081,82 @@ public final class OpenToolsCli implements AutoCloseable {
                         http.await();
                         return 0;
                     }
+                }
+            }
+        }
+    }
+
+    @Command(
+            mixinStandardHelpOptions = true,
+            name = "workflow",
+            description = "Run a DAG workflow from a JSON file",
+            subcommands = {WorkflowCommand.RunCommand.class}
+    )
+    static final class WorkflowCommand implements Runnable {
+        @ParentCommand
+        private OpenToolsCli root;
+
+        @Override
+        public void run() {
+            root.out().println("Use `workflow run <workflow.json>`.");
+        }
+
+        @Command(mixinStandardHelpOptions = true, name = "run",
+                description = "Validate and run workflow steps in dependency order")
+        static final class RunCommand implements Callable<Integer> {
+            @ParentCommand
+            private WorkflowCommand parent;
+
+            @Parameters(index = "0", paramLabel = "WORKFLOW_JSON")
+            private Path workflowFile;
+
+            @Option(names = "--workspace", description = "Additional allowed workspace root")
+            private List<Path> workspaces = new ArrayList<>();
+
+            @Option(names = "--json")
+            private boolean json;
+
+            @Override
+            public Integer call() throws Exception {
+                Path configuredAppHome = parent.root.appHome == null
+                        ? io.opentools.core.runtime.AppPaths.applicationHome()
+                        : parent.root.appHome.toAbsolutePath().normalize();
+                try (AutomationRuntime runtime = AutomationRuntime.open(
+                        parent.root.projectPath,
+                        configuredAppHome,
+                        workspaces
+                )) {
+                    Map<String, Object> result;
+                    try {
+                        result = runtime.toolAutomation().runWorkflow(workflowFile);
+                    } catch (Exception ex) {
+                        if (json) {
+                            parent.root.writeJsonFailure(JsonEnvelope.failure(ex));
+                        } else {
+                            parent.root.err().println(ex.getMessage());
+                        }
+                        return ExitCodes.forException(ex);
+                    }
+                    long failed = ((Number) result.getOrDefault("failed", 0)).longValue();
+                    if (json) {
+                        if (failed == 0) {
+                            parent.root.writeJsonSuccess(result);
+                        } else {
+                            parent.root.writeJsonFailure(JsonEnvelope.failure(
+                                    "WORKFLOW_FAILED",
+                                    "Workflow finished with " + failed + " failed step(s).",
+                                    "Inspect the failed steps in the details and their run logs.",
+                                    List.of(),
+                                    Map.of("workflow", result)
+                            ));
+                        }
+                    } else {
+                        parent.root.out().println("Workflow: " + result.get("name"));
+                        parent.root.out().println("Succeeded: " + result.get("succeeded")
+                                + "  Failed: " + result.get("failed")
+                                + "  Skipped: " + result.get("skipped"));
+                    }
+                    return failed == 0 ? ExitCodes.SUCCESS : ExitCodes.EXECUTION;
                 }
             }
         }

@@ -52,11 +52,19 @@ opentools jobs retry <run-id>
 
 ## 批处理
 
-批量文件按顺序执行 JSON 项目。批处理不解析 DAG，也不会自动把前一个作业结果
-替换为后一个作业的输入。
+批量文件按顺序执行相互独立的 JSON 项目。后续步骤需要前一步产物时，请使用工作流。
 
 ```powershell
 opentools --project C:\work\project batch run examples\batch\batch.json --json
+```
+
+## 工作流
+
+工作流文件声明步骤、依赖和 `${step.output}` 占位符；格式与占位符规则见
+[工作流](workflow.md)。
+
+```powershell
+opentools --project C:\work\project workflow run workflow.json --json
 ```
 
 自动模式拒绝覆盖、工作区外路径和未知参数。完整错误语义见

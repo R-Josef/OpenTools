@@ -54,7 +54,7 @@ public final class GoLevelTool extends AbstractOpenTool {
     public ValidationResult validate(ToolRequest request) {
         ValidationResult result = validateParameters(request)
                 .merge(FormatToolSupport.validateOutput(request, request.path("hierarchy")));
-        String resourceId = request.string("resourceId").trim();
+        String resourceId = request.string("resourceId") == null ? "" : request.string("resourceId").trim();
         if (resourceId.isEmpty() && request.path("hierarchy") == null) {
             result = result.merge(ValidationResult.of(io.opentools.api.tool.ValidationIssue.error(
                     "hierarchy", "Provide a GO hierarchy file or select a GO resource pack.",
@@ -85,7 +85,7 @@ public final class GoLevelTool extends AbstractOpenTool {
     public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
         ResourcePacks.Pack pack = null;
         Path hierarchyPath = request.path("hierarchy");
-        String resourceId = request.string("resourceId").trim();
+        String resourceId = request.string("resourceId") == null ? "" : request.string("resourceId").trim();
         if (!resourceId.isEmpty()) {
             pack = ResourcePacks.open().find(resourceId).orElseThrow(() -> new OpenToolException(
                     "RESOURCE_NOT_FOUND",

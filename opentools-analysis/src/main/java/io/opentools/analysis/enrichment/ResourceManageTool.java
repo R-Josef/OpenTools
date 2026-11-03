@@ -71,7 +71,8 @@ public final class ResourceManageTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         ValidationResult result = validateParameters(request);
-        String action = request.string("action").toUpperCase(Locale.ROOT);
+        String action = request.string("action") == null || request.string("action").isBlank()
+                ? "LIST" : request.string("action").toUpperCase(Locale.ROOT);
         switch (action) {
             case "IMPORT_GO" -> {
                 if (!isFile(request.path("obo"))) {
@@ -103,7 +104,8 @@ public final class ResourceManageTool extends AbstractOpenTool {
 
     @Override
     public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
-        String action = request.string("action").toUpperCase(Locale.ROOT);
+        String action = request.string("action") == null || request.string("action").isBlank()
+                ? "LIST" : request.string("action").toUpperCase(Locale.ROOT);
         ResourcePacks packs = ResourcePacks.open();
         try {
             return switch (action) {
@@ -125,7 +127,8 @@ public final class ResourceManageTool extends AbstractOpenTool {
 
     private ToolResult list(ToolRequest request, ToolExecutionContext context, ResourcePacks packs)
             throws Exception {
-        String kindFilter = request.string("kind").toUpperCase(Locale.ROOT);
+        String kindFilter = request.string("kind") == null || request.string("kind").isBlank()
+                ? "ALL" : request.string("kind").toUpperCase(Locale.ROOT);
         List<ResourcePacks.Pack> all = packs.list();
         List<ResourcePacks.Pack> visible = all.stream()
                 .filter(pack -> kindFilter.equals("ALL") || pack.kind().name().equals(kindFilter))

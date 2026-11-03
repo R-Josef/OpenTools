@@ -55,11 +55,20 @@ CPU count, clamped to 1–4). Jobs left behind by an abnormal exit are marked
 
 ## Batch execution
 
-Batch files run jobs sequentially. They do not provide a DAG or automatically
-connect one job's artifact to another job's input.
+Batch files run independent jobs sequentially. Use a workflow when later steps
+need an earlier step's artifact.
 
 ```powershell
 OpenToolsCLI.exe --project C:\work\project batch run examples\batch\batch.json --json
+```
+
+## Workflows
+
+Workflow files declare steps, dependencies, and `${step.output}` placeholders.
+See [Workflows](workflow.md) for the format and placeholder rules.
+
+```powershell
+OpenToolsCLI.exe --project C:\work\project workflow run workflow.json --json
 ```
 
 See [Errors and exit codes](errors-exit-codes.md) for automation behavior.

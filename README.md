@@ -40,6 +40,8 @@ packages contain no agent or model code.
   cancellation, and startup recovery for runs interrupted by an abnormal exit.
 - Versioned GO/KEGG resource packs are imported once with counts and SHA-256
   digests, then reused by id; enrichment results record the resource version.
+- Dependency-ordered workflows pass step artifacts into later steps through
+  placeholders, with cycle checks and stop/continue failure policies.
 - GUI, CLI, and MCP share `ToolDescriptor`, validation, tool execution, and
   result contracts.
 - The bundled default plugin adds an interactive Coin Runner tool whose
@@ -57,6 +59,7 @@ packages contain no agent or model code.
 | [User documentation](docs/en_US/README.md) | Quick start, tool reference, formats, CLI/MCP, FAQ |
 | [CLI](docs/en_US/cli.md) | Discovery, validation, execution, jobs, and JSON output |
 | [MCP](docs/en_US/mcp.md) | stdio and authenticated loopback HTTP |
+| [Workflows](docs/en_US/workflow.md) | Dependency-ordered JSON workflows with artifact placeholders |
 | [Plugin development](docs/en_US/plugin-development.md) | Plugin API, lifecycle, and examples |
 
 ## Download

@@ -13,6 +13,7 @@ same Markdown directory when the interface language is English.
 | Find a tool | [Tool reference](tool-reference.md) |
 | Understand input and output | [File formats](file-formats.md) |
 | Use the terminal or an agent | [CLI](cli.md), [MCP](mcp.md) |
+| Chain tasks into a DAG | [Workflows](workflow.md) |
 | Configure external programs | [External tools](external-tools.md) |
 | Develop a plugin | [Plugin developer guide](plugin-development.md) |
 | Plugin API and Javadoc | [Plugin API 2.1](plugin-api.md) |
@@ -31,6 +32,7 @@ same Markdown directory when the interface language is English.
 - [Visualization](categories/visualization.md)
 - [Plugin tools](categories/plugin.md)
 - [CLI and MCP](cli.md)
+- [Workflows](workflow.md)
 - [External tools](external-tools.md)
 - [FAQ](faq.md)
 
