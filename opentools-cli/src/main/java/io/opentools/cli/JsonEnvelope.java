@@ -1,6 +1,8 @@
 package io.opentools.cli;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.opentools.core.i18n.ErrorText;
+import io.opentools.core.i18n.LanguageManager;
 import io.opentools.core.job.JobRecord;
 import io.opentools.core.job.JobStatus;
 import io.opentools.core.job.ToolValidationException;
@@ -65,6 +67,10 @@ public record JsonEnvelope(boolean ok, String apiVersion, Object data, Error err
     }
 
     public static JsonEnvelope forJobFailure(JobRecord job) {
+        return forJobFailure(job, null);
+    }
+
+    public static JsonEnvelope forJobFailure(JobRecord job, LanguageManager language) {
         String code = job.errorCode();
         if (code == null || code.isBlank()) {
             code = job.status() == JobStatus.CANCELLED ? "CANCELLED"
@@ -77,7 +83,7 @@ public record JsonEnvelope(boolean ok, String apiVersion, Object data, Error err
         }
         return failure(
                 code,
-                message,
+                ErrorText.localize(language, code, message),
                 job.status() == JobStatus.CANCELLED
                         ? "Submit the job again when ready."
                         : "Inspect run.log and correct the tool input or dependency.",

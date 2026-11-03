@@ -1,6 +1,7 @@
 package io.opentools.ui;
 
 import io.opentools.core.job.JobRecord;
+import io.opentools.core.i18n.ErrorText;
 import io.opentools.core.i18n.LanguageManager;
 
 import javax.swing.table.AbstractTableModel;
@@ -79,7 +80,7 @@ final class JobsTableModel extends AbstractTableModel {
             case 3 -> progress(job);
             case 4 -> job.startedAt() == null ? "" : TIME_FORMAT.format(job.startedAt());
             case 5 -> job.finishedAt() == null ? "" : TIME_FORMAT.format(job.finishedAt());
-            case 6 -> job.errorMessage() == null ? "" : job.errorMessage();
+            case 6 -> ErrorText.localize(language, job.errorCode(), job.errorMessage());
             default -> "";
         };
     }

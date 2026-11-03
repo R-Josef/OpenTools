@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.opentools.core.job.JobRecord;
 import io.opentools.core.job.ToolExecutionService;
+import io.opentools.core.i18n.ErrorText;
 import io.opentools.core.i18n.LanguageManager;
 import io.opentools.plugin.host.ToolTextResolver;
 
@@ -207,7 +208,8 @@ final class ResultInspectorPanel extends JPanel {
                     "results.no_result",
                     "Run status: {0}\nThe result file has not been generated yet.",
                     localizedStatus(job)
-            ) + (job.errorMessage() == null ? "" : "\n" + job.errorMessage()));
+            ) + (job.errorMessage() == null ? "" : "\n"
+                    + ErrorText.localize(language, job.errorCode(), job.errorMessage())));
             tableModel.setDataVector(new Object[0][0], new Object[0]);
             clearPlot();
             return;

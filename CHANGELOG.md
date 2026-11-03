@@ -4,6 +4,9 @@
 
 ### Added
 
+- Job error codes now resolve through `ErrorText` to English/Chinese messages in
+  the Jobs table, Results panel, and CLI job failures; unknown codes keep the
+  original detail.
 - The GUI adds a Workflows view with a JSON editor, live DAG preview,
   validation, saved-project workflows, sequential execution, and per-step status
   colors.

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import io.opentools.core.i18n.ErrorText;
 import io.opentools.core.job.JobRecord;
 import io.opentools.core.job.JobStatus;
 import io.opentools.core.job.ToolValidationException;
@@ -365,7 +366,7 @@ public final class OpenToolsCli implements AutoCloseable {
                 if (exitCode == ExitCodes.SUCCESS) {
                     root.writeJsonSuccess(job);
                 } else {
-                    root.writeJsonFailure(JsonEnvelope.forJobFailure(job));
+                    root.writeJsonFailure(JsonEnvelope.forJobFailure(job, root.runtime().language()));
                 }
             } else {
                 root.out().println("Run: " + job.runId());
@@ -374,7 +375,8 @@ public final class OpenToolsCli implements AutoCloseable {
                 root.out().println("Result: " + job.runDirectory().resolve("result.json"));
                 root.out().println("Manifest: " + job.runDirectory().resolve("manifest.json"));
                 if (job.errorMessage() != null) {
-                    root.err().println("Error: " + job.errorMessage());
+                    root.err().println("Error: " + ErrorText.localize(
+                            root.runtime().language(), job.errorCode(), job.errorMessage()));
                 }
             }
             return exitCode;
@@ -466,7 +468,8 @@ public final class OpenToolsCli implements AutoCloseable {
                     if (exitCode == ExitCodes.SUCCESS) {
                         parent.root.writeJsonSuccess(job);
                     } else {
-                        parent.root.writeJsonFailure(JsonEnvelope.forJobFailure(job));
+                        parent.root.writeJsonFailure(JsonEnvelope.forJobFailure(
+                                job, parent.root.runtime().language()));
                     }
                 } else {
                     parent.root.out().println("Run: " + job.runId());
@@ -477,7 +480,8 @@ public final class OpenToolsCli implements AutoCloseable {
                     parent.root.out().println("Finished: " + job.finishedAt());
                     parent.root.out().println("Directory: " + job.runDirectory());
                     if (job.errorCode() != null) {
-                        parent.root.err().println("Error " + job.errorCode() + ": " + job.errorMessage());
+                        parent.root.err().println("Error " + job.errorCode() + ": " + ErrorText.localize(
+                                parent.root.runtime().language(), job.errorCode(), job.errorMessage()));
                     }
                 }
                 return exitCode;
