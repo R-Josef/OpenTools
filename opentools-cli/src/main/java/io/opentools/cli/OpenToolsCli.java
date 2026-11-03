@@ -23,6 +23,7 @@ import io.opentools.formats.FormatDetector;
 import io.opentools.external.ExternalRuntime;
 import io.opentools.external.ExternalTools;
 import io.opentools.mcp.AutomationRuntime;
+import io.opentools.mcp.WorkflowWatchService;
 import io.opentools.mcp.McpHttpServer;
 import io.opentools.mcp.McpStdioServer;
 import io.opentools.mcp.McpToolServer;
@@ -1094,7 +1095,11 @@ public final class OpenToolsCli implements AutoCloseable {
             mixinStandardHelpOptions = true,
             name = "workflow",
             description = "Run a DAG workflow from a JSON file",
-            subcommands = {WorkflowCommand.RunCommand.class}
+            subcommands = {
+                    WorkflowCommand.RunCommand.class,
+                    WorkflowCommand.WatchCommand.class,
+                    WorkflowCommand.ScheduleCommand.class
+            }
     )
     static final class WorkflowCommand implements Runnable {
         @ParentCommand
@@ -1161,6 +1166,131 @@ public final class OpenToolsCli implements AutoCloseable {
                                 + "  Skipped: " + result.get("skipped"));
                     }
                     return failed == 0 ? ExitCodes.SUCCESS : ExitCodes.EXECUTION;
+                }
+            }
+        }
+
+        @Command(mixinStandardHelpOptions = true, name = "watch",
+                description = "Run a workflow when matching files appear in a directory (explicit opt-in)")
+        static final class WatchCommand implements Callable<Integer> {
+            @ParentCommand
+            private WorkflowCommand parent;
+
+            @Parameters(index = "0", paramLabel = "DIRECTORY")
+            private Path directory;
+
+            @Option(names = "--workflow", required = true, paramLabel = "WORKFLOW_JSON")
+            private Path workflowFile;
+
+            @Option(names = "--pattern", description = "Glob matched against new file names")
+            private String pattern = "*.fa";
+
+            @Option(names = "--debounce-seconds", description = "Wait for a stable file size")
+            private int debounceSeconds = 2;
+
+            @Option(names = "--max-runs", description = "Stop after N runs; 0 means unlimited")
+            private int maxRuns;
+
+            @Option(names = "--json")
+            private boolean json;
+
+            @Override
+            public Integer call() throws Exception {
+                Path configuredAppHome = parent.root.appHome == null
+                        ? io.opentools.core.runtime.AppPaths.applicationHome()
+                        : parent.root.appHome.toAbsolutePath().normalize();
+                try (AutomationRuntime runtime = AutomationRuntime.open(
+                        parent.root.projectPath, configuredAppHome, List.of())) {
+                    Path watched = runtime.workspacePolicy().resolvePath(directory.toString());
+                    if (!runtime.workspacePolicy().isAllowed(watched)) {
+                        parent.root.err().println("Watch directory is outside the allowed workspace: " + watched);
+                        return ExitCodes.INPUT;
+                    }
+                    Path workflow = runtime.workspacePolicy().resolvePath(workflowFile.toString());
+                    if (!runtime.workspacePolicy().isAllowed(workflow)) {
+                        parent.root.err().println("Workflow is outside the allowed workspace: " + workflow);
+                        return ExitCodes.INPUT;
+                    }
+                    parent.root.out().println("Watching " + watched + " for " + pattern
+                            + " (Ctrl+C to stop)");
+                    int runs = new WorkflowWatchService(
+                            watched, pattern,
+                            java.time.Duration.ofSeconds(Math.max(1, debounceSeconds)),
+                            maxRuns
+                    ).watch(file -> {
+                        Map<String, Object> result = runtime.toolAutomation().runWorkflow(
+                                workflow,
+                                Map.of("watch.file", file.toString(),
+                                        "watch.name", file.getFileName().toString())
+                        );
+                        if (json) {
+                            parent.root.writeJsonSuccess(result);
+                        } else {
+                            parent.root.out().println("Triggered by " + file.getFileName()
+                                    + ": " + result.get("succeeded") + " succeeded, "
+                                    + result.get("failed") + " failed");
+                        }
+                    });
+                    parent.root.out().println("Watch stopped after " + runs + " run(s).");
+                    return ExitCodes.SUCCESS;
+                }
+            }
+        }
+
+        @Command(mixinStandardHelpOptions = true, name = "schedule",
+                description = "Run a workflow on a fixed interval (explicit opt-in)")
+        static final class ScheduleCommand implements Callable<Integer> {
+            @ParentCommand
+            private WorkflowCommand parent;
+
+            @Option(names = "--workflow", required = true, paramLabel = "WORKFLOW_JSON")
+            private Path workflowFile;
+
+            @Option(names = "--every-seconds", description = "Interval between runs")
+            private int everySeconds = 3600;
+
+            @Option(names = "--max-runs", description = "Stop after N runs; 0 means unlimited")
+            private int maxRuns;
+
+            @Option(names = "--start-immediately", negatable = true,
+                    description = "Run once before waiting for the first interval")
+            private boolean startImmediately = true;
+
+            @Option(names = "--json")
+            private boolean json;
+
+            @Override
+            public Integer call() throws Exception {
+                Path configuredAppHome = parent.root.appHome == null
+                        ? io.opentools.core.runtime.AppPaths.applicationHome()
+                        : parent.root.appHome.toAbsolutePath().normalize();
+                try (AutomationRuntime runtime = AutomationRuntime.open(
+                        parent.root.projectPath, configuredAppHome, List.of())) {
+                    Path workflow = runtime.workspacePolicy().resolvePath(workflowFile.toString());
+                    if (!runtime.workspacePolicy().isAllowed(workflow)) {
+                        parent.root.err().println("Workflow is outside the allowed workspace: " + workflow);
+                        return ExitCodes.INPUT;
+                    }
+                    int runs = 0;
+                    while (maxRuns <= 0 || runs < maxRuns) {
+                        if (runs > 0 || !startImmediately) {
+                            try {
+                                Thread.sleep(Math.max(1, everySeconds) * 1000L);
+                            } catch (InterruptedException ex) {
+                                Thread.currentThread().interrupt();
+                                return ExitCodes.SUCCESS;
+                            }
+                        }
+                        Map<String, Object> result = runtime.toolAutomation().runWorkflow(workflow);
+                        runs++;
+                        if (json) {
+                            parent.root.writeJsonSuccess(result);
+                        } else {
+                            parent.root.out().println("Run " + runs + ": " + result.get("succeeded")
+                                    + " succeeded, " + result.get("failed") + " failed");
+                        }
+                    }
+                    return ExitCodes.SUCCESS;
                 }
             }
         }

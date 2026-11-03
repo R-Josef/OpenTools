@@ -4,6 +4,9 @@
 
 ### Added
 
+- `workflow watch` and `workflow schedule` provide opt-in directory
+  triggers and fixed-interval runs; watched files substitute `${watch.file}`
+  and `${watch.name}` in the workflow JSON.
 - FASTA base counting removes `Character.toUpperCase` and a second canonical
   test per base; in-memory transpose writes fields directly instead of allocating
   a temporary row list. Add a reproducible performance benchmark page.

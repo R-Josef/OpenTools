@@ -70,5 +70,12 @@ opentools --project C:\work\project batch run examples\batch\batch.json --json
 opentools --project C:\work\project workflow run workflow.json --json
 ```
 
-自动模式拒绝覆盖、工作区外路径和未知参数。完整错误语义见
+目录监听和定时运行需要显式命令：
+
+```powershell
+opentools --project C:\work\project workflow watch C:\work\incoming --workflow workflow.json --pattern "*.fa"
+opentools --project C:\work\project workflow schedule --workflow workflow.json --every-seconds 3600
+```
+
+占位符和默认关闭说明见[工作流](workflow.md)；完整错误语义见
 [错误与退出码](errors-exit-codes.md)。

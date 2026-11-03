@@ -82,3 +82,46 @@ live DAG preview:
 
 The GUI runner is intentionally sequential; use the CLI/MCP workflow for
 scripted or remote execution. The JSON remains the portable source of truth.
+
+## Directory watch and schedules
+
+Both features are **explicit opt-in CLI commands**; OpenTools never starts a
+watcher or scheduler automatically.
+
+### Watch a directory
+
+```powershell
+opentools --project C:\work\project workflow watch C:\work\incoming `
+  --workflow workflows\import.json --pattern "*.fa" --max-runs 1
+```
+
+- The workflow can use `${watch.file}` and `${watch.name}` in parameter
+  strings; the watcher substitutes the matched file before running.
+- Matching uses a Java glob on the file name (default `*.fa`).
+- A file must have a stable size for the debounce interval before it runs.
+- `--max-runs 0` (default) watches until interrupted; `1` is useful for
+  testing and one-shot drop folders.
+- Watch and workflow paths must stay inside the allowed workspace.
+
+### Run on an interval
+
+```powershell
+opentools --project C:\work\project workflow schedule `
+  --workflow workflows\nightly.json --every-seconds 3600 --max-runs 1
+```
+
+- Runs immediately by default; use `--start-immediately=false` to wait one
+  interval first.
+- `--max-runs 0` runs until interrupted.
+- There is no built-in cron parser; use the OS scheduler for calendar rules, or
+  a short interval plus the workflow's own date logic.
+
+### Operational notes
+
+- A failed workflow returns a failed step summary; the watcher continues to the
+  next file unless the process exits.
+- The watcher handles create/modify events and ignores directories and
+  non-matching names.
+- These commands hold a project/runtime open for their lifetime; do not run two
+  schedulers against the same output paths.
+

@@ -75,4 +75,12 @@ See [Workflows](workflow.md) for the format and placeholder rules.
 OpenToolsCLI.exe --project C:\work\project workflow run workflow.json --json
 ```
 
-See [Errors and exit codes](errors-exit-codes.md) for automation behavior.
+Directory watching and interval schedules are explicit commands:
+
+```powershell
+OpenToolsCLI.exe --project C:\work\project workflow watch C:\work\incoming --workflow workflow.json --pattern "*.fa"
+OpenToolsCLI.exe --project C:\work\project workflow schedule --workflow workflow.json --every-seconds 3600
+```
+
+See [Workflows](workflow.md) for placeholders and opt-in behavior, and
+[Errors and exit codes](errors-exit-codes.md) for automation behavior.

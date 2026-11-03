@@ -78,3 +78,40 @@ MCP 返回相同的逐步骤结构。需要自定义调度逻辑时，可以继�
 
 GUI 运行器有意采用顺序执行；脚本化或远程执行请使用 CLI/MCP。JSON 始终是
 可移植的唯一来源。
+
+## 目录监听与计划任务
+
+两个功能都是**需要显式启用的 CLI 命令**；OpenTools 不会自动启动监听器或调度器。
+
+### 监听目录
+
+```powershell
+opentools --project C:\work\project workflow watch C:\work\incoming `
+  --workflow workflows\import.json --pattern "*.fa" --max-runs 1
+```
+
+- 工作流参数可以使用 `${watch.file}` 和 `${watch.name}`；监听器在运行前
+  替换为匹配到的文件。
+- 文件名用 Java glob 匹配（默认 `*.fa`）。
+- 文件大小在 debounce 时间内稳定后才会触发。
+- `--max-runs 0`（默认）持续监听；`1` 适合测试或一次性投放目录。
+- 监听目录和工作流路径都必须位于允许的工作区内。
+
+### 定时运行
+
+```powershell
+opentools --project C:\work\project workflow schedule `
+  --workflow workflows\nightly.json --every-seconds 3600 --max-runs 1
+```
+
+- 默认立即运行一次；`--start-immediately=false` 先等待一个间隔。
+- `--max-runs 0` 持续运行，直到中断。
+- 没有内置 cron 解析；日历规则可用操作系统计划任务，或短间隔加工作流内
+  日期判断。
+
+### 运维注意
+
+- 工作流失败会返回失败步骤汇总；监听器默认继续处理下一个文件，除非进程退出。
+- 监听器处理 create/modify 事件，忽略目录和不匹配的文件名。
+- 命令运行期间会持有项目和运行时；不要对同一输出路径启动两个调度器。
+

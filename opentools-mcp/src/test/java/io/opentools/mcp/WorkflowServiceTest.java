@@ -112,4 +112,31 @@ final class WorkflowServiceTest {
             assertEquals(0, ((Number) continued.get("skipped")).intValue());
         }
     }
+
+    @Test
+    void substitutesWatchVariablesInAWorkflowFile() throws Exception {
+        Path project = tempDir.resolve("project-watch-vars");
+        Files.createDirectories(project);
+        Path fasta = project.resolve("incoming.fa");
+        Files.writeString(fasta, ">seq1\nACGT\n");
+        Path workflow = project.resolve("watch-workflow.json");
+        Files.writeString(workflow, """
+                {
+                  "name": "watch",
+                  "steps": [
+                    {"id": "stats", "toolId": "fasta.stats",
+                     "parameters": {"input": "${watch.file}"}}
+                  ]
+                }
+                """);
+
+        try (AutomationRuntime runtime = AutomationRuntime.open(project, tempDir, List.of())) {
+            Map<String, Object> result = runtime.toolAutomation().runWorkflow(
+                    workflow,
+                    Map.of("watch.file", fasta.toString(), "watch.name", fasta.getFileName().toString())
+            );
+            assertEquals(1, ((Number) result.get("succeeded")).intValue());
+            assertEquals(0, ((Number) result.get("failed")).intValue());
+        }
+    }
 }

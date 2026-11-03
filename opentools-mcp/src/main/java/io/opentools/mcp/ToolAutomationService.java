@@ -245,6 +245,51 @@ public final class ToolAutomationService {
         return runWorkflow(spec);
     }
 
+    /**
+     * Runs a workflow after replacing explicit watch variables such as
+     * ${watch.file} and ${watch.name} in the JSON text.
+     *
+     * @param workflowFile workflow JSON under the workspace
+     * @param variables placeholder values keyed without the surrounding braces
+     * @return per-step status, run ids, artifacts, and metrics
+     * @throws Exception when the file cannot be read or is invalid
+     */
+    public Map<String, Object> runWorkflow(Path workflowFile, Map<String, String> variables) throws Exception {
+        if (variables == null || variables.isEmpty()) {
+            return runWorkflow(workflowFile);
+        }
+        Path normalized = runtime.workspacePolicy().resolvePath(workflowFile.toString());
+        if (!runtime.workspacePolicy().isAllowed(normalized)) {
+            throw new AutomationException(
+                    "PATH_OUTSIDE_WORKSPACE",
+                    "Workflow file is outside the allowed workspace: " + normalized,
+                    "Place the workflow under the project or an allowed workspace root."
+            );
+        }
+        if (!Files.isRegularFile(normalized)) {
+            throw new AutomationException(
+                    "WORKFLOW_NOT_FOUND",
+                    "Workflow file does not exist: " + normalized,
+                    "Check the path and try again."
+            );
+        }
+        String text = Files.readString(normalized);
+        for (Map.Entry<String, String> entry : variables.entrySet()) {
+            String replacement = JsonSupport.MAPPER.writeValueAsString(
+                    entry.getValue() == null ? "" : entry.getValue());
+            text = text.replace("${" + entry.getKey() + "}",
+                    replacement.substring(1, replacement.length() - 1));
+        }
+        Path directory = normalized.getParent() == null ? runtime.project().root() : normalized.getParent();
+        Path temporary = Files.createTempFile(directory, ".workflow-", ".json");
+        try {
+            Files.writeString(temporary, text);
+            return runWorkflow(temporary);
+        } finally {
+            Files.deleteIfExists(temporary);
+        }
+    }
+
     public Map<String, Object> runWorkflow(WorkflowSpec spec) throws Exception {
         if (spec.steps().size() > 100) {
             throw new AutomationException(
