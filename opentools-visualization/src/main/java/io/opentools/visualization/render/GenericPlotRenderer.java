@@ -59,8 +59,10 @@ public final class GenericPlotRenderer {
             case "VIOLIN" -> drawViolins(scene, spec, data, left, top, plotWidth, plotHeight, bounds);
             default -> drawScatter(scene, spec, data, left, top, plotWidth, plotHeight, bounds);
         }
+        drawXAxisTicks(scene, spec, data, left, top, plotWidth, plotHeight, fontSize, bounds);
         drawCategoryLabels(scene, spec, data, left, top, plotWidth, plotHeight, fontSize);
         drawAxisLabels(scene, spec, data, left, top, plotWidth, plotHeight, fontSize);
+        drawLegend(scene, spec, data, left, top, plotWidth, fontSize);
         return scene.build();
     }
 
@@ -244,7 +246,8 @@ public final class GenericPlotRenderer {
             scene.rect(centerX - boxWidth / 2, y3, boxWidth, Math.max(1, y1 - y3),
                     color(spec, seriesIndex), spec.style().foregroundColor(), 1, 0.75,
                     data.series().get(seriesIndex).name() + " n=" + values.size());
-            scene.line(centerX, mapY(median, top, height, bounds), centerX, mapY(median, top, height, bounds),
+            double medianY = mapY(median, top, height, bounds);
+            scene.line(centerX - boxWidth / 2, medianY, centerX + boxWidth / 2, medianY,
                     spec.style().foregroundColor(), 2.4);
             scene.line(centerX, mapY(min, top, height, bounds), centerX, y1,
                     spec.style().mutedColor(), 1);
@@ -305,6 +308,50 @@ public final class GenericPlotRenderer {
             }
             scene.text(left + (index + 0.5) * slot, top + height + 24, label,
                     spec.style().mutedColor(), fontSize - 2, false, SceneText.TextAnchor.CENTER, -35, "");
+        }
+    }
+
+    private static void drawXAxisTicks(
+            PlotSceneBuilder scene, PlotSpec spec, GenericPlotData data,
+            double left, double top, double width, double height, double fontSize, Bounds bounds
+    ) {
+        if (List.of("BAR", "STACKED_BAR", "BOX", "VIOLIN").contains(data.chart())) {
+            return;
+        }
+        for (int tick = 0; tick <= 5; tick++) {
+            double x = left + tick * width / 5.0;
+            double value = bounds.minX + tick * (bounds.maxX - bounds.minX) / 5.0;
+            scene.line(x, top, x, top + height, "#E8ECEF", 0.7);
+            scene.text(x, top + height + 20, format(value),
+                    spec.style().mutedColor(), fontSize - 2, false, SceneText.TextAnchor.CENTER, 0, "");
+        }
+    }
+
+    private static void drawLegend(
+            PlotSceneBuilder scene, PlotSpec spec, GenericPlotData data,
+            double left, double top, double width, double fontSize
+    ) {
+        int count = Math.min(6, data.series().size());
+        if (count < 2) {
+            return;
+        }
+        double rowHeight = fontSize + 6;
+        double boxWidth = Math.min(170, width * 0.35);
+        double x = left + width - boxWidth - 8;
+        double y = top + 10;
+        for (int index = 0; index < count; index++) {
+            String name = data.series().get(index).name();
+            if (name == null || name.isBlank()) {
+                name = "Series " + (index + 1);
+            }
+            if (name.length() > 20) {
+                name = name.substring(0, 17) + "...";
+            }
+            scene.rect(x, y + index * rowHeight, 11, 11,
+                    color(spec, index), spec.style().mutedColor(), 0.6, 0.95, name);
+            scene.text(x + 17, y + index * rowHeight + 9, name,
+                    spec.style().foregroundColor(), fontSize - 2, false,
+                    SceneText.TextAnchor.LEFT, 0, "");
         }
     }
 

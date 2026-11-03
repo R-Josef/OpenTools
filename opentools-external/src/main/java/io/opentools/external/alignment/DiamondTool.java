@@ -83,7 +83,7 @@ public final class DiamondTool extends AbstractOpenTool {
             )));
         }
         try {
-            ExternalArguments.parse(request.string("extraArgs"));
+            ExternalArguments.parseRestricted(request.string("extraArgs"), ExternalArguments.RESERVED_OPTIONS);
         } catch (IllegalArgumentException ex) {
             base = base.merge(ValidationResult.of(ValidationIssue.error(
                     "extraArgs", ex.getMessage(), "Close the quoted argument or remove it."
@@ -176,7 +176,7 @@ public final class DiamondTool extends AbstractOpenTool {
         if (request.bool("sensitive")) {
             command.add("--sensitive");
         }
-        command.addAll(ExternalArguments.parse(request.string("extraArgs")));
+        command.addAll(ExternalArguments.parseRestricted(request.string("extraArgs"), ExternalArguments.RESERVED_OPTIONS));
 
         try {
             ProcessResult result = runner.run(

@@ -12,10 +12,13 @@ import io.opentools.visualization.scene.PlotScene;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JSpinner;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
 import javax.swing.ToolTipManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -177,15 +180,11 @@ final class PlotViewerPanel extends JPanel {
                 return;
             }
         }
-        PlotSpec exportSpec = spec.withExport(new PlotExport(
-                List.of(format.name()),
-                base.getFileName().toString(),
-                spec.export().width(),
-                spec.export().height(),
-                spec.export().dpi(),
-                spec.export().transparent(),
-                true
-        ));
+        PlotExport options = chooseExportOptions(format, base.getFileName().toString());
+        if (options == null) {
+            return;
+        }
+        PlotSpec exportSpec = spec.withExport(options);
         setExportEnabled(false);
         Thread.ofVirtual().start(() -> {
             try {
@@ -211,6 +210,44 @@ final class PlotViewerPanel extends JPanel {
                 });
             }
         });
+    }
+
+    private PlotExport chooseExportOptions(PlotFormat format, String baseName) {
+        JSpinner width = new JSpinner(new SpinnerNumberModel(spec.export().width(), 200, 20000, 50));
+        JSpinner height = new JSpinner(new SpinnerNumberModel(spec.export().height(), 200, 20000, 50));
+        JSpinner dpi = new JSpinner(new SpinnerNumberModel(spec.export().dpi(), 72, 1200, 1));
+        JCheckBox transparent = new JCheckBox(
+                t("plot.transparent", "Transparent background"),
+                spec.export().transparent()
+        );
+        JPanel panel = new JPanel(new java.awt.GridLayout(0, 2, 8, 8));
+        panel.add(new JLabel(t("plot.width", "Width (px)")));
+        panel.add(width);
+        panel.add(new JLabel(t("plot.height", "Height (px)")));
+        panel.add(height);
+        panel.add(new JLabel(t("plot.dpi", "DPI")));
+        panel.add(dpi);
+        panel.add(new JLabel(""));
+        panel.add(transparent);
+        int choice = JOptionPane.showConfirmDialog(
+                this,
+                panel,
+                t("plot.export_options", "Export options"),
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+        );
+        if (choice != JOptionPane.OK_OPTION) {
+            return null;
+        }
+        return new PlotExport(
+                List.of(format.name()),
+                baseName,
+                ((Number) width.getValue()).intValue(),
+                ((Number) height.getValue()).intValue(),
+                ((Number) dpi.getValue()).intValue(),
+                transparent.isSelected(),
+                true
+        );
     }
 
     private void setExportEnabled(boolean enabled) {

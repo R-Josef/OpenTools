@@ -326,7 +326,7 @@ final class MainFrame extends JFrame {
         jobsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         jobsTable.setRowHeight(26);
         UiAccessibility.name(jobsTable, t("jobs.title", "Jobs"));
-        int[] widths = {100, 180, 100, 130, 130, 420};
+        int[] widths = {100, 170, 90, 120, 120, 120, 380};
         for (int i = 0; i < widths.length; i++) {
             jobsTable.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
         }

@@ -69,7 +69,7 @@ Replace placeholder paths with real workspace files. Keep parameter IDs unchange
 ## Checks and failure boundaries
 
 - External program versions and arguments can change hits, alignments, or trees; record versions and complete commands for publication.
-- `extraArgs` is passed to the external program; check quoting, conflicting options, and version compatibility first.
+- `extraArgs` cannot override inputs, outputs, databases, remote mode, or thread counts; only algorithm-tuning options are accepted, and `@` response files and `--` are rejected.
 - Existing outputs are protected by default; only consider `overwrite` after explicitly choosing the target path.
 
 ## Related next steps

@@ -52,7 +52,7 @@ public final class PlotExporter {
                 graphics.fillRect(0, 0, scene.width(), scene.height());
                 graphics.setComposite(java.awt.AlphaComposite.SrcOver);
             }
-            Java2DSceneRenderer.paint(graphics, scene);
+            Java2DSceneRenderer.paint(graphics, scene, transparent);
         } finally {
             graphics.dispose();
         }

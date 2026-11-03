@@ -17,9 +17,8 @@ public final class SqliteSpillSupport {
             throws OpenToolException {
         try {
             Files.createDirectories(directory);
-            if (!Files.isDirectory(directory) || !Files.isWritable(directory)) {
-                throw new IOException("not a writable directory");
-            }
+            // Attempting the write is the reliable test. Files.isWritable can
+            // report false on Windows ACLs that still allow the process to write.
             return Files.createTempFile(directory, prefix, ".sqlite");
         } catch (IOException ex) {
             throw new OpenToolException(

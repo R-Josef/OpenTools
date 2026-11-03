@@ -52,7 +52,7 @@ final class JobsTableModel extends AbstractTableModel {
 
     @Override
     public int getColumnCount() {
-        return 6;
+        return 7;
     }
 
     @Override
@@ -61,9 +61,10 @@ final class JobsTableModel extends AbstractTableModel {
             case 0 -> language.text("jobs.column.run_id", "Run ID");
             case 1 -> language.text("jobs.column.tool", "Tool");
             case 2 -> language.text("jobs.column.status", "Status");
-            case 3 -> language.text("jobs.column.started", "Started");
-            case 4 -> language.text("jobs.column.finished", "Finished");
-            case 5 -> language.text("jobs.column.diagnostic", "Diagnostic");
+            case 3 -> language.text("jobs.column.progress", "Progress");
+            case 4 -> language.text("jobs.column.started", "Started");
+            case 5 -> language.text("jobs.column.finished", "Finished");
+            case 6 -> language.text("jobs.column.diagnostic", "Diagnostic");
             default -> "";
         };
     }
@@ -75,11 +76,22 @@ final class JobsTableModel extends AbstractTableModel {
             case 0 -> shortened(job.runId());
             case 1 -> job.toolId();
             case 2 -> language.text("job.status." + job.status().name(), job.status().name());
-            case 3 -> job.startedAt() == null ? "" : TIME_FORMAT.format(job.startedAt());
-            case 4 -> job.finishedAt() == null ? "" : TIME_FORMAT.format(job.finishedAt());
-            case 5 -> job.errorMessage() == null ? "" : job.errorMessage();
+            case 3 -> progress(job);
+            case 4 -> job.startedAt() == null ? "" : TIME_FORMAT.format(job.startedAt());
+            case 5 -> job.finishedAt() == null ? "" : TIME_FORMAT.format(job.finishedAt());
+            case 6 -> job.errorMessage() == null ? "" : job.errorMessage();
             default -> "";
         };
+    }
+
+    private static String progress(JobRecord job) {
+        if (job.status() == io.opentools.core.job.JobStatus.QUEUED) {
+            return job.progressMessage() == null ? "" : job.progressMessage();
+        }
+        String percent = Math.round(job.progress() * 100) + "%";
+        return job.progressMessage() == null || job.progressMessage().isBlank()
+                ? percent
+                : percent + " · " + job.progressMessage();
     }
 
     private static String shortened(String value) {

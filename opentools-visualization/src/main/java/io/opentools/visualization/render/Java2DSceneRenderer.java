@@ -24,12 +24,25 @@ public final class Java2DSceneRenderer {
     }
 
     public static void paint(Graphics2D graphics, PlotScene scene) {
+        paint(graphics, scene, false);
+    }
+
+    /**
+     * Paints a scene.
+     *
+     * @param graphics target graphics
+     * @param scene scene to paint
+     * @param transparent when {@code true}, the page background is not filled
+     */
+    public static void paint(Graphics2D graphics, PlotScene scene, boolean transparent) {
         Graphics2D g = (Graphics2D) graphics.create();
         try {
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-            g.setColor(PlotColors.parse(scene.background()));
-            g.fillRect(0, 0, scene.width(), scene.height());
+            if (!transparent) {
+                g.setColor(PlotColors.parse(scene.background()));
+                g.fillRect(0, 0, scene.width(), scene.height());
+            }
             for (ScenePrimitive primitive : scene.primitives()) {
                 paintPrimitive(g, primitive);
             }

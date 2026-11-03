@@ -26,7 +26,48 @@
   run data, PNG result artwork, English/Chinese JAR resources, and
   default-enabled release packaging.
 
+### Fixed
+
+- Jobs now have a bounded concurrency gate, a real QUEUED state, persisted
+  progress, cooperative cancellation with a terminal CANCELLED record, and
+  startup recovery. Stale RUNNING/QUEUED jobs become FAILED with
+  `JOB_INTERRUPTED`; closing the app marks remaining jobs interrupted instead of
+  leaving project switching permanently blocked.
+- `--json` output is UTF-8 end to end, including the packaged launcher, and
+  non-ASCII characters are escaped as `\uXXXX`. Chinese aliases and paths stay
+  valid JSON for PowerShell `ConvertFrom-Json`, Python, and Node even when the
+  Windows console uses a legacy code page.
+- CLI application-home resolution now matches the GUI (JAR location first), so
+  `lang/`, `docs/`, and `plugins/` are found when the JAR is started from
+  another directory.
+- Every CLI subcommand now supports `--help`; `jobs cancel` returns the input
+  error code when a job cannot be cancelled instead of reporting CANCELLED.
+- External `extraArgs` reject response files and options that would override
+  inputs, outputs, databases, remote mode, or thread counts. This closes a
+  workspace-policy bypass for BLAST, DIAMOND, MUSCLE, trimAl, and HMMER.
+- GFF3 attribute lists are split before percent-decoding, so escaped commas
+  (`%2C`) stay inside one value. `gxf.inspect` can skip malformed lines and
+  reports their line numbers and count.
+- Concatenated CDS features honour the GFF3 phase of a 5'-partial first segment.
+- Generic plots draw X-axis ticks and a legend; box plots draw a visible median
+  line; transparent PNG export keeps its alpha; PDF export falls back to ASCII
+  when the loaded font has no glyph for a label, and prefers an installed CJK
+  font.
+- The plot viewer offers width, height, DPI, and transparent-background options
+  before export, and file inputs can reuse artifacts from recent jobs.
+- Spill and BLAST cache directories are probed by writing a real file instead of
+  trusting `Files.isWritable`, which reports false on some Windows ACLs.
+
 ### Changed
+
+- The project no longer supports TBtools legacy plugins. `plugins/legacy`,
+  legacy JAR metadata inspection, and `.plugin` script packages were removed
+  from the requirements; the plugin host only loads OpenTools SPI JARs (see
+  `OpenTools项目需求说明书.md` §10.6).
+- `run --no-wait` was removed. A one-shot CLI process cannot keep running a
+  background job; use the GUI or MCP for asynchronous execution.
+- New pull-request CI workflow runs `mvn verify` on every push to `main` and
+  every pull request.
 
 - Plugin localization now comes from
   `META-INF/opentools/i18n/<language>.properties` in the owning plugin JAR.

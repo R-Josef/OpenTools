@@ -44,7 +44,7 @@ public final class ExitCodes {
             if ("TOOL_NOT_FOUND".equals(code)
                     || "JOB_NOT_FOUND".equals(code)
                     || "JOB_PARAMS_INVALID".equals(code)
-                    || code.contains("INVALID")
+                    || code.endsWith("_INVALID")
                     || code.contains("VALIDATION")
                     || code.startsWith("EMPTY_")) {
                 return INPUT;

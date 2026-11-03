@@ -32,6 +32,7 @@ It performs one explicit, reproducible analysis step. The run record preserves n
 | --- | --- | --- | --- |
 | `input` Input GFF3/GTF | yes | empty | Select a complete real input file; do not submit the placeholder example path. Annotation file to inspect. |
 | `threads` Threads | no | 0 | Keep `0` for automatic selection on large files; use `1` for small inputs or fixed sequential processing. 0 uses AUTO for large files; 1 disables parallel record processing. |
+| `skipInvalidLines` Skip invalid lines | no | true | Keep `true` for dirty annotations and review the skipped line numbers; set `false` to fail fast. Record malformed lines in the summary instead of failing the whole inspection. |
 | `output` Output prefix | no | empty | Leave blank to write inside the run directory; custom paths should stay in the workspace and use the correct extension. Optional TSV file. A companion feature-type output is written beside it. |
 | `overwrite` Overwrite output | no | false | Keep `false` unless the target is known to be safe to replace. Allow replacing existing custom output files. |
 

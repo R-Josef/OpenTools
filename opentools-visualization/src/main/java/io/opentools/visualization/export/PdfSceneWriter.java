@@ -27,7 +27,10 @@ import java.util.List;
 public final class PdfSceneWriter {
     private static final List<Path> FONT_CANDIDATES = List.of(
             Path.of("C:/Windows/Fonts/simhei.ttf"),
+            Path.of("C:/Windows/Fonts/Deng.ttf"),
             Path.of("C:/Windows/Fonts/arial.ttf"),
+            Path.of("/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttf"),
+            Path.of("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttf"),
             Path.of("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
             Path.of("/System/Library/Fonts/Supplemental/Arial.ttf")
     );
@@ -111,7 +114,7 @@ public final class PdfSceneWriter {
             }
         } else if (primitive instanceof SceneText text) {
             PDFont font = text.bold() ? fonts.bold() : fonts.regular();
-            String value = fonts.unicode() ? text.text() : asciiFallback(text.text());
+            String value = fonts.canEncode(text.text()) ? text.text() : asciiFallback(text.text());
             float fontSize = (float) text.fontSize();
             float width = font.getStringWidth(value) / 1000f * fontSize;
             float xOffset = switch (text.anchor()) {
@@ -203,5 +206,16 @@ public final class PdfSceneWriter {
     }
 
     private record FontSet(PDFont regular, PDFont bold, boolean unicode) {
+        private boolean canEncode(String value) {
+            if (!unicode || value == null || value.isEmpty()) {
+                return unicode;
+            }
+            try {
+                regular.encode(value);
+                return true;
+            } catch (Exception ex) {
+                return false;
+            }
+        }
     }
 }

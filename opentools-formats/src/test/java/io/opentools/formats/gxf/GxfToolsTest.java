@@ -8,6 +8,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -224,6 +225,65 @@ final class GxfToolsTest {
 
         assertEquals(1L, result.metrics().get("extracted"));
         assertTrue(Files.readString(output).contains("ACC"));
+    }
+
+    @Test
+    void decodesEscapedCommasAfterSplittingLists() throws Exception {
+        Path gff = tempDir.resolve("escaped.gff3");
+        Files.writeString(gff, """
+                ##gff-version 3
+                chr1	test	gene	1	3	.	+	.	ID=g1;Note=hello%2Cworld;Alias=a,b
+                """);
+        try (GxfReader reader = new GxfReader(gff)) {
+            GxfRecord record = reader.next();
+            assertEquals(List.of("hello,world"), record.attributes().get("Note"));
+            assertEquals(List.of("a", "b"), record.attributes().get("Alias"));
+        }
+    }
+
+    @Test
+    void skipsMalformedLinesInLenientMode() throws Exception {
+        Path gff = tempDir.resolve("broken.gff3");
+        Files.writeString(gff, """
+                ##gff-version 3
+                chr1	test	gene	1	3	.	+	.	ID=g1
+                chr1	test	gene	5
+                chr1	test	gene	4	6	.	+	.	ID=g2
+                """);
+        try (GxfReader reader = new GxfReader(gff, true)) {
+            assertEquals("g1", reader.next().firstAttribute("ID"));
+            assertEquals("g2", reader.next().firstAttribute("ID"));
+            assertEquals(null, reader.next());
+            assertEquals(1, reader.warnings().size());
+            assertTrue(reader.warnings().getFirst().contains("line 3"));
+        }
+    }
+
+    @Test
+    void appliesGffPhaseToPartialCds() throws Exception {
+        Path genome = tempDir.resolve("phase-genome.fa");
+        Files.writeString(genome, ">chr1\nAAACCCGGGTTT\n");
+        Path annotation = tempDir.resolve("phase.gff3");
+        Files.writeString(annotation, """
+                ##gff-version 3
+                chr1	test	gene	4	12	.	+	.	ID=g1
+                chr1	test	mRNA	4	12	.	+	.	ID=tx1;Parent=g1
+                chr1	test	CDS	4	6	.	+	1	ID=c1;Parent=tx1
+                chr1	test	CDS	7	12	.	+	0	ID=c2;Parent=tx1
+                """);
+        Path output = tempDir.resolve("phase.fa");
+        new GxfSequenceExtractTool().execute(
+                new ToolRequest("gxf.sequence.extract", Map.of(
+                        "genome", genome.toString(),
+                        "annotation", annotation.toString(),
+                        "featureType", "CDS",
+                        "groupAttribute", "Parent",
+                        "mode", "FEATURE",
+                        "output", output.toString()
+                )),
+                context()
+        );
+        assertEquals("CCGGGTTT", Files.readAllLines(output).get(1));
     }
 
     private Path writeGenome() throws Exception {

@@ -334,8 +334,8 @@ public final class GenerateToolGuides {
         }
         if (tool.parameters().stream().anyMatch(parameter -> parameter.id().equals("extraArgs"))) {
             checks.add(chinese
-                    ? "`extraArgs` 会原样传给外部程序；先核对引号、冲突选项和版本兼容性。"
-                    : "`extraArgs` is passed to the external program; check quoting, conflicting options, and version compatibility first.");
+                    ? "`extraArgs` 不能覆盖输入、输出、数据库、远程模式或线程数；只允许算法调优选项，并拒绝 `@` 响应文件和 `--`。"
+                    : "`extraArgs` cannot override inputs, outputs, databases, remote mode, or thread counts; only algorithm-tuning options are accepted, and `@` response files and `--` are rejected.");
         }
         return checks;
     }

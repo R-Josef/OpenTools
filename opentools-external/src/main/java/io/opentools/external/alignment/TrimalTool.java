@@ -68,7 +68,7 @@ public final class TrimalTool extends AbstractOpenTool {
         ValidationResult result = validateParameters(request)
                 .merge(FormatToolSupport.validateOutput(request, request.path("input")));
         try {
-            ExternalArguments.parse(request.string("extraArgs"));
+            ExternalArguments.parseRestricted(request.string("extraArgs"), ExternalArguments.RESERVED_OPTIONS);
         } catch (IllegalArgumentException ex) {
             result = result.merge(ValidationResult.of(ValidationIssue.error(
                     "extraArgs", ex.getMessage(), "Close quoted arguments or remove them.")));
@@ -141,7 +141,7 @@ public final class TrimalTool extends AbstractOpenTool {
             command.add("-cons");
             command.add(Double.toString(coverage));
         }
-        command.addAll(ExternalArguments.parse(request.string("extraArgs")));
+        command.addAll(ExternalArguments.parseRestricted(request.string("extraArgs"), ExternalArguments.RESERVED_OPTIONS));
         return command;
     }
 

@@ -111,7 +111,7 @@ public final class BlastLocalTool extends AbstractOpenTool {
             )));
         }
         try {
-            ExternalArguments.parse(request.string("extraArgs"));
+            ExternalArguments.parseRestricted(request.string("extraArgs"), ExternalArguments.RESERVED_OPTIONS);
         } catch (IllegalArgumentException ex) {
             base = base.merge(ValidationResult.of(ValidationIssue.error(
                     "extraArgs", ex.getMessage(), "Close the quoted argument or remove it."
@@ -228,7 +228,7 @@ public final class BlastLocalTool extends AbstractOpenTool {
         blastCommand.add(Integer.toString(positive(request, "maxTargetSeqs", 10)));
         blastCommand.add("-num_threads");
         blastCommand.add(Integer.toString(positive(request, "threads", 4)));
-        blastCommand.addAll(ExternalArguments.parse(request.string("extraArgs")));
+        blastCommand.addAll(ExternalArguments.parseRestricted(request.string("extraArgs"), ExternalArguments.RESERVED_OPTIONS));
 
         try {
             ProcessResult blastResult = runner.run(
@@ -403,9 +403,9 @@ public final class BlastLocalTool extends AbstractOpenTool {
         Path root = configured.toAbsolutePath().normalize();
         try {
             Files.createDirectories(root);
-            if (!Files.isDirectory(root) || !Files.isWritable(root)) {
-                throw new java.io.IOException("not a writable directory");
-            }
+            // Probe with a real file: Files.isWritable can report false on
+            // Windows ACLs that still allow this process to write.
+            Files.deleteIfExists(Files.createTempFile(root, ".opentools-probe", ".tmp"));
             return root;
         } catch (Exception ex) {
             throw new OpenToolException(

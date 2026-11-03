@@ -187,7 +187,8 @@ final class DocumentationCoverageTest {
 
     @Test
     void docsFollowTheActiveLanguageWithoutRestartingTheProcess() throws Exception {
-        LanguageManager live = new LanguageManager(findProjectRoot(), "zh_CN");
+        LanguageManager live = new LanguageManager(
+                findProjectRoot(), Files.createTempDirectory("opentools-lang-test"), "zh_CN");
         AtomicReference<DocsPanel> chinese = new AtomicReference<>();
         SwingUtilities.invokeAndWait(() -> chinese.set(new DocsPanel(registry, live)));
         assertEquals("zh_CN", chinese.get().docsLanguage());

@@ -79,7 +79,7 @@ public final class HmmsearchTool extends AbstractOpenTool {
             )));
         }
         try {
-            ExternalArguments.parse(request.string("extraArgs"));
+            ExternalArguments.parseRestricted(request.string("extraArgs"), ExternalArguments.RESERVED_OPTIONS);
         } catch (IllegalArgumentException ex) {
             result = result.merge(ValidationResult.of(ValidationIssue.error(
                     "extraArgs", ex.getMessage(), "Close quoted arguments or remove them."
@@ -169,7 +169,7 @@ public final class HmmsearchTool extends AbstractOpenTool {
                 hmm.getFileName().toString(),
                 sequences.getFileName().toString()
         ));
-        command.addAll(ExternalArguments.parse(request.string("extraArgs")));
+        command.addAll(ExternalArguments.parseRestricted(request.string("extraArgs"), ExternalArguments.RESERVED_OPTIONS));
         return command;
     }
 

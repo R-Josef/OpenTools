@@ -3,7 +3,6 @@ package io.opentools.app;
 import io.opentools.cli.OpenToolsCli;
 import io.opentools.ui.OpenToolsGui;
 
-import java.io.PrintWriter;
 import java.util.Arrays;
 
 public final class OpenToolsLauncher {
@@ -19,11 +18,7 @@ public final class OpenToolsLauncher {
             OpenToolsGui.launchDefault();
             return;
         }
-        int exitCode = OpenToolsCli.execute(
-                args,
-                new PrintWriter(System.out, true),
-                new PrintWriter(System.err, true)
-        );
+        int exitCode = OpenToolsCli.execute(args);
         if (exitCode != 0) {
             System.exit(exitCode);
         }

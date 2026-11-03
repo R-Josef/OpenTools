@@ -26,6 +26,11 @@ opentools --app-home C:\work\opentools-app run fasta.stats `
 每个工具使用 `--param key=value`。参数 ID、类型、默认值和可选值以
 `tools describe <id> --schema` 为准。
 
+`--json` 输出始终是 UTF-8，非 ASCII 字符按 JSON `\uXXXX` 转义，因此即使
+Windows 控制台使用旧代码页，PowerShell 的 `ConvertFrom-Json` 和 Python/Node
+仍能正确解析。人类可读输出仍使用平台编码。`run` 会等待作业结束并返回稳定
+退出码；需要后台执行时，请在常驻进程（GUI 或 MCP）中提交作业。
+
 ```powershell
 opentools run fasta.filter --param input=in.fa --param minLength=100 `
   --param output=out.fa.gz
@@ -40,6 +45,10 @@ opentools jobs logs <run-id>
 opentools jobs cancel <run-id>
 opentools jobs retry <run-id>
 ```
+
+`jobs status` 返回 `progress`（0–1）和 `progressMessage`。作业并发上限可通过
+`-Dopentools.jobs.maxConcurrent=N` 设置，默认取 CPU 核数的一半（1–4）。异常退出
+遗留的作业会在下次打开项目时标记为 `JOB_INTERRUPTED`。
 
 ## 批处理
 

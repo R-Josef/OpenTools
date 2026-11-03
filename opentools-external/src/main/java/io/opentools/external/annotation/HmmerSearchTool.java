@@ -71,7 +71,7 @@ public final class HmmerSearchTool extends AbstractOpenTool {
                     "domtbl", "Output file already exists: " + output, "Enable overwrite or choose a new path.")));
         }
         try {
-            ExternalArguments.parse(request.string("extraArgs"));
+            ExternalArguments.parseRestricted(request.string("extraArgs"), ExternalArguments.RESERVED_OPTIONS);
         } catch (IllegalArgumentException ex) {
             result = result.merge(ValidationResult.of(ValidationIssue.error(
                     "extraArgs", ex.getMessage(), "Close quoted arguments or remove them.")));
@@ -107,7 +107,7 @@ public final class HmmerSearchTool extends AbstractOpenTool {
                     database.getFileName().toString(),
                     sequences.getFileName().toString()
             ));
-            command.addAll(ExternalArguments.parse(request.string("extraArgs")));
+            command.addAll(ExternalArguments.parseRestricted(request.string("extraArgs"), ExternalArguments.RESERVED_OPTIONS));
             ProcessResult result = new ProcessRunner().run(
                     command, work, Map.of(),
                     Duration.ofMinutes(Math.max(1, request.integer("timeoutMinutes"))),

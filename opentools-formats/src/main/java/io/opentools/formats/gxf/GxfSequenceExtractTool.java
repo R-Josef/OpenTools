@@ -287,7 +287,29 @@ public final class GxfSequenceExtractTool extends AbstractOpenTool {
             String segment = genome.subsequence(record.seqId(), record.start(), record.end());
             sequence.append(strand == '-' ? FastaSequenceStore.reverseComplement(segment) : segment);
         }
-        return sequence.toString();
+        int trim = firstCodonOffset(ordered);
+        return trim > 0 && sequence.length() > trim ? sequence.substring(trim) : sequence.toString();
+    }
+
+    /**
+     * Returns how many leading bases belong to a codon started upstream of the
+     * first CDS segment. GFF3 phase 1 or 2 on a 5'-partial CDS means the
+     * concatenated sequence starts mid-codon.
+     */
+    private static int firstCodonOffset(List<GxfRecord> ordered) {
+        if (ordered.isEmpty()) {
+            return 0;
+        }
+        boolean allCds = ordered.stream().allMatch(record -> "cds".equalsIgnoreCase(record.type()));
+        if (!allCds) {
+            return 0;
+        }
+        try {
+            int phase = Integer.parseInt(ordered.getFirst().phase().trim());
+            return phase == 1 || phase == 2 ? phase : 0;
+        } catch (RuntimeException ex) {
+            return 0;
+        }
     }
 
     private static long[] upstreamRange(char strand, long minStart, long maxEnd, int length, long chromosomeLength) {

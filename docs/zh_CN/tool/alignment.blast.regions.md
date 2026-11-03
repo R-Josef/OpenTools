@@ -96,7 +96,7 @@ opentools run alignment.blast.regions --param genome=C:\data\genome.fasta --para
 ## 检查清单与失败边界
 
 - 外部程序的版本和参数会改变命中、比对或树；发表时记录程序版本和完整命令。
-- `extraArgs` 会原样传给外部程序；先核对引号、冲突选项和版本兼容性。
+- `extraArgs` 不能覆盖输入、输出、数据库、远程模式或线程数；只允许算法调优选项，并拒绝 `@` 响应文件和 `--`。
 - 已有输出默认不会被覆盖；只有明确设置输出路径并接受覆盖时，才检查 `overwrite`。
 
 ## 相关下一步

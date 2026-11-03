@@ -46,8 +46,8 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 @Command(
-        name = "opentools",
         mixinStandardHelpOptions = true,
+        name = "opentools",
         versionProvider = OpenToolsVersionProvider.class,
         description = "Local-first bioinformatics workbench",
         subcommands = {
@@ -78,6 +78,28 @@ public final class OpenToolsCli implements AutoCloseable {
     private String languageCode;
 
     private CliRuntime runtime;
+
+    /**
+     * Executes the CLI with encoding-correct writers.
+     *
+     * <p>JSON automation is always UTF-8; human-readable output keeps the
+     * platform console encoding so that Windows terminals render it.</p>
+     *
+     * @param args command-line arguments
+     * @return process exit code
+     */
+    public static int execute(String[] args) {
+        PrintWriter out;
+        PrintWriter err;
+        if (hasJsonOption(args)) {
+            out = new PrintWriter(new java.io.OutputStreamWriter(System.out, StandardCharsets.UTF_8), true);
+            err = new PrintWriter(new java.io.OutputStreamWriter(System.err, StandardCharsets.UTF_8), true);
+        } else {
+            out = new PrintWriter(System.out, true);
+            err = new PrintWriter(System.err, true);
+        }
+        return execute(args, out, err);
+    }
 
     public static int execute(String[] args, PrintWriter out, PrintWriter err) {
         OpenToolsCli root = new OpenToolsCli();
@@ -130,24 +152,27 @@ public final class OpenToolsCli implements AutoCloseable {
     }
 
     public static void main(String[] args) {
-        int exitCode = execute(args, new PrintWriter(System.out, true), new PrintWriter(System.err, true));
-        System.exit(exitCode);
+        System.exit(execute(args));
     }
 
     private static ObjectMapper createObjectMapper() {
         SimpleModule module = new SimpleModule();
         module.addSerializer(Path.class, ToStringSerializer.instance);
-        return new ObjectMapper()
+        ObjectMapper mapper = new ObjectMapper()
                 .findAndRegisterModules()
                 .registerModule(module)
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
                 .enable(SerializationFeature.INDENT_OUTPUT);
+        // Keep automation JSON valid even when a legacy Windows console decodes
+        // the UTF-8 bytes with the active ANSI code page.
+        mapper.getFactory().configure(com.fasterxml.jackson.core.JsonGenerator.Feature.ESCAPE_NON_ASCII, true);
+        return mapper;
     }
 
     public synchronized CliRuntime runtime() throws Exception {
         if (runtime == null) {
             Path configuredAppHome = appHome == null
-                    ? Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
+                    ? io.opentools.core.runtime.AppPaths.applicationHome()
                     : appHome.toAbsolutePath().normalize();
             runtime = CliRuntime.open(projectPath, configuredAppHome, languageCode);
         }
@@ -174,7 +199,7 @@ public final class OpenToolsCli implements AutoCloseable {
         try {
             return JSON.writeValueAsString(value);
         } catch (Exception ex) {
-            return "{\"ok\":false,\"data\":null,"
+            return "{\"ok\":false,\"apiVersion\":\"2.0\",\"data\":null,"
                     + "\"error\":{\"code\":\"JSON_SERIALIZATION_FAILED\","
                     + "\"message\":\"Could not serialize command response.\","
                     + "\"suggestion\":\"Use a non-JSON output mode.\",\"issues\":[]}}";
@@ -200,6 +225,7 @@ public final class OpenToolsCli implements AutoCloseable {
     }
 
     @Command(
+            mixinStandardHelpOptions = true,
             name = "tools",
             description = "Discover available tools",
             subcommands = {ToolsCommand.ListCommand.class, ToolsCommand.DescribeCommand.class}
@@ -213,7 +239,7 @@ public final class OpenToolsCli implements AutoCloseable {
             root.out().println("Use `tools list` or `tools describe <tool-id>`.");
         }
 
-        @Command(name = "list", description = "List registered tools")
+        @Command(mixinStandardHelpOptions = true, name = "list", description = "List registered tools")
         static final class ListCommand implements Callable<Integer> {
             @ParentCommand
             private ToolsCommand parent;
@@ -239,7 +265,7 @@ public final class OpenToolsCli implements AutoCloseable {
             }
         }
 
-        @Command(name = "describe", description = "Describe one task and its parameters")
+        @Command(mixinStandardHelpOptions = true, name = "describe", description = "Describe one task and its parameters")
         static final class DescribeCommand implements Callable<Integer> {
             @ParentCommand
             private ToolsCommand parent;
@@ -293,7 +319,7 @@ public final class OpenToolsCli implements AutoCloseable {
         }
     }
 
-    @Command(name = "run", description = "Run a task")
+    @Command(mixinStandardHelpOptions = true, name = "run", description = "Run a task")
     static final class RunCommand implements Callable<Integer> {
         @ParentCommand
         private OpenToolsCli root;
@@ -306,9 +332,6 @@ public final class OpenToolsCli implements AutoCloseable {
 
         @Option(names = "--dry-run", description = "Validate only")
         private boolean dryRun;
-
-        @Option(names = "--no-wait", description = "Return after queueing the job")
-        private boolean noWait;
 
         @Option(names = "--json", description = "Emit JSON")
         private boolean json;
@@ -334,13 +357,7 @@ public final class OpenToolsCli implements AutoCloseable {
                 return ExitCodes.SUCCESS;
             }
 
-            JobRecord job;
-            if (noWait) {
-                String runId = root.runtime().execution().submit(root.runtime().project(), request);
-                job = root.runtime().execution().find(runId);
-            } else {
-                job = root.runtime().execution().runAndWait(root.runtime().project(), request);
-            }
+            JobRecord job = root.runtime().execution().runAndWait(root.runtime().project(), request);
 
             int exitCode = ExitCodes.forJob(job);
             if (json) {
@@ -377,6 +394,7 @@ public final class OpenToolsCli implements AutoCloseable {
     }
 
     @Command(
+            mixinStandardHelpOptions = true,
             name = "jobs",
             description = "Inspect recent jobs",
             subcommands = {
@@ -396,7 +414,7 @@ public final class OpenToolsCli implements AutoCloseable {
             root.out().println("Use `jobs list`, `jobs status`, `jobs logs`, or `jobs cancel`.");
         }
 
-        @Command(name = "list", description = "List recent jobs")
+        @Command(mixinStandardHelpOptions = true, name = "list", description = "List recent jobs")
         static final class ListCommand implements Callable<Integer> {
             @ParentCommand
             private JobsCommand parent;
@@ -428,7 +446,7 @@ public final class OpenToolsCli implements AutoCloseable {
             }
         }
 
-        @Command(name = "status", description = "Show one job")
+        @Command(mixinStandardHelpOptions = true, name = "status", description = "Show one job")
         static final class StatusCommand implements Callable<Integer> {
             @ParentCommand
             private JobsCommand parent;
@@ -465,7 +483,7 @@ public final class OpenToolsCli implements AutoCloseable {
             }
         }
 
-        @Command(name = "logs", description = "Print a run log")
+        @Command(mixinStandardHelpOptions = true, name = "logs", description = "Print a run log")
         static final class LogsCommand implements Callable<Integer> {
             @ParentCommand
             private JobsCommand parent;
@@ -511,7 +529,7 @@ public final class OpenToolsCli implements AutoCloseable {
             }
         }
 
-        @Command(name = "cancel", description = "Request cancellation")
+        @Command(mixinStandardHelpOptions = true, name = "cancel", description = "Request cancellation")
         static final class CancelCommand implements Callable<Integer> {
             @ParentCommand
             private JobsCommand parent;
@@ -544,11 +562,11 @@ public final class OpenToolsCli implements AutoCloseable {
                             ? "Cancellation requested."
                             : "Job is not running or was not found.");
                 }
-                return accepted ? ExitCodes.SUCCESS : ExitCodes.CANCELLED;
+                return accepted ? ExitCodes.SUCCESS : ExitCodes.INPUT;
             }
         }
 
-        @Command(name = "retry", description = "Retry a job with the same parameters")
+        @Command(mixinStandardHelpOptions = true, name = "retry", description = "Retry a job with the same parameters")
         static final class RetryCommand implements Callable<Integer> {
             @ParentCommand
             private JobsCommand parent;
@@ -580,6 +598,7 @@ public final class OpenToolsCli implements AutoCloseable {
     }
 
     @Command(
+            mixinStandardHelpOptions = true,
             name = "plugins",
             description = "Manage installed plugins",
             subcommands = {
@@ -598,7 +617,7 @@ public final class OpenToolsCli implements AutoCloseable {
             root.out().println("Use `plugins list`, `plugins inspect`, `plugins enable`, or `plugins disable`.");
         }
 
-        @Command(name = "list", description = "List installed plugins")
+        @Command(mixinStandardHelpOptions = true, name = "list", description = "List installed plugins")
         static final class ListCommand implements Callable<Integer> {
             @ParentCommand
             private PluginsCommand parent;
@@ -633,7 +652,7 @@ public final class OpenToolsCli implements AutoCloseable {
             }
         }
 
-        @Command(name = "inspect", description = "Show one plugin and its dependency metadata")
+        @Command(mixinStandardHelpOptions = true, name = "inspect", description = "Show one plugin and its dependency metadata")
         static final class InspectCommand implements Callable<Integer> {
             @ParentCommand
             private PluginsCommand parent;
@@ -686,7 +705,7 @@ public final class OpenToolsCli implements AutoCloseable {
             }
         }
 
-        @Command(name = "enable", description = "Enable a plugin for future runs")
+        @Command(mixinStandardHelpOptions = true, name = "enable", description = "Enable a plugin for future runs")
         static final class EnableCommand implements Callable<Integer> {
             @ParentCommand
             private PluginsCommand parent;
@@ -703,7 +722,7 @@ public final class OpenToolsCli implements AutoCloseable {
             }
         }
 
-        @Command(name = "disable", description = "Disable a plugin for future runs")
+        @Command(mixinStandardHelpOptions = true, name = "disable", description = "Disable a plugin for future runs")
         static final class DisableCommand implements Callable<Integer> {
             @ParentCommand
             private PluginsCommand parent;
@@ -789,6 +808,7 @@ public final class OpenToolsCli implements AutoCloseable {
     }
 
     @Command(
+            mixinStandardHelpOptions = true,
             name = "format",
             description = "Inspect file formats",
             subcommands = {FormatCommand.DetectCommand.class}
@@ -802,7 +822,7 @@ public final class OpenToolsCli implements AutoCloseable {
             root.out().println("Use `format detect <file>`.");
         }
 
-        @Command(name = "detect", description = "Detect a file format")
+        @Command(mixinStandardHelpOptions = true, name = "detect", description = "Detect a file format")
         static final class DetectCommand implements Callable<Integer> {
             @ParentCommand
             private FormatCommand parent;
@@ -850,7 +870,7 @@ public final class OpenToolsCli implements AutoCloseable {
         }
     }
 
-    @Command(name = "doctor", description = "Check the local runtime")
+    @Command(mixinStandardHelpOptions = true, name = "doctor", description = "Check the local runtime")
     static final class DoctorCommand implements Callable<Integer> {
         @ParentCommand
         private OpenToolsCli root;
@@ -904,6 +924,7 @@ public final class OpenToolsCli implements AutoCloseable {
     }
 
     @Command(
+            mixinStandardHelpOptions = true,
             name = "project",
             description = "Inspect the active project",
             subcommands = {ProjectCommand.InfoCommand.class}
@@ -917,7 +938,7 @@ public final class OpenToolsCli implements AutoCloseable {
             root.out().println("Use `project info`.");
         }
 
-        @Command(name = "info", description = "Show project information")
+        @Command(mixinStandardHelpOptions = true, name = "info", description = "Show project information")
         static final class InfoCommand implements Callable<Integer> {
             @ParentCommand
             private ProjectCommand parent;
@@ -957,6 +978,7 @@ public final class OpenToolsCli implements AutoCloseable {
     }
 
     @Command(
+            mixinStandardHelpOptions = true,
             name = "mcp",
             description = "Run the local OpenTools MCP server",
             subcommands = {McpCommand.ServeCommand.class}
@@ -970,7 +992,7 @@ public final class OpenToolsCli implements AutoCloseable {
             root.out().println("Use `mcp serve --transport stdio` or `mcp serve --transport http`.");
         }
 
-        @Command(name = "serve", description = "Serve MCP over stdio or authenticated loopback HTTP")
+        @Command(mixinStandardHelpOptions = true, name = "serve", description = "Serve MCP over stdio or authenticated loopback HTTP")
         static final class ServeCommand implements Callable<Integer> {
             @ParentCommand
             private McpCommand parent;
@@ -996,7 +1018,7 @@ public final class OpenToolsCli implements AutoCloseable {
             @Override
             public Integer call() throws Exception {
                 Path configuredAppHome = parent.root.appHome == null
-                        ? Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
+                        ? io.opentools.core.runtime.AppPaths.applicationHome()
                         : parent.root.appHome.toAbsolutePath().normalize();
                 try (AutomationRuntime runtime = AutomationRuntime.open(
                         parent.root.projectPath,
@@ -1064,6 +1086,7 @@ public final class OpenToolsCli implements AutoCloseable {
     }
 
     @Command(
+            mixinStandardHelpOptions = true,
             name = "batch",
             description = "Run task parameter sets from a JSON file",
             subcommands = {BatchCommand.RunCommand.class}
@@ -1077,7 +1100,7 @@ public final class OpenToolsCli implements AutoCloseable {
             root.out().println("Use `batch run <batch.json>`.");
         }
 
-        @Command(name = "run", description = "Validate and run jobs sequentially")
+        @Command(mixinStandardHelpOptions = true, name = "run", description = "Validate and run jobs sequentially")
         static final class RunCommand implements Callable<Integer> {
             @ParentCommand
             private BatchCommand parent;
@@ -1097,7 +1120,7 @@ public final class OpenToolsCli implements AutoCloseable {
             @Override
             public Integer call() throws Exception {
                 Path configuredAppHome = parent.root.appHome == null
-                        ? Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
+                        ? io.opentools.core.runtime.AppPaths.applicationHome()
                         : parent.root.appHome.toAbsolutePath().normalize();
                 try (AutomationRuntime runtime = AutomationRuntime.open(
                         parent.root.projectPath,

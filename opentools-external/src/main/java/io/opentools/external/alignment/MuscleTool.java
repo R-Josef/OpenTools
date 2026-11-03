@@ -65,7 +65,7 @@ public final class MuscleTool extends AbstractOpenTool {
         ValidationResult result = validateParameters(request)
                 .merge(FormatToolSupport.validateOutput(request, request.path("input")));
         try {
-            ExternalArguments.parse(request.string("extraArgs"));
+            ExternalArguments.parseRestricted(request.string("extraArgs"), ExternalArguments.RESERVED_OPTIONS);
         } catch (IllegalArgumentException ex) {
             result = result.merge(ValidationResult.of(ValidationIssue.error(
                     "extraArgs", ex.getMessage(), "Close quoted arguments or remove them.")));
@@ -100,7 +100,7 @@ public final class MuscleTool extends AbstractOpenTool {
                     command.addAll(List.of("-threads", Integer.toString(request.integer("threads"))));
                 }
             }
-            command.addAll(ExternalArguments.parse(request.string("extraArgs")));
+            command.addAll(ExternalArguments.parseRestricted(request.string("extraArgs"), ExternalArguments.RESERVED_OPTIONS));
             ProcessResult result = new ProcessRunner().run(
                     command, work, Map.of(),
                     Duration.ofMinutes(Math.max(1, request.integer("timeoutMinutes"))),

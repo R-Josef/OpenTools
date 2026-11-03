@@ -1,20 +1,21 @@
 package io.opentools.core.job;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.core.type.TypeReference;
 import io.opentools.api.tool.CancellationToken;
 import io.opentools.api.tool.OpenTool;
 import io.opentools.api.tool.OpenToolException;
 import io.opentools.api.tool.OutputArtifact;
 import io.opentools.api.tool.ParameterType;
 import io.opentools.api.tool.ToolExecutionContext;
-import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ToolParameter;
-import io.opentools.core.tool.ToolRegistry;
 import io.opentools.api.tool.ToolRequest;
+import io.opentools.api.tool.ToolResult;
 import io.opentools.api.tool.ValidationResult;
+import io.opentools.core.tool.ToolRegistry;
 import io.opentools.core.util.Hashing;
+import io.opentools.core.util.Log;
 import io.opentools.core.workspace.Project;
 
 import java.io.BufferedWriter;
@@ -28,24 +29,57 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Validates, queues, and runs tools, persisting status, progress, and results.
+ */
 public final class ToolExecutionService implements AutoCloseable {
+    private static final long PROGRESS_THROTTLE_NANOS = 200_000_000L;
+
     private final ToolRegistry registry;
     private final JobStore jobStore;
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+    private final ScheduledExecutorService heartbeatExecutor = Executors.newSingleThreadScheduledExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "opentools-job-heartbeat");
+        thread.setDaemon(true);
+        return thread;
+    });
     private final Map<String, CancellationToken> cancellations = new ConcurrentHashMap<>();
     private final Map<String, Future<?>> futures = new ConcurrentHashMap<>();
+    private final Map<String, ProgressState> progressStates = new ConcurrentHashMap<>();
+    private final Set<String> activeRuns = ConcurrentHashMap.newKeySet();
+    private final Set<String> startedRuns = ConcurrentHashMap.newKeySet();
+    private final Semaphore concurrency;
+    private final int maxConcurrent;
     private final ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+    private volatile boolean closing;
 
     public ToolExecutionService(ToolRegistry registry, JobStore jobStore) {
         this.registry = registry;
         this.jobStore = jobStore;
+        this.maxConcurrent = configuredConcurrency();
+        this.concurrency = new Semaphore(maxConcurrent, true);
+        this.heartbeatExecutor.scheduleAtFixedRate(this::refreshHeartbeats, 15, 15, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Returns the maximum number of concurrently running jobs.
+     *
+     * @return configured concurrency limit
+     */
+    public int maxConcurrent() {
+        return maxConcurrent;
     }
 
     public ValidationResult validate(ToolRequest request) {
@@ -79,6 +113,8 @@ public final class ToolExecutionService implements AutoCloseable {
                 Instant.now(),
                 null,
                 null,
+                0.0,
+                "Queued",
                 paramsJson,
                 null,
                 null,
@@ -89,8 +125,15 @@ public final class ToolExecutionService implements AutoCloseable {
 
         CancellationToken cancellation = new CancellationToken();
         cancellations.put(runId, cancellation);
-        Future<?> future = executor.submit(() -> execute(project, effectiveRequest, tool, queued, cancellation));
-        futures.put(runId, future);
+        progressStates.put(runId, new ProgressState());
+        activeRuns.add(runId);
+
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            execute(project, effectiveRequest, tool, queued, cancellation);
+            return null;
+        });
+        futures.put(runId, task);
+        executor.execute(task);
         return runId;
     }
 
@@ -109,9 +152,28 @@ public final class ToolExecutionService implements AutoCloseable {
             return false;
         }
         token.cancel();
+        boolean started = startedRuns.contains(runId);
         Future<?> future = futures.get(runId);
         if (future != null) {
             future.cancel(true);
+        }
+        if (!started) {
+            // The worker never reached the running state: close the record here,
+            // otherwise it would stay QUEUED forever and block project switching.
+            try {
+                jobStore.find(runId)
+                        .filter(job -> job.status() == JobStatus.QUEUED || job.status() == JobStatus.RUNNING)
+                        .ifPresent(job -> {
+                            try {
+                                jobStore.update(cancelledRecord(job));
+                            } catch (SQLException ex) {
+                                Log.warn("Could not persist cancellation for " + runId, ex);
+                            }
+                        });
+            } catch (SQLException ex) {
+                Log.warn("Could not read job " + runId + " while cancelling", ex);
+            }
+            cleanup(runId);
         }
         return true;
     }
@@ -148,15 +210,37 @@ public final class ToolExecutionService implements AutoCloseable {
         return submit(project, requestFromJob(runId));
     }
 
-    private void execute(Project project, ToolRequest request, OpenTool tool, JobRecord queued, CancellationToken cancellation) {
+    private void execute(
+            Project project,
+            ToolRequest request,
+            OpenTool tool,
+            JobRecord queued,
+            CancellationToken cancellation
+    ) {
         Path logPath = queued.runDirectory().resolve("run.log");
         Instant startedAt = Instant.now();
-        JobRecord running = new JobRecord(
-                queued.runId(), queued.toolId(), queued.toolVersion(), JobStatus.RUNNING,
-                queued.createdAt(), startedAt, null, queued.paramsJson(), null, null, null, queued.runDirectory()
-        );
+        boolean acquired = false;
         try {
+            while (!concurrency.tryAcquire(250, TimeUnit.MILLISECONDS)) {
+                if (cancellation.isCancelled()) {
+                    recordCancelled(queued, startedAt);
+                    return;
+                }
+            }
+            acquired = true;
+            if (cancellation.isCancelled()) {
+                recordCancelled(queued, null);
+                return;
+            }
+            startedRuns.add(queued.runId());
+
+            JobRecord running = new JobRecord(
+                    queued.runId(), queued.toolId(), queued.toolVersion(), JobStatus.RUNNING,
+                    queued.createdAt(), startedAt, null, 0.0, "Running",
+                    queued.paramsJson(), null, null, null, queued.runDirectory()
+            );
             jobStore.update(running);
+
             try (BufferedWriter logWriter = Files.newBufferedWriter(
                     logPath,
                     StandardOpenOption.CREATE,
@@ -168,7 +252,7 @@ public final class ToolExecutionService implements AutoCloseable {
                         queued.runDirectory(),
                         queued.runDirectory().resolve("outputs"),
                         message -> writeLog(logWriter, message),
-                        ignored -> { },
+                        (fraction, message) -> reportProgress(queued.runId(), fraction, message),
                         cancellation
                 );
                 context.log("Tool: " + tool.descriptor().id() + " " + tool.descriptor().version());
@@ -206,23 +290,34 @@ public final class ToolExecutionService implements AutoCloseable {
                 objectMapper.writeValue(queued.runDirectory().resolve("manifest.json").toFile(), manifest);
                 String manifestJson = objectMapper.writeValueAsString(manifest);
 
+                context.log("Completed: " + result.summary());
+                reportProgress(queued.runId(), 1.0, "Completed");
+
                 JobRecord succeeded = new JobRecord(
                         queued.runId(), queued.toolId(), queued.toolVersion(), JobStatus.SUCCEEDED,
-                        queued.createdAt(), startedAt, Instant.now(), queued.paramsJson(), manifestJson,
-                        null, null, queued.runDirectory()
+                        queued.createdAt(), startedAt, Instant.now(), 1.0, "Completed",
+                        queued.paramsJson(), manifestJson, null, null, queued.runDirectory()
                 );
                 jobStore.update(succeeded);
-                context.progress(1.0, "Completed: " + result.summary());
             }
-        } catch (java.util.concurrent.CancellationException ex) {
-            recordFailure(queued, startedAt, "CANCELLED", "Tool run cancelled.", logPath);
+        } catch (CancellationException ex) {
+            recordCancelled(queued, startedAt);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            if (cancellation.isCancelled()) {
+                recordCancelled(queued, startedAt);
+            } else {
+                recordFailure(queued, startedAt, "JOB_INTERRUPTED", "Job was interrupted.", logPath);
+            }
         } catch (OpenToolException ex) {
             recordFailure(queued, startedAt, ex.code(), ex.getMessage() + " " + safeSuggestion(ex.suggestion()), logPath);
         } catch (Exception ex) {
             recordFailure(queued, startedAt, "TOOL_FAILED", rootMessage(ex), logPath);
         } finally {
-            cancellations.remove(queued.runId());
-            futures.remove(queued.runId());
+            if (acquired) {
+                concurrency.release();
+            }
+            cleanup(queued.runId());
         }
     }
 
@@ -311,15 +406,91 @@ public final class ToolExecutionService implements AutoCloseable {
         appendPlainLog(logPath, "ERROR " + code + ": " + safeMessage);
         try {
             JobRecord failed = new JobRecord(
-                    queued.runId(), queued.toolId(), queued.toolVersion(),
-                    "CANCELLED".equals(code) ? JobStatus.CANCELLED : JobStatus.FAILED,
-                    queued.createdAt(), startedAt, Instant.now(), queued.paramsJson(), null,
-                    code, safeMessage, queued.runDirectory()
+                    queued.runId(), queued.toolId(), queued.toolVersion(), JobStatus.FAILED,
+                    queued.createdAt(), startedAt, Instant.now(),
+                    progressOf(queued.runId()), safeMessage,
+                    queued.paramsJson(), null, code, safeMessage, queued.runDirectory()
             );
             jobStore.update(failed);
-        } catch (SQLException ignored) {
-            // The run log remains the fallback diagnostic if history persistence fails.
+        } catch (SQLException ex) {
+            Log.warn("Could not persist failed job " + queued.runId(), ex);
         }
+    }
+
+    private void recordCancelled(JobRecord queued, Instant startedAt) {
+        try {
+            jobStore.find(queued.runId()).ifPresent(job -> {
+                if (job.status() == JobStatus.SUCCEEDED || job.status() == JobStatus.FAILED
+                        || job.status() == JobStatus.CANCELLED) {
+                    return;
+                }
+                try {
+                    jobStore.update(cancelledRecord(job));
+                } catch (SQLException ex) {
+                    Log.warn("Could not persist cancelled job " + queued.runId(), ex);
+                }
+            });
+        } catch (SQLException ex) {
+            Log.warn("Could not read job " + queued.runId() + " while cancelling", ex);
+        }
+        appendPlainLog(queued.runDirectory().resolve("run.log"), "CANCELLED: Tool run cancelled.");
+    }
+
+    private JobRecord cancelledRecord(JobRecord job) {
+        return new JobRecord(
+                job.runId(), job.toolId(), job.toolVersion(), JobStatus.CANCELLED,
+                job.createdAt(), job.startedAt(), Instant.now(),
+                progressOf(job.runId()), "Cancelled",
+                job.paramsJson(), job.manifestJson(), "CANCELLED", "Tool run cancelled.", job.runDirectory()
+        );
+    }
+
+    private void reportProgress(String runId, double fraction, String message) {
+        ProgressState state = progressStates.get(runId);
+        if (state == null) {
+            return;
+        }
+        double clamped = Math.max(0.0, Math.min(1.0, fraction));
+        long now = System.nanoTime();
+        synchronized (state) {
+            boolean forced = clamped >= 1.0 || message != null;
+            if (!forced && now - state.lastNanos < PROGRESS_THROTTLE_NANOS
+                    && clamped - state.fraction < 0.01) {
+                return;
+            }
+            state.lastNanos = now;
+            state.fraction = clamped;
+            state.message = message;
+        }
+        try {
+            jobStore.updateProgress(runId, clamped, message);
+        } catch (SQLException ex) {
+            Log.warn("Could not persist progress for " + runId, ex);
+        }
+    }
+
+    private double progressOf(String runId) {
+        ProgressState state = progressStates.get(runId);
+        return state == null ? 0.0 : state.fraction;
+    }
+
+    private void refreshHeartbeats() {
+        if (activeRuns.isEmpty() || closing) {
+            return;
+        }
+        try {
+            jobStore.heartbeat(Set.copyOf(activeRuns), Instant.now());
+        } catch (SQLException ex) {
+            Log.warn("Could not refresh job heartbeats", ex);
+        }
+    }
+
+    private void cleanup(String runId) {
+        activeRuns.remove(runId);
+        startedRuns.remove(runId);
+        cancellations.remove(runId);
+        futures.remove(runId);
+        progressStates.remove(runId);
     }
 
     private static void writeLog(BufferedWriter writer, String message) {
@@ -336,8 +507,8 @@ public final class ToolExecutionService implements AutoCloseable {
         try {
             Files.writeString(logPath, message + System.lineSeparator(),
                     StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-        } catch (IOException ignored) {
-            // Best effort after a failed run.
+        } catch (IOException ex) {
+            Log.warn("Could not append to " + logPath, ex);
         }
     }
 
@@ -354,9 +525,60 @@ public final class ToolExecutionService implements AutoCloseable {
         return suggestion == null || suggestion.isBlank() ? "" : "Suggestion: " + suggestion;
     }
 
+    private static int configuredConcurrency() {
+        String configured = System.getProperty("opentools.jobs.maxConcurrent");
+        if (configured != null && !configured.isBlank()) {
+            try {
+                return Math.max(1, Math.min(16, Integer.parseInt(configured.trim())));
+            } catch (NumberFormatException ignored) {
+                // Fall through to the default.
+            }
+        }
+        int processors = Runtime.getRuntime().availableProcessors();
+        return Math.max(1, Math.min(4, processors / 2));
+    }
+
     @Override
-    public void close() throws Exception {
+    public void close() {
+        closing = true;
+        heartbeatExecutor.shutdownNow();
+        for (CancellationToken token : cancellations.values()) {
+            token.cancel();
+        }
         executor.shutdownNow();
-        executor.awaitTermination(5, TimeUnit.SECONDS);
+        try {
+            executor.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+        for (String runId : List.copyOf(activeRuns)) {
+            try {
+                jobStore.find(runId)
+                        .filter(job -> job.status() == JobStatus.QUEUED || job.status() == JobStatus.RUNNING)
+                        .ifPresent(job -> {
+                            try {
+                                jobStore.update(new JobRecord(
+                                        job.runId(), job.toolId(), job.toolVersion(), JobStatus.FAILED,
+                                        job.createdAt(), job.startedAt(), Instant.now(),
+                                        progressOf(runId), "Interrupted",
+                                        job.paramsJson(), job.manifestJson(), "JOB_INTERRUPTED",
+                                        "The application exited before this job finished. Retry the job to run it again.",
+                                        job.runDirectory()
+                                ));
+                            } catch (SQLException ex) {
+                                Log.warn("Could not mark job " + runId + " as interrupted", ex);
+                            }
+                        });
+            } catch (SQLException ex) {
+                Log.warn("Could not read job " + runId + " while closing", ex);
+            }
+            cleanup(runId);
+        }
+    }
+
+    private static final class ProgressState {
+        private long lastNanos;
+        private double fraction;
+        private String message;
     }
 }

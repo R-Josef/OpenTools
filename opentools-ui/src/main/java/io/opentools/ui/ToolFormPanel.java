@@ -1,5 +1,8 @@
 package io.opentools.ui;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.opentools.core.job.JobRecord;
 import io.opentools.core.job.ToolExecutionService;
 import io.opentools.core.job.ToolValidationException;
 import io.opentools.core.i18n.LanguageManager;
@@ -47,6 +50,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -236,6 +240,11 @@ final class ToolFormPanel extends JPanel {
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
         buttons.setOpaque(false);
         buttons.add(browse);
+        if (!output) {
+            JButton useResult = new JButton(language.text("form.use_result", "Use result..."));
+            buttons.add(useResult);
+            useResult.addActionListener(ignored -> chooseRecentResult(field));
+        }
         if (!output && TextInputEditor.supports(tool, parameter)) {
             JButton textInput = new JButton(language.text("form.input_text", "Enter text"));
             buttons.add(textInput);
@@ -363,6 +372,63 @@ final class ToolFormPanel extends JPanel {
                 }
             }
         });
+    }
+
+    private void chooseRecentResult(JTextField field) {
+        List<Path> artifacts = recentArtifacts();
+        if (artifacts.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    language.text("form.no_results", "No completed job artifacts are available yet."),
+                    language.text("form.use_result", "Use result..."),
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+            return;
+        }
+        Object[] choices = artifacts.stream().map(Path::toString).toArray();
+        Object selected = JOptionPane.showInputDialog(
+                this,
+                language.text("form.use_result_prompt", "Choose an artifact from a recent job:"),
+                language.text("form.use_result", "Use result..."),
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                choices,
+                choices[0]
+        );
+        if (selected != null) {
+            field.setText(selected.toString());
+            updateFileHint(field.getText());
+        }
+    }
+
+    private List<Path> recentArtifacts() {
+        List<Path> paths = new ArrayList<>();
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            for (JobRecord job : executionService.recentJobs(20)) {
+                Path result = job.runDirectory().resolve("result.json");
+                if (!Files.isRegularFile(result)) {
+                    continue;
+                }
+                JsonNode root = mapper.readTree(result.toFile());
+                for (JsonNode artifact : root.path("artifacts")) {
+                    String value = artifact.path("path").asText("");
+                    if (value.isBlank()) {
+                        continue;
+                    }
+                    Path path = Path.of(value);
+                    if (Files.isRegularFile(path) && !paths.contains(path)) {
+                        paths.add(path);
+                        if (paths.size() >= 50) {
+                            return paths;
+                        }
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            // A damaged historical result must not block the form.
+        }
+        return paths;
     }
 
     private void updateFileHint(String value) {

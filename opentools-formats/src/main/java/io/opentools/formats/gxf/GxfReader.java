@@ -19,10 +19,33 @@ import java.util.regex.Pattern;
 public final class GxfReader implements AutoCloseable {
     private static final Pattern GTF_ATTRIBUTE = Pattern.compile("(\\S+)\\s+\"([^\"]*)\"");
     private final BufferedReader reader;
+    private final boolean lenient;
+    private final List<String> warnings = new ArrayList<>();
     private long lineNumber;
 
     public GxfReader(Path path) throws IOException {
+        this(path, false);
+    }
+
+    /**
+     * Creates a reader.
+     *
+     * @param path annotation file
+     * @param lenient when {@code true}, malformed lines are skipped and recorded
+     * @throws IOException when the file cannot be opened
+     */
+    public GxfReader(Path path, boolean lenient) throws IOException {
         this.reader = new BufferedReader(new InputStreamReader(Compression.open(path), StandardCharsets.UTF_8));
+        this.lenient = lenient;
+    }
+
+    /**
+     * Returns human-readable descriptions of skipped malformed lines.
+     *
+     * @return immutable warning list
+     */
+    public List<String> warnings() {
+        return List.copyOf(warnings);
     }
 
     public GxfRecord next() throws IOException {
@@ -38,7 +61,14 @@ public final class GxfReader implements AutoCloseable {
                 }
                 continue;
             }
-            return parse(line);
+            try {
+                return parse(line);
+            } catch (OpenToolException ex) {
+                if (!lenient) {
+                    throw ex;
+                }
+                warnings.add("line " + lineNumber + ": " + ex.getMessage());
+            }
         }
         return null;
     }
@@ -102,10 +132,10 @@ public final class GxfReader implements AutoCloseable {
                 continue;
             }
             String key = trimmed.substring(0, separator).trim();
-            String value = decode(trimmed.substring(separator + 1).trim());
-            for (String item : value.split(",")) {
-                if (!item.isBlank()) {
-                    attributes.computeIfAbsent(key, ignored -> new ArrayList<>()).add(item);
+            for (String item : trimmed.substring(separator + 1).trim().split(",")) {
+                String value = decode(item);
+                if (!value.isBlank()) {
+                    attributes.computeIfAbsent(key, ignored -> new ArrayList<>()).add(value);
                 }
             }
         }

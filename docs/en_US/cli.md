@@ -26,6 +26,13 @@ operations can add explicit allowed workspaces.
 Use `--param key=value`. Parameter IDs, types, defaults, and options are defined
 by `tools describe <id> --schema`.
 
+`--json` output is always UTF-8 and escapes non-ASCII characters as JSON
+`\uXXXX`, so PowerShell `ConvertFrom-Json`, Python, and Node parse it correctly
+even when the Windows console uses a legacy code page. Human-readable output
+keeps the platform encoding. `run` waits for the job and returns a stable exit
+code. To run in the background, submit from a persistent process such as the
+GUI or the MCP server.
+
 ```powershell
 OpenToolsCLI.exe run fasta.filter --param input=in.fa `
   --param minLength=100 --param output=out.fa.gz
@@ -40,6 +47,11 @@ OpenToolsCLI.exe jobs logs <run-id>
 OpenToolsCLI.exe jobs cancel <run-id>
 OpenToolsCLI.exe jobs retry <run-id>
 ```
+
+`jobs status` reports `progress` (0–1) and `progressMessage`. The concurrency
+limit is configurable with `-Dopentools.jobs.maxConcurrent=N` (default: half the
+CPU count, clamped to 1–4). Jobs left behind by an abnormal exit are marked
+`JOB_INTERRUPTED` the next time the project opens.
 
 ## Batch execution
 

@@ -40,6 +40,8 @@ public final class GxfInspectTool extends AbstractOpenTool {
                     ToolParameter.integer("threads", "Threads",
                             "0 uses AUTO for large files; 1 disables parallel record processing.",
                             0, 0, 64),
+                    ToolParameter.bool("skipInvalidLines", "Skip invalid lines",
+                            "Record malformed lines in the summary instead of failing the whole inspection.", true),
                     ToolParameter.optionalOutputFile("output", "Output prefix", "Optional TSV file. Companion feature-type output is written beside it."),
                     ToolParameter.bool("overwrite", "Overwrite output", "Allow replacing existing custom output files.", false)
             )
@@ -77,7 +79,8 @@ public final class GxfInspectTool extends AbstractOpenTool {
                 request.integer("threads"), Files.size(input));
 
         GxfSummary summary = new GxfSummary();
-        try (GxfReader reader = new GxfReader(input)) {
+        List<String> skipped;
+        try (GxfReader reader = new GxfReader(input, request.bool("skipInvalidLines"))) {
             OrderedParallelProcessor.processChunks(
                     threads,
                     512,
@@ -92,6 +95,7 @@ public final class GxfInspectTool extends AbstractOpenTool {
                     },
                     summary::merge
             );
+            skipped = reader.warnings();
         }
         long records = summary.records;
         long totalLength = summary.totalLength;
@@ -108,6 +112,7 @@ public final class GxfInspectTool extends AbstractOpenTool {
 
         List<List<String>> rows = new ArrayList<>();
         rows.add(List.of("Records", Long.toString(records)));
+        rows.add(List.of("Skipped invalid lines", Integer.toString(skipped.size())));
         rows.add(List.of("Sequence IDs", Integer.toString(sequenceIds.size())));
         rows.add(List.of("Genes", Long.toString(geneCount)));
         rows.add(List.of("Transcripts", Long.toString(transcriptCount)));
@@ -124,11 +129,14 @@ public final class GxfInspectTool extends AbstractOpenTool {
         metrics.put("featureTypes", featureTypes);
         metrics.put("threads", threads);
         metrics.put("parallelRecords", threads > 1);
+        metrics.put("skippedLines", skipped.size());
+        metrics.put("skippedLineDetails", skipped);
         context.progress(1.0, "GXF inspection completed");
         return new ToolResult(
                 "Inspected " + records + " annotation records",
                 List.of(records),
-                sequenceIds.size() + " sequence IDs; " + featureTypes.size() + " feature types",
+                sequenceIds.size() + " sequence IDs; " + featureTypes.size() + " feature types; "
+                        + skipped.size() + " invalid lines skipped",
                 List.of(sequenceIds.size(), featureTypes.size()),
                 new ResultTable(List.of("Metric", "Value"), rows),
                 List.of(
