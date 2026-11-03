@@ -317,12 +317,13 @@ public final class TableTools {
                 int outputColumns = columns;
                 FormatToolSupport.writeAtomically(output, writer -> {
                     for (int column = 0; column < outputColumns; column++) {
-                        List<String> row = new ArrayList<>();
-                        row.add(columnName(table.headers, column));
+                        DelimitedTableWriter.writeField(writer, columnName(table.headers, column), '\t');
                         for (List<String> source : table.rows) {
-                            row.add(column < source.size() ? source.get(column) : "");
+                            writer.write('\t');
+                            DelimitedTableWriter.writeField(
+                                    writer, column < source.size() ? source.get(column) : "", '\t');
                         }
-                        writeLine(writer, row);
+                        writer.write('\n');
                     }
                 });
                 context.progress(1.0, "Table transpose completed");

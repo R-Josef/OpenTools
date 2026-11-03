@@ -210,17 +210,20 @@ public final class FastaStatsTool extends AbstractOpenTool {
         long gaps = 0;
         long canonical = 0;
         for (int i = 0; i < sequence.length(); i++) {
-            char current = Character.toUpperCase(sequence.charAt(i));
+            char current = sequence.charAt(i);
+            if (current >= 'a' && current <= 'z') {
+                current -= 32;
+            }
             switch (current) {
-                case 'G', 'C' -> gc++;
+                case 'G', 'C' -> {
+                    gc++;
+                    canonical++;
+                }
+                case 'A', 'T', 'U' -> canonical++;
                 case 'N' -> n++;
                 case '-', '.' -> gaps++;
                 default -> {
                 }
-            }
-            if (current == 'A' || current == 'C' || current == 'G'
-                    || current == 'T' || current == 'U') {
-                canonical++;
             }
         }
         return new SequenceCounts(sequence.length(), gc, n, gaps, canonical);

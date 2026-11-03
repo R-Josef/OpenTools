@@ -4,6 +4,9 @@
 
 ### Added
 
+- FASTA base counting removes `Character.toUpperCase` and a second canonical
+  test per base; in-memory transpose writes fields directly instead of allocating
+  a temporary row list. Add a reproducible performance benchmark page.
 - Job error codes now resolve through `ErrorText` to English/Chinese messages in
   the Jobs table, Results panel, and CLI job failures; unknown codes keep the
   original detail.

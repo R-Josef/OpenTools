@@ -18,6 +18,7 @@
 | 开发插件 | [插件开发者指南](plugin-development.md) |
 | Plugin API 与 Javadoc | [Plugin API 2.1](plugin-api.md) |
 | UI 与文档开发 | [界面、Markdown 和视觉验证](ui-and-docs.md) |
+| 查看性能 | [性能](performance.md) |
 | 排查失败 | [错误与退出码](errors-exit-codes.md)、[FAQ](faq.md) |
 | 选择发布物 | [发布包说明](release-packages.md) |
 

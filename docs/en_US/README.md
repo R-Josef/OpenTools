@@ -18,6 +18,7 @@ same Markdown directory when the interface language is English.
 | Develop a plugin | [Plugin developer guide](plugin-development.md) |
 | Plugin API and Javadoc | [Plugin API 2.1](plugin-api.md) |
 | Develop the UI or Docs | [UI and Docs development](ui-and-docs.md) |
+| Review performance | [Performance](performance.md) |
 | Troubleshoot failures | [Errors and exit codes](errors-exit-codes.md), [FAQ](faq.md) |
 | Choose a package | [Release packages](release-packages.md) |
 

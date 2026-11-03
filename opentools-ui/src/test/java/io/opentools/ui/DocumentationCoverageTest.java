@@ -116,6 +116,7 @@ final class DocumentationCoverageTest {
                 "external-tools.md",
                 "release-packages.md",
                 "ui-and-docs.md",
+                "performance.md",
                 "categories/sequence.md",
                 "categories/annotation-bed.md",
                 "categories/table.md",
@@ -145,6 +146,7 @@ final class DocumentationCoverageTest {
                 "README.md", "quick-start.md", "installation.md", "cli.md", "mcp.md",
                 "workflow.md", "tool-reference.md", "file-formats.md", "faq.md", "plugin-development.md",
                 "errors-exit-codes.md", "external-tools.md", "release-packages.md", "ui-and-docs.md",
+                "performance.md",
                 "categories/sequence.md", "categories/annotation-bed.md", "categories/table.md",
                 "categories/alignment-phylogeny.md", "categories/expression-enrichment.md",
                 "categories/hts.md", "categories/visualization.md", "categories/plugin.md"
