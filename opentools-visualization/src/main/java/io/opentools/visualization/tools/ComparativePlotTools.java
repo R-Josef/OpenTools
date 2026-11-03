@@ -7,18 +7,26 @@ import io.opentools.api.tool.ToolDescriptor;
 import io.opentools.api.tool.ToolParameter;
 import io.opentools.api.tool.ToolRequest;
 import io.opentools.api.tool.ValidationResult;
+import io.opentools.formats.gxf.GxfReader;
+import io.opentools.formats.gxf.GxfRecord;
 import io.opentools.visualization.model.GenericPlotData;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public final class ComparativePlotTools {
     private ComparativePlotTools() {
     }
 
     public static List<AbstractOpenTool> tools() {
-        return List.of(new PlotCollinearityTool(), new PlotDotplotTool());
+        return List.of(new PlotCollinearityTool(), new PlotSyntenyTool(), new PlotDotplotTool());
     }
 }
 
@@ -184,6 +192,170 @@ final class PlotCollinearityTool extends AbstractOpenTool {
     }
 
     private record Pair(String block, double x, double y) {
+    }
+}
+
+final class PlotSyntenyTool extends AbstractOpenTool {
+    private static final ToolDescriptor DESCRIPTOR = PlotToolSupport.descriptor(
+            "plot.synteny",
+            "Multi-species Synteny",
+            "Draw a chord/ribbon overview of collinearity links across three or more genomes.",
+            List.of(
+                    ToolParameter.requiredFile("input", "Cross-genome pairs",
+                            "TSV with genome_a, gene_a, genome_b, gene_b, and optional block columns."),
+                    ToolParameter.requiredFile("annotation", "Combined annotation",
+                            "GFF3/GTF with gene features for all genomes; gene IDs must be unique."),
+                    ToolParameter.string("blockColumn", "Block column", "Optional block identifier column.", "block"),
+                    ToolParameter.string("genomeAColumn", "Genome A column", "Genome label column for the first side.", "genome_a"),
+                    ToolParameter.string("geneAColumn", "Gene A column", "Gene ID column for the first side.", "gene_a"),
+                    ToolParameter.string("genomeBColumn", "Genome B column", "Genome label column for the second side.", "genome_b"),
+                    ToolParameter.string("geneBColumn", "Gene B column", "Gene ID column for the second side.", "gene_b"),
+                    ToolParameter.integer("maxLinks", "Maximum links", "Cap the number of drawn cross-genome links.", 5000, 1, 200000)
+            ),
+            "Multi-species Synteny"
+    );
+
+    @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
+
+    @Override public ValidationResult validate(ToolRequest request) {
+        ValidationResult result = validateParameters(request).merge(PlotToolSupport.validate(request));
+        if (!Files.isRegularFile(request.path("annotation"))) {
+            result = result.merge(ValidationResult.of(io.opentools.api.tool.ValidationIssue.error(
+                    "annotation", "Annotation file not found.",
+                    "Choose a combined GFF3/GTF with gene features.")));
+        }
+        return result;
+    }
+
+    @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
+        Map<String, Gene> genes = readGenes(request.path("annotation"));
+        var table = PlotToolSupport.readTable(request.path("input"), null);
+        int block = table.column(request.string("blockColumn"));
+        int genomeA = table.requiredColumn(request.string("genomeAColumn"));
+        int geneA = table.requiredColumn(request.string("geneAColumn"));
+        int genomeB = table.requiredColumn(request.string("genomeBColumn"));
+        int geneB = table.requiredColumn(request.string("geneBColumn"));
+        int maxLinks = Math.max(1, request.integer("maxLinks"));
+
+        List<Link> links = new ArrayList<>();
+        List<String> genomes = new ArrayList<>();
+        Map<String, Set<String>> genomeGenes = new LinkedHashMap<>();
+        int unmapped = 0;
+        for (var row : table.rows()) {
+            String nameA = PlotToolSupport.cell(row, genomeA);
+            String nameB = PlotToolSupport.cell(row, genomeB);
+            String idA = normalizeGeneId(PlotToolSupport.cell(row, geneA));
+            String idB = normalizeGeneId(PlotToolSupport.cell(row, geneB));
+            if (nameA.isBlank() || nameB.isBlank() || !genes.containsKey(idA) || !genes.containsKey(idB)) {
+                unmapped++;
+                continue;
+            }
+            if (!genomes.contains(nameA)) genomes.add(nameA);
+            if (!genomes.contains(nameB)) genomes.add(nameB);
+            genomeGenes.computeIfAbsent(nameA, ignored -> new LinkedHashSet<>()).add(idA);
+            genomeGenes.computeIfAbsent(nameB, ignored -> new LinkedHashSet<>()).add(idB);
+            links.add(new Link(nameA, idA, nameB, idB,
+                    block >= 0 ? PlotToolSupport.cell(row, block) : "all"));
+        }
+        if (links.isEmpty()) {
+            throw new io.opentools.api.tool.OpenToolException(
+                    "SYNTENY_EMPTY",
+                    "No cross-genome links matched the annotation.",
+                    "Check gene IDs and the combined GFF3/GTF.");
+        }
+        Map<String, Map<String, Integer>> positions = new LinkedHashMap<>();
+        for (String genome : genomes) {
+            List<Gene> ordered = genomeGenes.getOrDefault(genome, Set.of()).stream()
+                    .map(genes::get)
+                    .sorted(Comparator.comparingInt((Gene gene) -> gene.seqOrder())
+                            .thenComparingLong(Gene::start))
+                    .toList();
+            Map<String, Integer> index = new LinkedHashMap<>();
+            for (int position = 0; position < ordered.size(); position++) {
+                index.put(ordered.get(position).id(), position);
+            }
+            positions.put(genome, index);
+        }
+        Map<String, GenericPlotData.GenericSeries.Builder> series = new LinkedHashMap<>();
+        int drawn = 0;
+        boolean truncated = false;
+        for (Link link : links) {
+            Integer x = positions.getOrDefault(link.genomeA(), Map.of()).get(link.geneA());
+            Integer y = positions.getOrDefault(link.genomeB(), Map.of()).get(link.geneB());
+            if (x == null || y == null) {
+                unmapped++;
+                continue;
+            }
+            if (drawn >= maxLinks) {
+                truncated = true;
+                break;
+            }
+            String key = link.block() + (char) 31 + link.genomeA() + (char) 31 + link.genomeB();
+            series.computeIfAbsent(key, GenericPlotData.GenericSeries.Builder::new).add(x, y);
+            drawn++;
+        }
+        if (drawn == 0) {
+            throw new io.opentools.api.tool.OpenToolException(
+                    "SYNTENY_EMPTY",
+                    "No link could be placed on a genome.",
+                    "Check that gene IDs occur in the annotation and genome labels are consistent.");
+        }
+        GenericPlotData data = new GenericPlotData("SYNTENY", "", "", genomes,
+                series.values().stream().map(GenericPlotData.GenericSeries.Builder::build).toList());
+        context.log("Multi-species synteny: " + genomes.size() + " genomes, " + drawn + " links");
+        ToolResult base = PlotToolSupport.renderGeneric(this, request, context, data,
+                "synteny", request.string("title"), genomes.size(), drawn);
+        Map<String, Object> metrics = new LinkedHashMap<>(base.metrics());
+        metrics.put("genomes", genomes.size());
+        metrics.put("links", drawn);
+        metrics.put("unmapped", unmapped);
+        metrics.put("blocks", series.size());
+        metrics.put("truncated", truncated);
+        return new ToolResult(base.summary(), base.summaryArguments(), base.detail(),
+                base.detailArguments(), base.table(), base.artifacts(), metrics);
+    }
+
+    private static Map<String, Gene> readGenes(Path path) throws Exception {
+        Map<String, Gene> genes = new LinkedHashMap<>();
+        Map<String, Integer> sequenceOrder = new LinkedHashMap<>();
+        try (GxfReader reader = new GxfReader(path, true)) {
+            GxfRecord record;
+            while ((record = reader.next()) != null) {
+                if (!record.type().equalsIgnoreCase("gene")
+                        && !record.type().equalsIgnoreCase("mRNA")
+                        && !record.type().equalsIgnoreCase("transcript")) {
+                    continue;
+                }
+                String id = normalizeGeneId(record.firstAttribute("ID", "gene_id", "Name", "locus_tag"));
+                if (id.isBlank() || genes.containsKey(id)) {
+                    continue;
+                }
+                int order = sequenceOrder.computeIfAbsent(record.seqId(), ignored -> sequenceOrder.size());
+                genes.put(id, new Gene(id, record.start(), order));
+            }
+        }
+        if (genes.isEmpty()) {
+            throw new io.opentools.api.tool.OpenToolException(
+                    "SYNTENY_ANNOTATION_EMPTY",
+                    "No gene features were found in the annotation.",
+                    "Use a combined GFF3/GTF with gene features.");
+        }
+        return genes;
+    }
+
+    private static String normalizeGeneId(String id) {
+        if (id == null) return "";
+        String value = id.trim();
+        for (String prefix : List.of("gene:", "transcript:", "mRNA:")) {
+            if (value.startsWith(prefix)) return value.substring(prefix.length());
+        }
+        return value;
+    }
+
+    private record Gene(String id, long start, int seqOrder) {
+    }
+
+    private record Link(String genomeA, String geneA, String genomeB, String geneB, String block) {
     }
 }
 

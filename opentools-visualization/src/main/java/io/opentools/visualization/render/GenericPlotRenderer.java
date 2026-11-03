@@ -30,6 +30,10 @@ public final class GenericPlotRenderer {
             drawCircos(scene, spec, data, width, height, fontSize);
             return scene.build();
         }
+        if ("SYNTENY".equals(data.chart())) {
+            drawSynteny(scene, spec, data, width, height, fontSize);
+            return scene.build();
+        }
         double left = 82;
         double right = 32;
         double top = spec.title().isBlank() ? 38 : 88;
@@ -157,6 +161,99 @@ public final class GenericPlotRenderer {
         scene.text(cx, cy - 4, sequences.size() + " sequences", spec.style().foregroundColor(),
                 fontSize + 1, true, SceneText.TextAnchor.CENTER, 0, "");
         scene.text(cx, cy + 16, featureCount + " features", spec.style().mutedColor(),
+                fontSize - 1, false, SceneText.TextAnchor.CENTER, 0, "");
+    }
+
+    private static void drawSynteny(
+            PlotSceneBuilder scene, PlotSpec spec, GenericPlotData data,
+            int width, int height, double fontSize
+    ) {
+        double cx = width / 2.0;
+        double cy = height / 2.0 + 10;
+        double radius = Math.min(width, height) * 0.35;
+        List<String> genomes = new ArrayList<>(data.categories());
+        if (genomes.isEmpty()) {
+            for (GenericPlotData.GenericSeries series : data.series()) {
+                String[] parts = series.name().split(String.valueOf((char) 31), 3);
+                if (parts.length >= 3) {
+                    if (!genomes.contains(parts[1])) genomes.add(parts[1]);
+                    if (!genomes.contains(parts[2])) genomes.add(parts[2]);
+                }
+            }
+        }
+        if (genomes.isEmpty()) {
+            return;
+        }
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        for (String genome : genomes) {
+            counts.put(genome, 1);
+        }
+        for (GenericPlotData.GenericSeries series : data.series()) {
+            String[] parts = series.name().split(String.valueOf((char) 31), 3);
+            if (parts.length < 3) continue;
+            for (int i = 0; i < series.x().size(); i++) {
+                counts.merge(parts[1], (int) Math.ceil(series.x().get(i)) + 1, Math::max);
+                counts.merge(parts[2], (int) Math.ceil(series.y().get(i)) + 1, Math::max);
+            }
+        }
+        double gap = genomes.size() > 1 ? 0.035 : 0;
+        double available = Math.PI * 2 - gap * genomes.size();
+        double total = counts.values().stream().mapToInt(Integer::intValue).sum();
+        Map<String, Double> starts = new LinkedHashMap<>();
+        Map<String, Double> spans = new LinkedHashMap<>();
+        double angle = -Math.PI / 2 + gap / 2.0;
+        int genomeIndex = 0;
+        for (String genome : genomes) {
+            double span = available * counts.get(genome) / Math.max(1, total);
+            starts.put(genome, angle);
+            spans.put(genome, span);
+            String color = color(spec, genomeIndex);
+            scene.polygon(annularSector(cx, cy, radius - 14, radius, angle, angle + span),
+                    color, "", 0, genome + " (" + counts.get(genome) + " genes)");
+            double middle = angle + span / 2.0;
+            scene.text(cx + Math.cos(middle) * (radius + 26),
+                    cy + Math.sin(middle) * (radius + 26),
+                    genome, color, fontSize - 1, true,
+                    SceneText.TextAnchor.CENTER, 0, genome);
+            angle += span + gap;
+            genomeIndex++;
+        }
+        int links = 0;
+        for (int seriesIndex = 0; seriesIndex < data.series().size(); seriesIndex++) {
+            GenericPlotData.GenericSeries series = data.series().get(seriesIndex);
+            String[] parts = series.name().split(String.valueOf((char) 31), 3);
+            if (parts.length < 3 || !starts.containsKey(parts[1]) || !starts.containsKey(parts[2])) {
+                continue;
+            }
+            String color = color(spec, seriesIndex + 1);
+            for (int point = 0; point < series.x().size(); point++) {
+                double angleA = starts.get(parts[1])
+                        + spans.get(parts[1]) * Math.max(0, series.x().get(point))
+                        / Math.max(1, counts.get(parts[1]));
+                double angleB = starts.get(parts[2])
+                        + spans.get(parts[2]) * Math.max(0, series.y().get(point))
+                        / Math.max(1, counts.get(parts[2]));
+                double ax = cx + Math.cos(angleA) * (radius - 16);
+                double ay = cy + Math.sin(angleA) * (radius - 16);
+                double bx = cx + Math.cos(angleB) * (radius - 16);
+                double by = cy + Math.sin(angleB) * (radius - 16);
+                double previousX = ax;
+                double previousY = ay;
+                for (int step = 1; step <= 24; step++) {
+                    double t = step / 24.0;
+                    double one = 1 - t;
+                    double x = one * one * ax + 2 * one * t * cx + t * t * bx;
+                    double y = one * one * ay + 2 * one * t * cy + t * t * by;
+                    scene.line(previousX, previousY, x, y, color, 1.1);
+                    previousX = x;
+                    previousY = y;
+                }
+                links++;
+            }
+        }
+        scene.text(cx, cy - 4, genomes.size() + " genomes", spec.style().foregroundColor(),
+                fontSize + 1, true, SceneText.TextAnchor.CENTER, 0, "");
+        scene.text(cx, cy + 16, links + " links", spec.style().mutedColor(),
                 fontSize - 1, false, SceneText.TextAnchor.CENTER, 0, "");
     }
 

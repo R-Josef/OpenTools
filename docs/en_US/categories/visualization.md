@@ -13,4 +13,4 @@ standalone tools with image and plot-model outputs.
 - Clustering, maximum intersections, dimensions, and DPI have schema limits.
 - Color and threshold parameters are part of reproducibility.
 
-The in-app Docs tree exposes all 20 tools.
+The in-app Docs tree exposes all 21 tools.

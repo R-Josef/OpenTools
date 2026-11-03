@@ -4,6 +4,8 @@
 
 ### Added
 
+- `plot.synteny` draws multi-genome chord/ribbon links from a cross-genome
+  pair table and a combined GFF3/GTF annotation, with block colors and a link cap.
 - `plot.circos` now renders a real circular ideogram: one arc per sequence,
   proportional spans, label-colored feature ticks, sequence labels, and center
   counts.
@@ -53,7 +55,7 @@
   replacing the `param` node with `parameter`, fixes plugin metadata to
   `plugin.name/description`, derives result keys from the Tool ID, and locates
   tool guides at `docs/<language>/tool/<Tool ID>.md`.
-- Detailed English and Chinese beginner guides now cover all 92 built-in tools,
+- Detailed English and Chinese beginner guides now cover all 93 built-in tools,
   including input sketches, parameter selection, result interpretation,
   failure boundaries, and related next steps.
 - Bundled default example plugin with the interactive Coin Runner tool, JSON

@@ -31,7 +31,7 @@ packages contain no agent or model code.
 
 ## Features
 
-- 92 built-in tools covering FASTA/FASTQ, GFF3/GTF, BED, tables, local and remote
+- 93 built-in tools covering FASTA/FASTQ, GFF3/GTF, BED, tables, local and remote
   BLAST, DIAMOND, HMMER, multiple sequence alignment, phylogeny, comparative
   genomics, expression, enrichment, SAM/BAM/CRAM, VCF/BCF, and plotting.
 - Projects, jobs, input hashes, parameters, logs, and result manifests are
@@ -44,7 +44,8 @@ packages contain no agent or model code.
   placeholders, with cycle checks and stop/continue failure policies.
 - Collinearity plots use real GFF3/GTF gene order; SSR mining reports perfect
   microsatellite loci; primer check predicts amplicons with IUPAC-aware matching.
-- MEME motif discovery and MAST scanning integrate with an installed MEME Suite.
+- MEME motif discovery and MAST scanning integrate with an installed MEME Suite;
+  multi-genome collinearity links render as a chord/ribbon overview.
 - GUI, CLI, and MCP share `ToolDescriptor`, validation, tool execution, and
   result contracts.
 - The bundled default plugin adds an interactive Coin Runner tool whose
