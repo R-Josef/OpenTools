@@ -1,6 +1,7 @@
 param(
     [string]$CacheDirectory = "",
     [string]$NativeBuildDirectory = "",
+    [string]$MemeDirectory = "",
     [string]$OutputDirectory = "",
     [switch]$Offline,
     [switch]$SkipBuild,
@@ -352,6 +353,29 @@ Copy-Item -LiteralPath (Join-Path $projectRoot "licenses\WRITTEN_SOURCE_OFFER.md
     -Destination (Join-Path $licensesRoot "WRITTEN_SOURCE_OFFER.md")
 
 $toolRows = @()
+if ($MemeDirectory) {
+    $memeRoot = (Resolve-Path -LiteralPath $MemeDirectory).Path
+    foreach ($required in @("bin\meme.exe", "bin\mast.exe", "bin\cygwin1.dll")) {
+        if (-not (Test-Path -LiteralPath (Join-Path $memeRoot $required) -PathType Leaf)) {
+            throw "The MEME directory is missing required packaged file: $required"
+        }
+    }
+    $memeDestination = Join-Path $toolsRoot "meme"
+    Copy-Item -Path (Join-Path $memeRoot "*") -Destination $memeDestination -Recurse -Force
+    $memeLicenseDir = Join-Path $licensesRoot "tools\meme"
+    New-Item -ItemType Directory -Force -Path $memeLicenseDir | Out-Null
+    if (Test-Path -LiteralPath (Join-Path $memeRoot "LICENSE") -PathType Leaf) {
+        Copy-Item -LiteralPath (Join-Path $memeRoot "LICENSE") -Destination (Join-Path $memeLicenseDir "LICENSE") -Force
+    }
+    $toolRows += [pscustomobject]@{
+        Tool = "MEME Suite"
+        Version = "5.5.9"
+        License = "MEME Suite non-commercial license"
+        SHA256 = "0406FB7B1DC27F6AAB3D6D3A29ECDF617BBDD946690CFA97CA2129BC210BFD12"
+        Source = "https://meme-suite.org/meme/meme-software/5.5.9/meme-5.5.9.tar.gz"
+    }
+}
+
 foreach ($tool in $manifest.tools) {
     $destinationRoot = Join-Path $imageRoot $tool.destination
     New-Item -ItemType Directory -Force -Path $destinationRoot | Out-Null
