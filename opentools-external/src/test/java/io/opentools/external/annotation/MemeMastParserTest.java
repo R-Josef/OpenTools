@@ -60,6 +60,66 @@ final class MemeMastParserTest {
     }
 
     @Test
+    void acceptsMemeInternalDoctype() throws Exception {
+        Path xml = tempDir.resolve("meme-doctype.xml");
+        Files.writeString(xml, """
+                <?xml version="1.0"?>
+                <!DOCTYPE MEME [
+                <!ELEMENT MEME (motifs)>
+                <!ELEMENT motifs (motif*)>
+                <!ELEMENT motif EMPTY>
+                <!ATTLIST motif id CDATA #REQUIRED width CDATA #REQUIRED sites CDATA #REQUIRED evalue CDATA #REQUIRED>
+                ]>
+                <MEME version="5.5.9">
+                  <motifs>
+                    <motif id="MEME-1" width="8" sites="12" evalue="1.2e-10"/>
+                  </motifs>
+                </MEME>
+                """);
+        assertEquals(1, MemeResults.readMotifs(xml).size());
+    }
+
+    @Test
+    void readsMastExplicitStartAndEnd() throws Exception {
+        Path xml = tempDir.resolve("mast-explicit.xml");
+        Files.writeString(xml, """
+                <?xml version="1.0"?>
+                <MAST>
+                  <sequences>
+                    <sequence id="seq1">
+                      <seg start="5" end="16" strand="-1">
+                        <hit motiff="MEME-1" position="4" start="5" end="16" strand="-1" pvalue="5.5e-8" match="MEME-1"/>
+                      </seg>
+                    </sequence>
+                  </sequences>
+                </MAST>
+                """);
+        var hits = MemeResults.readMastHits(xml);
+        assertEquals(1, hits.size());
+        assertEquals(5, hits.get(0).start());
+        assertEquals(16, hits.get(0).end());
+        assertEquals("-1", hits.get(0).strand());
+    }
+
+    @Test
+    void convertsMastHitListToXml() throws Exception {
+        var hits = MastHitList.parse("""
+                # sequence_name (strand+/-)motif id alt_id hit_start hit_end score hit_p-value
+                seq0 -1 TACGTACGTACG MEME-1 5 16 2450.10 5.55e-08
+                seq1 +1 TACGTACGTACG MEME-1 25 36 2450.10 5.55e-08
+                """);
+        assertEquals(2, hits.size());
+        assertEquals("seq0", hits.get(0).sequence());
+        assertEquals(5, hits.get(0).start());
+        Path xml = tempDir.resolve("mast-fallback.xml");
+        MastHitList.writeXml(xml, hits);
+        var parsed = MemeResults.readMastHits(xml);
+        assertEquals(2, parsed.size());
+        assertEquals(5, parsed.get(0).start());
+        assertEquals(16, parsed.get(0).end());
+    }
+
+    @Test
     void rejectsMalformedXml() throws Exception {
         Path xml = tempDir.resolve("bad.xml");
         Files.writeString(xml, "<MEME><motifs>");

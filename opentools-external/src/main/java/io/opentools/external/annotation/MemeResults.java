@@ -69,10 +69,13 @@ public final class MemeResults {
             if (motif.isBlank()) {
                 continue;
             }
-            int position = integer(hit.getAttribute("position"));
             String match = hit.getAttribute("match");
-            int start = position + 1;
-            int end = match == null || match.isBlank() ? start : start + match.length() - 1;
+            int start = hit.getAttribute("start").isBlank()
+                    ? integer(hit.getAttribute("position")) + 1
+                    : integer(hit.getAttribute("start"));
+            int end = hit.getAttribute("end").isBlank()
+                    ? (match == null || match.isBlank() ? start : start + match.length() - 1)
+                    : integer(hit.getAttribute("end"));
             result.add(new MastHit(
                     sequenceId,
                     motif,
@@ -89,9 +92,14 @@ public final class MemeResults {
     private static Document parse(Path xml) {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            // MEME XML carries an internal DTD; permit the DOCTYPE while blocking
+            // external entity and DTD resolution.
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false);
             factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
             factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            factory.setAttribute("http://javax.xml.XMLConstants/property/accessExternalDTD", "");
+            factory.setAttribute("http://javax.xml.XMLConstants/property/accessExternalSchema", "");
             factory.setXIncludeAware(false);
             factory.setExpandEntityReferences(false);
             return factory.newDocumentBuilder().parse(xml.toFile());

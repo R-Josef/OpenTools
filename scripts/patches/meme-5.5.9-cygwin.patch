@@ -1,0 +1,22 @@
+--- a/src/alph-in.c
++++ b/src/alph-in.c
+@@ -93,7 +93,7 @@
+ // match quoted text with backslash escapes (should match a JSON string)
+ // note that this regular expression uses 2 groups so take that into account
+ // when counting brackets.
+-#define NAME "\"(([^\\\"]+|\\[\"\\/bfnrt]|\\u[0-9A-Fa-f]{4})*)\""
++#define NAME "\"([^\"]*)\""
+ 
+ // REGULAR EXPRESSIONS
+ // matches the alphabet header
+--- a/src/motif-in-meme-text.c
++++ b/src/motif-in-meme-text.c
+@@ -135,7 +135,7 @@
+     "[[:space:]]*([^[:space:]]*)[[:space:]]*$";
+ // match: ALPHABET "name"
+ static const char * ALPHABET_START_RE = "^[[:space:]]*ALPHABET([[:space:]]+"
+-    "\"(([^\\\"]+|\\[\"\\/bfnrt]|\\u[0-9A-Fa-f]{4})*)\")?([[:space:]]+(RNA|DNA|PROTEIN)-LIKE)?[[:space:]]*$";
++    "\"([^\"]*)\")?([[:space:]]+(RNA|DNA|PROTEIN)-LIKE)?[[:space:]]*$";
+ static const char * ALPHABET_END_RE = "^[[:space:]]*END[[:space:]]+ALPHABET[[:space:]]*$";
+ static const char * STRANDS_RE = "^[[:space:]]*strands[[:space:]]*:"
+     "([-+[:space:]]*)$";

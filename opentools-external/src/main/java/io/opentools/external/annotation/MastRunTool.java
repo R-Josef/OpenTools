@@ -99,16 +99,36 @@ public final class MastRunTool extends AbstractOpenTool {
                     Duration.ofMinutes(Math.max(1, request.integer("timeoutMinutes"))),
                     context.cancellationToken(), context::log);
             Path xml = outDir.resolve("mast.xml");
-            if (!process.succeeded() && !Files.isRegularFile(xml)) {
-                throw new ExternalProcessException("MAST_FAILED",
-                        "MAST exited with code " + process.exitCode() + ": " + tail(process.output()),
-                        "Inspect run.log and verify MAST is installed and the motif/sequence alphabets match.");
+            boolean usableXml = Files.isRegularFile(xml) && Files.size(xml) > 0;
+            if (!usableXml) {
+                context.log("MAST did not produce usable mast.xml; falling back to -hit_list.");
+                List<String> fallback = new ArrayList<>(command);
+                int outputOption = fallback.indexOf("-oc");
+                if (outputOption >= 0 && outputOption + 1 < fallback.size()) {
+                    fallback.remove(outputOption + 1);
+                    fallback.remove(outputOption);
+                }
+                fallback.add("-hit_list");
+                ProcessResult hitList = new ProcessRunner().run(
+                        fallback, work, Map.of(),
+                        Duration.ofMinutes(Math.max(1, request.integer("timeoutMinutes"))),
+                        context.cancellationToken(), context::log);
+                if (!hitList.succeeded()) {
+                    throw new ExternalProcessException("MAST_FAILED",
+                            "MAST exited with code " + process.exitCode() + " and the -hit_list fallback exited with "
+                                    + hitList.exitCode() + ": " + tail(process.output() + hitList.output()),
+                            "Inspect run.log and verify MAST is installed and the motif/sequence alphabets match.");
+                }
+                List<MemeResults.MastHit> fallbackHits = MastHitList.parse(hitList.output());
+                MastHitList.writeXml(xml, fallbackHits);
+                usableXml = true;
+                context.log("MAST -hit_list fallback produced " + fallbackHits.size() + " hits.");
             }
             if (!process.succeeded()) {
                 context.log("MAST reported exit code " + process.exitCode()
                         + " after writing mast.xml; continuing with the XML output.");
             }
-            if (!Files.isRegularFile(xml)) {
+            if (!usableXml) {
                 throw new ExternalProcessException("MAST_OUTPUT_MISSING",
                         "MAST did not create mast.xml.", "Check the MAST output directory and command syntax.");
             }
