@@ -671,7 +671,9 @@ final class MainFrame extends JFrame {
         refreshRecentProjects();
         setTitle(windowTitle());
         catalogPanel.rebind(session.execution());
-        workflowPanel.rebind();
+        if (workflowPanel != null) {
+            workflowPanel.rebind();
+        }
         resultPanel.rebind(session.execution());
         refreshJobs();
     }
