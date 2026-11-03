@@ -496,17 +496,27 @@ final class PlotCircosTool extends AbstractOpenTool {
         int sequence = table.requiredColumn(request.string("sequenceColumn"));
         int start = table.requiredColumn(request.string("startColumn"));
         int end = table.requiredColumn(request.string("endColumn"));
+        int label = table.column(request.string("labelColumn"));
         Map<String, GenericPlotData.GenericSeries.Builder> series = new LinkedHashMap<>();
+        List<String> sequences = new java.util.ArrayList<>();
         for (var row : table.rows()) {
-            String name = PlotToolSupport.cell(row, sequence);
-            series.computeIfAbsent(name, GenericPlotData.GenericSeries.Builder::new)
+            String sequenceName = PlotToolSupport.cell(row, sequence);
+            if (!sequences.contains(sequenceName)) {
+                sequences.add(sequenceName);
+            }
+            String feature = label >= 0 ? PlotToolSupport.cell(row, label) : "feature";
+            if (feature.isBlank()) {
+                feature = "feature";
+            }
+            String key = sequenceName + (char) 31 + feature;
+            series.computeIfAbsent(key, GenericPlotData.GenericSeries.Builder::new)
                     .add(PlotToolSupport.number(row, start), PlotToolSupport.number(row, end));
         }
         GenericPlotData data = new GenericPlotData("CIRCOS", "Genomic coordinate", "",
-                List.copyOf(series.keySet()), series.values().stream()
+                sequences, series.values().stream()
                 .map(GenericPlotData.GenericSeries.Builder::build).toList());
         return PlotToolSupport.renderGeneric(this, request, context, data,
-                "circos", request.string("title"), series.size());
+                "circos", request.string("title"), sequences.size(), series.size());
     }
 }
 

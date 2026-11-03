@@ -9,8 +9,12 @@ import io.opentools.visualization.scene.SceneText;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 public final class GenericPlotRenderer {
     private GenericPlotRenderer() {
@@ -72,37 +76,127 @@ public final class GenericPlotRenderer {
             int width, int height, double fontSize
     ) {
         double cx = width / 2.0;
-        double cy = height / 2.0 + 18;
+        double cy = height / 2.0 + 16;
         double radius = Math.min(width, height) * 0.34;
         scene.circle(cx, cy, radius, spec.style().backgroundColor(),
-                spec.style().mutedColor(), 1.2, 1, "");
-        for (int seriesIndex = 0; seriesIndex < data.series().size(); seriesIndex++) {
-            GenericPlotData.GenericSeries series = data.series().get(seriesIndex);
-            double max = series.y().stream().mapToDouble(Double::doubleValue).max().orElse(1);
-            String color = color(spec, seriesIndex);
-            for (int index = 0; index < series.x().size(); index++) {
-                double startAngle = series.x().get(index) / Math.max(1, max) * Math.PI * 2;
-                double endAngle = series.y().get(index) / Math.max(1, max) * Math.PI * 2;
-                double arcRadius = radius * (0.62 + 0.05 * (seriesIndex % 5));
-                int steps = Math.max(2, (int) Math.ceil(Math.abs(endAngle - startAngle) * 30));
-                List<ScenePoint> points = new ArrayList<>();
-                for (int step = 0; step <= steps; step++) {
-                    double angle = startAngle + (endAngle - startAngle) * step / steps;
-                    points.add(new ScenePoint(cx + Math.cos(angle) * (arcRadius + 8),
-                            cy + Math.sin(angle) * (arcRadius + 8)));
-                }
-                for (int step = steps; step >= 0; step--) {
-                    double angle = startAngle + (endAngle - startAngle) * step / steps;
-                    points.add(new ScenePoint(cx + Math.cos(angle) * (arcRadius - 8),
-                            cy + Math.sin(angle) * (arcRadius - 8)));
-                }
-                scene.polygon(points, color, "", 0, series.name() + " "
-                        + format(series.x().get(index)) + "-" + format(series.y().get(index)));
-            }
-            double angle = seriesIndex * 2 * Math.PI / Math.max(1, data.series().size());
-            scene.text(cx + Math.cos(angle) * (radius + 28), cy + Math.sin(angle) * (radius + 28),
-                    series.name(), color, fontSize - 2, true, SceneText.TextAnchor.CENTER, 0, "");
+                spec.style().mutedColor(), 1.0, 1, "");
+
+        Map<String, List<Integer>> bySequence = new LinkedHashMap<>();
+        Set<String> sequences = new LinkedHashSet<>(data.categories());
+        for (int index = 0; index < data.series().size(); index++) {
+            String name = data.series().get(index).name();
+            String sequence = sequenceOf(name, sequences);
+            sequences.add(sequence);
+            bySequence.computeIfAbsent(sequence, ignored -> new ArrayList<>()).add(index);
         }
+        if (sequences.isEmpty()) {
+            return;
+        }
+        Map<String, Double> lengths = new LinkedHashMap<>();
+        for (String sequence : sequences) {
+            double maximum = 1;
+            for (int seriesIndex : bySequence.getOrDefault(sequence, List.of())) {
+                GenericPlotData.GenericSeries series = data.series().get(seriesIndex);
+                for (double value : series.y()) {
+                    maximum = Math.max(maximum, value);
+                }
+                for (double value : series.x()) {
+                    maximum = Math.max(maximum, value);
+                }
+            }
+            lengths.put(sequence, maximum);
+        }
+        double gap = sequences.size() > 1 ? 0.035 : 0;
+        double available = Math.PI * 2 - gap * sequences.size();
+        double total = lengths.values().stream().mapToDouble(Double::doubleValue).sum();
+        double angle = -Math.PI / 2 + gap / 2.0;
+        int sequenceIndex = 0;
+        int featureCount = 0;
+        for (String sequence : sequences) {
+            double span = available * lengths.get(sequence) / Math.max(1, total);
+            double end = angle + span;
+            String ringColor = color(spec, sequenceIndex);
+            scene.polygon(annularSector(cx, cy, radius - 10, radius, angle, end),
+                    ringColor, "", 0,
+                    sequence + " (" + format(lengths.get(sequence)) + " bp)");
+            double middle = (angle + end) / 2.0;
+            scene.text(cx + Math.cos(middle) * (radius + 26),
+                    cy + Math.sin(middle) * (radius + 26),
+                    sequence, ringColor, fontSize - 1, true,
+                    SceneText.TextAnchor.CENTER, 0, sequence);
+            for (int seriesIndex : bySequence.getOrDefault(sequence, List.of())) {
+                GenericPlotData.GenericSeries series = data.series().get(seriesIndex);
+                String feature = labelOf(series.name(), sequence);
+                String featureColor = color(spec, sequenceIndex + seriesIndex + 1);
+                for (int point = 0; point < series.x().size(); point++) {
+                    double from = Math.max(0, Math.min(series.x().get(point), series.y().get(point)));
+                    double to = Math.max(series.x().get(point), series.y().get(point));
+                    double featureStart = angle + span * from / Math.max(1, lengths.get(sequence));
+                    double featureEnd = angle + span * to / Math.max(1, lengths.get(sequence));
+                    if (featureEnd - featureStart < 0.001) {
+                        featureEnd = featureStart + 0.006;
+                    }
+                    scene.polygon(annularSector(cx, cy, radius - 34, radius - 14, featureStart, featureEnd),
+                            featureColor, "", 0,
+                            sequence + " " + feature + " " + format(from) + "-" + format(to));
+                    if (featureEnd - featureStart > 0.09) {
+                        double featureMiddle = (featureStart + featureEnd) / 2.0;
+                        scene.text(cx + Math.cos(featureMiddle) * (radius - 42),
+                                cy + Math.sin(featureMiddle) * (radius - 42),
+                                feature, spec.style().mutedColor(), fontSize - 2, false,
+                                SceneText.TextAnchor.CENTER,
+                                Math.toDegrees(featureMiddle) + 90,
+                                sequence + " " + feature);
+                    }
+                    featureCount++;
+                }
+            }
+            angle = end + gap;
+            sequenceIndex++;
+        }
+        scene.text(cx, cy - 4, sequences.size() + " sequences", spec.style().foregroundColor(),
+                fontSize + 1, true, SceneText.TextAnchor.CENTER, 0, "");
+        scene.text(cx, cy + 16, featureCount + " features", spec.style().mutedColor(),
+                fontSize - 1, false, SceneText.TextAnchor.CENTER, 0, "");
+    }
+
+    private static String sequenceOf(String name, Set<String> known) {
+        int separator = name.indexOf(31);
+        if (separator > 0) {
+            return name.substring(0, separator);
+        }
+        for (String sequence : known) {
+            if (name.startsWith(sequence + " ")) {
+                return sequence;
+            }
+        }
+        return name;
+    }
+
+    private static String labelOf(String name, String sequence) {
+        int separator = name.indexOf(31);
+        if (separator >= 0 && separator + 1 < name.length()) {
+            return name.substring(separator + 1);
+        }
+        String prefix = sequence + " ";
+        return name.startsWith(prefix) ? name.substring(prefix.length()) : name;
+    }
+
+    private static List<ScenePoint> annularSector(
+            double cx, double cy, double inner, double outer,
+            double startAngle, double endAngle
+    ) {
+        int steps = Math.max(2, (int) Math.ceil(Math.abs(endAngle - startAngle) * 36));
+        List<ScenePoint> points = new ArrayList<>();
+        for (int step = 0; step <= steps; step++) {
+            double angle = startAngle + (endAngle - startAngle) * step / steps;
+            points.add(new ScenePoint(cx + Math.cos(angle) * outer, cy + Math.sin(angle) * outer));
+        }
+        for (int step = steps; step >= 0; step--) {
+            double angle = startAngle + (endAngle - startAngle) * step / steps;
+            points.add(new ScenePoint(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner));
+        }
+        return points;
     }
 
     private static void drawScatter(

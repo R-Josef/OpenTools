@@ -4,6 +4,9 @@
 
 ### Added
 
+- `plot.circos` now renders a real circular ideogram: one arc per sequence,
+  proportional spans, label-colored feature ticks, sequence labels, and center
+  counts.
 - `plot.efp` now renders tissue-grouped expression maps with a sample map,
   tissue color bands, tissue-ordered samples, and a reordered processed matrix.
 - Cross-process job cancellation: `jobs cancel` and MCP `opentools_cancel_job`
