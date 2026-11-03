@@ -87,6 +87,7 @@ public final class MastRunTool extends AbstractOpenTool {
             Files.copy(request.path("sequences"), sequences, StandardCopyOption.REPLACE_EXISTING);
             Path outDir = work.resolve("out");
             Files.createDirectories(outDir);
+            MemeRuntimeSupport.copyTemplateIfAvailable(mast.executable(), work);
             List<String> command = new ArrayList<>();
             command.add(mast.executable().toString());
             command.add(motifs.getFileName().toString());
@@ -97,12 +98,16 @@ public final class MastRunTool extends AbstractOpenTool {
                     command, work, Map.of(),
                     Duration.ofMinutes(Math.max(1, request.integer("timeoutMinutes"))),
                     context.cancellationToken(), context::log);
-            if (!process.succeeded()) {
+            Path xml = outDir.resolve("mast.xml");
+            if (!process.succeeded() && !Files.isRegularFile(xml)) {
                 throw new ExternalProcessException("MAST_FAILED",
                         "MAST exited with code " + process.exitCode() + ": " + tail(process.output()),
                         "Inspect run.log and verify MAST is installed and the motif/sequence alphabets match.");
             }
-            Path xml = outDir.resolve("mast.xml");
+            if (!process.succeeded()) {
+                context.log("MAST reported exit code " + process.exitCode()
+                        + " after writing mast.xml; continuing with the XML output.");
+            }
             if (!Files.isRegularFile(xml)) {
                 throw new ExternalProcessException("MAST_OUTPUT_MISSING",
                         "MAST did not create mast.xml.", "Check the MAST output directory and command syntax.");

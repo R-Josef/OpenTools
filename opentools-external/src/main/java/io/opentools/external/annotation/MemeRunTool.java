@@ -95,6 +95,7 @@ public final class MemeRunTool extends AbstractOpenTool {
             Files.copy(request.path("input"), input, StandardCopyOption.REPLACE_EXISTING);
             Path outDir = work.resolve("out");
             Files.createDirectories(outDir);
+            MemeRuntimeSupport.copyTemplateIfAvailable(meme.executable(), work);
             List<String> command = new ArrayList<>();
             command.add(meme.executable().toString());
             command.add(input.getFileName().toString());
@@ -109,12 +110,16 @@ public final class MemeRunTool extends AbstractOpenTool {
                     command, work, Map.of(),
                     Duration.ofMinutes(Math.max(1, request.integer("timeoutMinutes"))),
                     context.cancellationToken(), context::log);
-            if (!process.succeeded()) {
+            Path xml = outDir.resolve("meme.xml");
+            if (!process.succeeded() && !Files.isRegularFile(xml)) {
                 throw new ExternalProcessException("MEME_FAILED",
                         "MEME exited with code " + process.exitCode() + ": " + tail(process.output()),
                         "Inspect run.log and verify MEME is installed and the sequence alphabet is correct.");
             }
-            Path xml = outDir.resolve("meme.xml");
+            if (!process.succeeded()) {
+                context.log("MEME reported exit code " + process.exitCode()
+                        + " after writing meme.xml; continuing with the XML output.");
+            }
             if (!Files.isRegularFile(xml)) {
                 throw new ExternalProcessException("MEME_OUTPUT_MISSING",
                         "MEME did not create meme.xml.", "Check the MEME output directory and command syntax.");
