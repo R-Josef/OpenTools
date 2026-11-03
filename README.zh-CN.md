@@ -2,6 +2,15 @@
 
 [English](README.md) | 简体中文
 
+<p align="center">
+  <img src="assets/branding/opentools-banner.svg" alt="OpenTools - 主要由 DeepSeek 与 Codex 作为 Agent 生成" width="100%">
+</p>
+
+<p align="center">
+  <a href="https://www.deepseek.com/"><img src="https://img.shields.io/badge/Generated_with-DeepSeek-4D6BFE" alt="Generated with DeepSeek"></a>
+  <a href="https://openai.com/codex/"><img src="https://img.shields.io/badge/Agent-Codex-111111" alt="Agent: Codex"></a>
+</p>
+
 OpenTools 是一个本地优先、工具驱动的开源生物信息学工作台。它把常用序列、
 注释、表格、比对、表达、富集、HTS 和可视化工具放进同一个可搜索界面，并让
 同一套工具定义同时服务于 Windows 桌面、CLI 和 MCP。
@@ -9,6 +18,12 @@ OpenTools 是一个本地优先、工具驱动的开源生物信息学工作台�
 项目面向 Windows 科研用户、生物信息分析人员和插件开发者。数据默认留在本机，
 不要求登录或上传。OpenTools 自身以 GPL-3.0-or-later 发布；随包分发的第三方
 程序保留各自许可证，详见 [第三方声明](THIRD_PARTY_NOTICES.md)。
+
+本项目的大部分内容由 **DeepSeek** 模型与 **Codex**（作为编码 Agent）生成。
+
+<p align="center">
+  <img src="https://img.aigengtu.com/0_preview/meme/2677.webp" width="180" alt="DeepSeek 鲸娘表情包">
+</p>
 
 ![OpenTools 工具目录](docs/zh_CN/assets/screenshots/tools-catalog.jpg)
 
@@ -29,29 +44,31 @@ OpenTools 是一个本地优先、工具驱动的开源生物信息学工作台�
 
 | 入口 | 说明 |
 | --- | --- |
-| Windows 便携包 | `OpenTools.exe` / `OpenToolsCLI.exe`，自带精简 Java 运行时和 Windows x64 工具 |
-| 通用 JAR | 面向已有 Java 21 和分析工具的用户，不捆绑平台二进制 |
+| [下载](#下载) | Windows、Linux、macOS 便携包与校验文件 |
 | [应用内 Docs](docs/zh_CN/README.md) | 快速开始、分类工具、格式、CLI/MCP、FAQ |
 | [CLI](docs/zh_CN/cli.md) | 工具发现、校验、运行、作业和 JSON 自动化 |
 | [MCP](docs/zh_CN/mcp.md) | stdio 与仅限本机的认证 HTTP 接入 |
 | [插件开发](docs/zh_CN/plugin-development.md) | Plugin API、生命周期和示例 |
 
-## 发布包
+## 下载
 
-OpenTools 采用分层发布：
+最新快照 `v0.9.0-SNAPSHOT` 提供四个便携包，每个归档在同一 Release 中都带有
+对应的 `.sha256.json` 校验文件。
 
-1. **通用 JAR**：可在 Java 21 环境运行全部 Java 内置工具。外部程序从包内
-   `tools/`、显式路径、环境变量或 `PATH` 发现，不包含任何平台二进制；
-   默认插件位于 `plugins/`。
-2. **Windows x64 便携整合包**：解压后通过 `OpenTools.exe` 启动，自带运行时和
-   固定版本的 Windows 工具。目标是无需安装 Java、conda 或 MSYS2。
-3. **Linux x64 便携包**：解压到自包含目录，自带 Java 运行时和固定版本的
-   Linux 工具。
-4. **macOS 便携包**：分别提供 Intel x64 和 Apple Silicon arm64 ZIP。
+| 平台 | 安装包 | 校验 |
+| --- | --- | --- |
+| Windows x64 | [opentools-0.9.0-SNAPSHOT-windows-x64.zip](https://github.com/R-Josef/OpenTools/releases/download/v0.9.0-SNAPSHOT/opentools-0.9.0-SNAPSHOT-windows-x64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/v0.9.0-SNAPSHOT/opentools-0.9.0-SNAPSHOT-windows-x64.zip.sha256.json) |
+| Linux x64 | [opentools-0.9.0-SNAPSHOT-linux-x64.tar.gz](https://github.com/R-Josef/OpenTools/releases/download/v0.9.0-SNAPSHOT/opentools-0.9.0-SNAPSHOT-linux-x64.tar.gz) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/v0.9.0-SNAPSHOT/opentools-0.9.0-SNAPSHOT-linux-x64.tar.gz.sha256.json) |
+| macOS x64（Intel） | [opentools-0.9.0-SNAPSHOT-macos-x64.zip](https://github.com/R-Josef/OpenTools/releases/download/v0.9.0-SNAPSHOT/opentools-0.9.0-SNAPSHOT-macos-x64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/v0.9.0-SNAPSHOT/opentools-0.9.0-SNAPSHOT-macos-x64.zip.sha256.json) |
+| macOS arm64（Apple Silicon） | [opentools-0.9.0-SNAPSHOT-macos-arm64.zip](https://github.com/R-Josef/OpenTools/releases/download/v0.9.0-SNAPSHOT/opentools-0.9.0-SNAPSHOT-macos-arm64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/v0.9.0-SNAPSHOT/opentools-0.9.0-SNAPSHOT-macos-arm64.zip.sha256.json) |
+
+[浏览全部 Release](https://github.com/R-Josef/OpenTools/releases) ·
+[最新 Release](https://github.com/R-Josef/OpenTools/releases/latest)
 
 Windows x64、Linux x64、macOS x64 和 macOS arm64 由
 `.github/workflows/release.yml` 的平台矩阵构建。安装器、自动更新和 macOS
-Developer ID 签名尚未包含。
+Developer ID 签名尚未包含。通用 JAR 与源码构建说明见
+[发布包说明](docs/zh_CN/release-packages.md)。
 
 ## 安装与首次运行
 
