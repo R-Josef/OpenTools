@@ -89,14 +89,4 @@ fi
     printf 'jobs=%s\n' "$jobs"
 } > "$output_dir/BUILD-INFO.txt"
 
-if ! PATH="$output_dir/bin:$PATH" "$output_dir/bin/meme.exe" -version; then
-    printf 'meme.exe -version failed in the portable tree\n' >&2
-    ls -l "$output_dir/bin" >&2 || true
-    file "$output_dir/bin/meme.exe" >&2 || true
-    exit 1
-fi
-if ! PATH="$output_dir/bin:$PATH" "$output_dir/bin/mast.exe" -version; then
-    printf 'mast.exe -version failed in the portable tree\n' >&2
-    exit 1
-fi
 printf 'Built MEME %s for Cygwin into %s\n' "$version" "$output_dir"

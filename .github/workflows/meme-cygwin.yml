@@ -31,11 +31,11 @@ jobs:
       - name: Smoke test
         shell: pwsh
         run: |
-          $root = "${{ steps.cygwin.outputs.root }}"
-          $bash = Join-Path $root "bin\bash.exe"
-          $cygpath = Join-Path $root "bin\cygpath.exe"
-          $output = & $cygpath -u "$env:RUNNER_TEMP\meme-cygwin"
-          & $bash -lc "'$output/bin/meme.exe' -version && '$output/bin/mast.exe' -version"
+          $bin = Join-Path $env:RUNNER_TEMP "meme-cygwin\bin"
+          & (Join-Path $bin "meme.exe") -version
+          if ($LASTEXITCODE -ne 0) { throw "meme.exe -version failed" }
+          & (Join-Path $bin "mast.exe") -version
+          if ($LASTEXITCODE -ne 0) { throw "mast.exe -version failed" }
       - uses: actions/upload-artifact@v4
         with:
           name: meme-cygwin
