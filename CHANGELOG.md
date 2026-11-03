@@ -4,6 +4,8 @@
 
 ### Added
 
+- `plot.efp` now renders tissue-grouped expression maps with a sample map,
+  tissue color bands, tissue-ordered samples, and a reordered processed matrix.
 - Cross-process job cancellation: `jobs cancel` and MCP `opentools_cancel_job`
   mark active jobs in the shared project database; the owning process polls the
   request and records `CANCELLED`.

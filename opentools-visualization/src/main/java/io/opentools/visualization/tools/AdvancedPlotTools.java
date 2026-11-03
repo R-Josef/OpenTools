@@ -18,7 +18,11 @@ import io.opentools.formats.fasta.FastaSequenceStore;
 import io.opentools.formats.gxf.GxfReader;
 import io.opentools.formats.gxf.GxfRecord;
 import io.opentools.visualization.model.GenericPlotData;
+import io.opentools.visualization.model.HeatmapData;
+import io.opentools.visualization.model.PlotExport;
 import io.opentools.visualization.model.PlotSpec;
+import io.opentools.visualization.model.PlotStyle;
+import io.opentools.visualization.model.PlotType;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -508,18 +512,203 @@ final class PlotCircosTool extends AbstractOpenTool {
 
 final class PlotEfpTool extends AbstractOpenTool {
     private static final ToolDescriptor DESCRIPTOR = PlotToolSupport.descriptor(
-            "plot.efp", "eFP Expression", "Render tissue/sample expression as a reproducible heatmap.",
-            List.of(ToolParameter.requiredFile("input", "Expression matrix", "Genes in rows and tissues/samples in header."),
-                    ToolParameter.bool("exportData", "Export processed data", "Write processed matrix.", true)),
+            "plot.efp", "eFP Expression",
+            "Render a tissue-grouped expression map with sample bands, ordering, and a reproducible heatmap.",
+            List.of(
+                    ToolParameter.requiredFile("input", "Expression matrix", "Genes in rows and tissues/samples in header."),
+                    ToolParameter.optionalFile("sampleMap", "Sample map",
+                            "Optional TSV with sample and tissue columns; samples are grouped and sorted by tissue."),
+                    new ToolParameter("normalization", "Value normalization",
+                            "Optionally calculate a z-score within each gene row.",
+                            ParameterType.ENUM, false, "NONE",
+                            List.of("NONE", "ROW_ZSCORE"), null, null, false, null),
+                    ToolParameter.bool("exportData", "Export processed data", "Write the reordered matrix.", true)
+            ),
             "Expression eFP"
     );
 
     @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
-    @Override public ValidationResult validate(ToolRequest request) { return PlotToolSupport.validate(request); }
-    @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
-        ToolResult delegated = new HeatmapTool().execute(
-                new ToolRequest("visual.heatmap", PlotToolSupport.heatmapParameters(request)), context);
-        return new ToolResult("Rendered expression eFP heatmap", List.of(), "Tissue/sample matrix rendered as a heatmap.", List.of(), delegated.table(),
-                delegated.artifacts(), delegated.metrics());
+
+    @Override
+    public ValidationResult validate(ToolRequest request) {
+        ValidationResult result = PlotToolSupport.validate(request);
+        try {
+            readSampleMap(request.path("sampleMap"));
+        } catch (Exception ex) {
+            result = result.merge(ValidationResult.of(io.opentools.api.tool.ValidationIssue.error(
+                    "sampleMap", ex.getMessage(), "Use a TSV with sample and tissue columns.")));
+        }
+        return result;
+    }
+
+    @Override
+    public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
+        Map<String, String> tissueBySample = readSampleMap(request.path("sampleMap"));
+        MatrixParser.Config config = new MatrixParser.Config(
+                request.path("input"), "AUTO", "ROW_MEAN", "AS_MISSING",
+                "ORIGINAL", "ORIGINAL",
+                request.string("normalization") == null ? "NONE" : request.string("normalization"),
+                5000, 5000, 1000
+        );
+        context.progress(0.08, "Parsing expression matrix");
+        MatrixParser.MatrixResult parsed = new MatrixParser().parse(
+                config, context.cancellationToken(), 1);
+        HeatmapData original = parsed.data();
+        List<Integer> order = new ArrayList<>();
+        for (int i = 0; i < original.columnLabels().size(); i++) {
+            order.add(i);
+        }
+        order.sort(java.util.Comparator
+                .comparing((Integer index) -> tissueBySample.getOrDefault(
+                        original.columnLabels().get(index), "Unassigned"))
+                .thenComparingInt(Integer::intValue));
+        List<String> columns = order.stream().map(original.columnLabels()::get).toList();
+        List<List<Double>> values = new ArrayList<>();
+        for (List<Double> row : original.values()) {
+            values.add(order.stream().map(row::get).toList());
+        }
+        HeatmapData data = new HeatmapData(
+                original.rowLabels(), columns, values, "ORIGINAL",
+                tissueBySample.isEmpty() ? "ORIGINAL" : "TISSUE",
+                original.sourceRows(), original.sourceColumns(),
+                original.missingValues(), original.invalidValues(), original.clippedValues(),
+                1, 1, original.diagnostics()
+        );
+        double minimum = parsed.minimum();
+        double maximum = parsed.maximum();
+        if (maximum <= minimum) {
+            maximum = minimum + 1;
+        }
+        PlotStyle baseStyle = PlotStyle.heatmap(PlotStyle.defaults().palette(), false);
+        PlotStyle style = new PlotStyle(
+                baseStyle.backgroundColor(), baseStyle.foregroundColor(), baseStyle.mutedColor(),
+                baseStyle.accentColor(), baseStyle.missingColor(), baseStyle.palette(),
+                baseStyle.fontFamily(), baseStyle.baseFontSize(), baseStyle.lineWidth(),
+                true, false, minimum, maximum,
+                request.string("normalization") == null ? "NONE" : request.string("normalization"),
+                1, 1
+        );
+        Path base = PlotArtifactSupport.basePath(context, request.path("output"), "efp");
+        List<String> formats = switch (request.string("exportFormats") == null ? "PNG_SVG_PDF"
+                : request.string("exportFormats")) {
+            case "PNG_SVG" -> List.of("PNG", "SVG");
+            case "PNG" -> List.of("PNG");
+            default -> List.of("PNG", "SVG", "PDF");
+        };
+        PlotExport export = new PlotExport(
+                formats, base.getFileName().toString(),
+                request.integer("width") <= 0 ? 1200 : request.integer("width"),
+                request.integer("height") <= 0 ? 800 : request.integer("height"),
+                request.integer("dpi") <= 0 ? 144 : request.integer("dpi"),
+                false, request.bool("overwrite")
+        );
+        Map<String, String> metadata = new LinkedHashMap<>();
+        metadata.put("rowOrder", "ORIGINAL");
+        metadata.put("columnOrder", data.columnOrder());
+        metadata.put("normalization", style.normalization());
+        metadata.put("sampleMap", request.path("sampleMap") == null ? "" : request.path("sampleMap").toString());
+        for (int i = 0; i < columns.size(); i++) {
+            metadata.put("sampleGroup." + i, tissueBySample.getOrDefault(columns.get(i), "Unassigned"));
+        }
+        PlotSpec spec = new PlotSpec(
+                "1.0", "efp", PlotType.HEATMAP,
+                request.string("title") == null ? "Expression eFP" : request.string("title"),
+                request.string("subtitle") == null ? "" : request.string("subtitle"),
+                style, export, metadata, data
+        );
+        Path processed = Path.of(base + ".processed.tsv");
+        if (request.bool("exportData")) {
+            writeEfpMatrix(processed, data);
+        }
+        context.progress(0.55, "Rendering eFP map");
+        PlotArtifactSupport.RenderedPlot rendered = PlotArtifactSupport.render(
+                descriptor().id(), spec, context, base,
+                PlotArtifactSupport.lineage(descriptor().id(), spec, request.path("input"))
+        );
+        context.progress(1.0, "eFP rendering completed");
+        List<OutputArtifact> artifacts = new ArrayList<>(rendered.artifacts());
+        if (request.bool("exportData")) {
+            artifacts.add(new OutputArtifact(processed, "Processed eFP matrix", "text/tab-separated-values"));
+        }
+        long sampleGroups = tissueBySample.values().stream().distinct().count();
+        Map<String, Object> metrics = new LinkedHashMap<>();
+        metrics.put("genes", data.rowLabels().size());
+        metrics.put("samples", data.columnLabels().size());
+        metrics.put("sampleGroups", (int) sampleGroups);
+        metrics.put("normalization", style.normalization());
+        metrics.put("missingValues", data.missingValues());
+        return new ToolResult(
+                "Rendered eFP expression map",
+                List.of(data.rowLabels().size(), data.columnLabels().size()),
+                data.rowLabels().size() + " genes x " + data.columnLabels().size()
+                        + " samples; " + (tissueBySample.isEmpty() ? "no sample map" : "grouped by tissue") + ".",
+                List.of(data.rowLabels().size()),
+                new ResultTable(List.of("Metric", "Value"), List.of(
+                        List.of("Genes", Integer.toString(data.rowLabels().size())),
+                        List.of("Samples", Integer.toString(data.columnLabels().size())),
+                        List.of("Sample groups", Integer.toString((int) sampleGroups)),
+                        List.of("Normalization", style.normalization())
+                )),
+                artifacts, metrics
+        );
+    }
+
+    private static Map<String, String> readSampleMap(Path path) throws Exception {
+        if (path == null) {
+            return Map.of();
+        }
+        Map<String, String> result = new LinkedHashMap<>();
+        try (BufferedReader reader = new BufferedReader(new java.io.InputStreamReader(
+                Compression.open(path), StandardCharsets.UTF_8))) {
+            String header = reader.readLine();
+            if (header == null) {
+                throw new OpenToolException("SAMPLE_MAP_EMPTY", "Sample map is empty.",
+                        "Provide a TSV with sample and tissue columns.");
+            }
+            String[] names = header.replace("\ufeff", "").split("\t", -1);
+            int sample = -1;
+            int tissue = -1;
+            for (int i = 0; i < names.length; i++) {
+                if (names[i].trim().equalsIgnoreCase("sample")) sample = i;
+                if (names[i].trim().equalsIgnoreCase("tissue")) tissue = i;
+            }
+            if (sample < 0 || tissue < 0) {
+                throw new OpenToolException("SAMPLE_MAP_HEADER",
+                        "Sample map needs sample and tissue columns.",
+                        "Use a tab-separated header such as sample<TAB>tissue.");
+            }
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.isBlank() || line.startsWith("#")) continue;
+                String[] fields = line.split("\t", -1);
+                if (fields.length <= Math.max(sample, tissue)) continue;
+                String sampleId = fields[sample].trim();
+                String tissueName = fields[tissue].trim();
+                if (!sampleId.isEmpty() && !tissueName.isEmpty()) {
+                    result.put(sampleId, tissueName);
+                }
+            }
+        }
+        return Map.copyOf(result);
+    }
+
+    private static void writeEfpMatrix(Path path, HeatmapData data) throws Exception {
+        Files.createDirectories(path.toAbsolutePath().getParent());
+        try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
+            writer.write("gene");
+            for (String column : data.columnLabels()) {
+                writer.write('\t');
+                writer.write(column);
+            }
+            writer.newLine();
+            for (int row = 0; row < data.rowLabels().size(); row++) {
+                writer.write(data.rowLabels().get(row));
+                for (Double value : data.values().get(row)) {
+                    writer.write('\t');
+                    writer.write(value == null ? "" : Double.toString(value));
+                }
+                writer.newLine();
+            }
+        }
     }
 }

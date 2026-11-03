@@ -6,17 +6,24 @@ import io.opentools.visualization.scene.PlotScene;
 import io.opentools.visualization.scene.PlotSceneBuilder;
 import io.opentools.visualization.scene.SceneText;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public final class HeatmapRenderer {
+    private static final java.util.List<String> GROUP_COLORS = java.util.List.of(
+            "#1F6F78", "#D47A43", "#5F7DB5", "#7F9E56", "#B55C78", "#8C6BAA"
+    );
+
     private HeatmapRenderer() {
     }
 
     public static PlotScene render(PlotSpec spec, HeatmapData data) {
         double fontSize = spec.style().baseFontSize();
         double right = spec.style().showLegend() ? 150 : 38;
-        double top = titleTop(spec, fontSize);
+        Map<Integer, String> sampleGroups = sampleGroups(spec, data);
+        double top = titleTop(spec, fontSize) + (sampleGroups.isEmpty() ? 0 : 26);
         double rowLabelFontSize = fontSize - 2;
         double maximumRowLabelWidth = data.rowLabels().stream()
                 .mapToDouble(label -> TextMetrics.width(label, false, rowLabelFontSize))
@@ -53,6 +60,7 @@ public final class HeatmapRenderer {
 
         PlotSceneBuilder scene = new PlotSceneBuilder(width, height, spec.style().backgroundColor());
         title(scene, spec, fontSize);
+        drawSampleGroups(scene, spec, sampleGroups, left, top, cellWidth, fontSize);
         for (int row = 0; row < data.rowLabels().size(); row++) {
             double y = top + row * cellHeight;
             if (row % rowEvery == 0) {
@@ -135,6 +143,68 @@ public final class HeatmapRenderer {
                 fontSize - 2
         );
         return scene.build();
+    }
+
+    private static Map<Integer, String> sampleGroups(PlotSpec spec, HeatmapData data) {
+        Map<Integer, String> groups = new LinkedHashMap<>();
+        for (int column = 0; column < data.columnLabels().size(); column++) {
+            String group = spec.metadata().get("sampleGroup." + column);
+            if (group != null && !group.isBlank()) {
+                groups.put(column, group);
+            }
+        }
+        return groups;
+    }
+
+    private static void drawSampleGroups(
+            PlotSceneBuilder scene,
+            PlotSpec spec,
+            Map<Integer, String> groups,
+            double left,
+            double top,
+            double cellWidth,
+            double fontSize
+    ) {
+        if (groups.isEmpty()) {
+            return;
+        }
+        List<String> palette = GROUP_COLORS;
+        Map<String, Integer> colorIndex = new LinkedHashMap<>();
+        int start = 0;
+        int count = groups.size();
+        while (start < count) {
+            int column = start;
+            String group = groups.get(column);
+            int end = column;
+            while (end + 1 < count && group.equals(groups.get(end + 1))) {
+                end++;
+            }
+            int paletteIndex = colorIndex.computeIfAbsent(group, ignored -> colorIndex.size());
+            String fill = palette.get(paletteIndex % Math.max(1, palette.size()));
+            scene.rect(
+                    left + column * cellWidth,
+                    top - 22,
+                    (end - column + 1) * cellWidth,
+                    16,
+                    fill,
+                    "",
+                    0,
+                    1,
+                    "Tissue: " + group
+            );
+            scene.text(
+                    left + (column + end + 1) * cellWidth / 2.0,
+                    top - 9,
+                    group,
+                    PlotColors.contrast(fill),
+                    fontSize - 2,
+                    false,
+                    SceneText.TextAnchor.CENTER,
+                    0,
+                    "Tissue: " + group
+            );
+            start = end + 1;
+        }
     }
 
     private static void drawLegend(
