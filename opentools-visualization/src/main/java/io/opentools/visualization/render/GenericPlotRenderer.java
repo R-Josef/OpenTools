@@ -57,6 +57,7 @@ public final class GenericPlotRenderer {
             case "STACKED_BAR" -> drawStackedBars(scene, spec, data, left, top, plotWidth, plotHeight, bounds);
             case "BOX" -> drawBoxes(scene, spec, data, left, top, plotWidth, plotHeight, bounds);
             case "VIOLIN" -> drawViolins(scene, spec, data, left, top, plotWidth, plotHeight, bounds);
+            case "SEGMENTS" -> drawSegments(scene, spec, data, left, top, plotWidth, plotHeight, bounds);
             default -> drawScatter(scene, spec, data, left, top, plotWidth, plotHeight, bounds);
         }
         drawXAxisTicks(scene, spec, data, left, top, plotWidth, plotHeight, fontSize, bounds);
@@ -164,6 +165,23 @@ public final class GenericPlotRenderer {
                         + " y=" + format(series.y().get(index))
                         + " size=" + format(series.sizes().get(index));
                 scene.circle(x, y, radius, color, "#FFFFFF", 0.7, 0.55, tooltip);
+            }
+        }
+    }
+
+    private static void drawSegments(
+            PlotSceneBuilder scene, PlotSpec spec, GenericPlotData data,
+            double left, double top, double width, double height, Bounds bounds
+    ) {
+        for (int seriesIndex = 0; seriesIndex < data.series().size(); seriesIndex++) {
+            GenericPlotData.GenericSeries series = data.series().get(seriesIndex);
+            String color = color(spec, seriesIndex);
+            for (int index = 0; index + 1 < series.x().size(); index += 2) {
+                double x1 = left + normalize(series.x().get(index), bounds.minX, bounds.maxX) * width;
+                double y1 = top + height - normalize(series.y().get(index), bounds.minY, bounds.maxY) * height;
+                double x2 = left + normalize(series.x().get(index + 1), bounds.minX, bounds.maxX) * width;
+                double y2 = top + height - normalize(series.y().get(index + 1), bounds.minY, bounds.maxY) * height;
+                scene.line(x1, y1, x2, y2, color, spec.style().lineWidth());
             }
         }
     }
@@ -400,6 +418,18 @@ public final class GenericPlotRenderer {
         if (minX == Double.POSITIVE_INFINITY) {
             minX = 0;
             maxX = Math.max(1, data.categories().size() - 1);
+        }
+        if (data.xMax() != null) {
+            maxX = Math.max(maxX, data.xMax());
+        }
+        if (data.yMax() != null) {
+            maxY = Math.max(maxY, data.yMax());
+        }
+        if ("SEGMENTS".equals(data.chart())) {
+            minX = 0;
+            minY = 0;
+            maxX = Math.max(maxX, 1);
+            maxY = Math.max(maxY, 1);
         }
         if ("BAR".equals(data.chart()) || "STACKED_BAR".equals(data.chart())) {
             minY = Math.min(0, minY);

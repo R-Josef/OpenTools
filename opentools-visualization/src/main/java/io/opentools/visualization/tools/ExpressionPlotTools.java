@@ -487,9 +487,14 @@ final class PlotToolSupport {
             case "PNG" -> List.of("PNG");
             default -> List.of("PNG", "SVG", "PDF");
         };
+        // Direct tool callers may omit UI defaults; keep geometry valid.
+        int width = request.integer("width") >= 320 ? request.integer("width") : 1200;
+        int height = request.integer("height") >= 240 ? request.integer("height") : 800;
+        int dpi = request.integer("dpi") >= 72 && request.integer("dpi") <= 1200
+                ? request.integer("dpi")
+                : 144;
         return new PlotExport(formats, base.getFileName().toString(),
-                request.integer("width"), request.integer("height"),
-                request.integer("dpi"), false, request.bool("overwrite"));
+                width, height, dpi, false, request.bool("overwrite"));
     }
 
     private static void writeProcessed(Path output, List<String> header, List<List<String>> rows) throws Exception {

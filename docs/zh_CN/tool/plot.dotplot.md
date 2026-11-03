@@ -4,7 +4,7 @@
 
 ## 一句话说明
 
-绘制两列数值坐标，可选分组。
+把数值坐标或 BLAST outfmt 6 的 HSP 绘制为基因组位置点图。
 
 它完成一个明确、可复现的分析步骤。运行记录会保存规范化参数、输入文件哈希和日志；正式发表前仍应检查原始数据、参数和生物学解释。
 
@@ -40,7 +40,11 @@ x	y	group
 
 | 参数 | 必填 | 默认值 | 选择建议 |
 | --- | --- | --- | --- |
-| `input` 点图表格 | 是 | 空 | 选择真实且完整的输入文件，不用示例占位路径替代。 包含 x/y 列的分隔文本。 |
+| `input` 点图表格 | 是 | 空 | 选择真实且完整的输入文件，不用示例占位路径替代。 含 x/y 列的表格，或含 qseqid、sseqid、pident、qstart、qend、sstart、send 的 BLAST outfmt 6 表。 |
+| `inputFormat` 输入格式 | 否 | AUTO | AUTO 通过 qseqid/sseqid 表头识别 BLAST outfmt 6；表头有歧义时显式选择。 |
+| `queryLengthColumn` Query 长度列 | 否 | qlen | BLAST 输入可选的 qlen 列；缺失时由 qstart/qend 推导。 |
+| `subjectLengthColumn` Subject 长度列 | 否 | slen | BLAST 输入可选的 slen 列；缺失时由 sstart/send 推导。 |
+| `maxHits` 最大 HSP 数 | 否 | 5000 | 最多绘制的 BLAST HSP 行数；图过于密集时可调小。 |
 | `xColumn` X 列 | 否 | x | 可选项通常先留空；填写时保持 ID、列名或语法与输入一致。 数值 X 列。 |
 | `yColumn` Y 列 | 否 | y | 可选项通常先留空；填写时保持 ID、列名或语法与输入一致。 数值 Y 列。 |
 | `groupColumn` 分组列 | 否 | 空字符串 | 可选项通常先留空；填写时保持 ID、列名或语法与输入一致。 可选的系列分组列。 |
@@ -57,7 +61,8 @@ x	y	group
 ## 结果怎么读
 
 - 输出格式：`PNG`、`SVG`、`PDF`、`JSON`
-- 每个点来自表中的一对 x/y 数值；先确认坐标单位和点的分组，再寻找趋势或异常。
+- 表格模式下每个点来自一对 x/y 数值；先确认坐标单位和点的分组，再寻找趋势或异常。
+- BLAST 模式下每条线段连接一个 HSP 在 query/subject 坐标中的起点和终点，颜色按一致性分组。
 - 结果面板是快速检查入口；完整数据、运行清单和日志位于本次运行目录。
 - 若输出了数据表，应同时核对图中点、组别、排序和筛选是否与数据一致。
 

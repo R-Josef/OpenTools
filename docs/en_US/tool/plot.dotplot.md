@@ -4,7 +4,7 @@
 
 ## What this tool does
 
-Plot two numeric coordinate columns with optional grouping.
+Plot numeric coordinates or BLAST outfmt 6 HSPs as a genome-position dot plot.
 
 It performs one explicit, reproducible analysis step. The run record preserves normalized parameters, input hashes, and logs; always review the source data, settings, and biological interpretation before publication.
 
@@ -40,7 +40,11 @@ x	y	group
 
 | Parameter | Required | Default | Guidance |
 | --- | --- | --- | --- |
-| `input` Dot plot table | yes | empty | Select a complete real input file; do not submit the placeholder example path. Delimited table with x and y columns. |
+| `input` Dot plot table | yes | empty | Select a complete real input file; do not submit the placeholder example path. Delimited table with x/y columns, or BLAST outfmt 6 with qseqid, sseqid, pident, qstart, qend, sstart, and send. |
+| `inputFormat` Input format | no | AUTO | AUTO detects BLAST outfmt 6 from its qseqid and sseqid headers; choose the explicit mode when headers are ambiguous. |
+| `queryLengthColumn` Query length column | no | qlen | Optional qlen column for BLAST input; derived from qstart/qend when absent. |
+| `subjectLengthColumn` Subject length column | no | slen | Optional slen column for BLAST input; derived from sstart/send when absent. |
+| `maxHits` Maximum HSPs | no | 5000 | Maximum BLAST HSP rows to draw; lower it if a plot becomes too dense. |
 | `xColumn` X column | no | x | Leave optional values blank first; when provided, keep IDs, column names, or syntax consistent with the input. Numeric x column. |
 | `yColumn` Y column | no | y | Leave optional values blank first; when provided, keep IDs, column names, or syntax consistent with the input. Numeric y column. |
 | `groupColumn` Group column | no | empty string | Leave optional values blank first; when provided, keep IDs, column names, or syntax consistent with the input. Optional series grouping column. |
@@ -57,7 +61,8 @@ x	y	group
 ## Read the result
 
 - Output formats: `PNG`, `SVG`, `PDF`, `JSON`
-- Each point is an x/y numeric pair from the table; confirm units and grouping before interpreting trends or outliers.
+- In table mode, each point is an x/y numeric pair; confirm units and grouping before interpreting trends or outliers.
+- In BLAST mode, each segment connects an HSP start and end in query/subject coordinates; colors group hits by identity.
 - The result panel is the quick-review surface; complete data, manifests, and logs live in the run directory.
 - If a processed data table is exported, verify that plotted points, groups, ordering, and filters agree with it.
 

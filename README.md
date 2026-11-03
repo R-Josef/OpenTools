@@ -25,7 +25,8 @@ dependency: release packages contain no agent or model code.
 
 ## Features
 
-- 86 built-in tools covering FASTA/FASTQ, GFF3/GTF, BED, tables, BLAST/DIAMOND,
+- 87 built-in tools covering FASTA/FASTQ, GFF3/GTF, BED, tables, local and remote
+  BLAST, DIAMOND,
   HMMER, multiple sequence alignment, phylogeny, comparative genomics,
   expression, enrichment, SAM/BAM/CRAM, VCF/BCF, and plotting.
 - Projects, jobs, input hashes, parameters, logs, and result manifests are

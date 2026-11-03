@@ -13,6 +13,10 @@ independent programs:
 | IQ-TREE | Maximum-likelihood phylogeny | `tools/iqtree/bin` |
 | MCScanX | Collinearity and duplicate-gene classification | `tools/mcscanx` |
 
+Remote BLAST is Java-native: it calls the NCBI BLAST URL API over HTTPS and does
+not need a local executable or database. It uploads the query only when the task
+sets `allowUpload=true`.
+
 ## Discovery order
 
 1. package `tools/`;

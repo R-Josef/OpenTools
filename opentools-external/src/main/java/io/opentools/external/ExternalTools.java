@@ -2,6 +2,7 @@ package io.opentools.external;
 
 import io.opentools.core.tool.ToolRegistry;
 import io.opentools.external.alignment.BlastLocalTool;
+import io.opentools.external.alignment.RemoteBlastTool;
 import io.opentools.external.alignment.BlastFastqTool;
 import io.opentools.external.alignment.BlastReciprocalTool;
 import io.opentools.external.alignment.BlastRegionsTool;
@@ -30,6 +31,7 @@ public final class ExternalTools {
 
     public static void register(ToolRegistry registry) {
         registry.register(new BlastLocalTool());
+        registry.register(new RemoteBlastTool());
         registry.register(new DiamondTool());
         registry.register(new BlastXmlToTableTool());
         registry.register(new BlastReciprocalTool());

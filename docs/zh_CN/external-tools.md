@@ -12,6 +12,9 @@ OpenTools 的 Java 工具不需要外部程序。以下工具调用独立第三�
 | IQ-TREE | 最大似然系统发育 | `tools/iqtree/bin` |
 | MCScanX | 共线性与重复基因分类 | `tools/mcscanx` |
 
+远程 BLAST 是 Java 原生实现：通过 HTTPS 调用 NCBI BLAST URL API，不需要本地
+可执行文件或数据库。只有任务显式设置 `allowUpload=true` 时才会上传查询序列。
+
 ## 发现顺序
 
 1. 便携包内固定 `tools/`；

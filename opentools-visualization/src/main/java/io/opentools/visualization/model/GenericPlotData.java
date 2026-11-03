@@ -2,12 +2,22 @@ package io.opentools.visualization.model;
 
 import java.util.List;
 
+/**
+ * Generic chart data.
+ *
+ * <p>{@code xMax} and {@code yMax} optionally pin the upper axis bounds; they
+ * are used by segment plots such as BLAST dot plots, where the axis should span
+ * the complete query or subject rather than only the observed hit coordinates.
+ * Both values are {@code null} for ordinary charts.</p>
+ */
 public record GenericPlotData(
         String chart,
         String xLabel,
         String yLabel,
         List<String> categories,
-        List<GenericSeries> series
+        List<GenericSeries> series,
+        Double xMax,
+        Double yMax
 ) implements PlotData {
     public GenericPlotData {
         chart = chart == null || chart.isBlank() ? "SCATTER" : chart.toUpperCase(java.util.Locale.ROOT);
@@ -15,6 +25,27 @@ public record GenericPlotData(
         yLabel = yLabel == null ? "" : yLabel;
         categories = categories == null ? List.of() : List.copyOf(categories);
         series = series == null ? List.of() : List.copyOf(series);
+        xMax = xMax != null && xMax > 0 && Double.isFinite(xMax) ? xMax : null;
+        yMax = yMax != null && yMax > 0 && Double.isFinite(yMax) ? yMax : null;
+    }
+
+    /**
+     * Creates data without explicit axis bounds.
+     *
+     * @param chart chart type
+     * @param xLabel x-axis label
+     * @param yLabel y-axis label
+     * @param categories category labels
+     * @param series data series
+     */
+    public GenericPlotData(
+            String chart,
+            String xLabel,
+            String yLabel,
+            List<String> categories,
+            List<GenericSeries> series
+    ) {
+        this(chart, xLabel, yLabel, categories, series, null, null);
     }
 
     public record GenericSeries(String name, List<Double> x, List<Double> y, List<Double> sizes) {
