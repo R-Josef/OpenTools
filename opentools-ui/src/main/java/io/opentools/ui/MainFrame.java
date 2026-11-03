@@ -52,11 +52,12 @@ final class MainFrame extends JFrame {
     private static final String DOCS = "Docs";
     private static final String PROJECTS = "Projects";
     private static final String TOOLS = "Tools";
+    private static final String WORKFLOWS = "Workflows";
     private static final String JOBS = "Jobs";
     private static final String RESULTS = "Results";
     private static final String PLUGINS = "Plugins";
     private static final String SETTINGS = "Settings";
-    private static final String[] VIEWS = {HOME, DOCS, PROJECTS, TOOLS, JOBS, RESULTS, PLUGINS, SETTINGS};
+    private static final String[] VIEWS = {HOME, DOCS, PROJECTS, TOOLS, WORKFLOWS, JOBS, RESULTS, PLUGINS, SETTINGS};
 
     private final OpenToolsGui.UiSession session;
     private final ProjectWorkflow projectWorkflow = new ProjectWorkflow();
@@ -78,6 +79,7 @@ final class MainFrame extends JFrame {
     private ToolCatalogPanel catalogPanel;
     private DocsPanel docsPanel;
     private ResultInspectorPanel resultPanel;
+    private WorkflowPanel workflowPanel;
     private PluginPanel pluginPanel;
 
     MainFrame(OpenToolsGui.UiSession session) {
@@ -212,6 +214,8 @@ final class MainFrame extends JFrame {
                 this::refreshJobs
         );
         cards.add(catalogPanel, TOOLS);
+        workflowPanel = new WorkflowPanel(session);
+        cards.add(workflowPanel, WORKFLOWS);
         cards.add(createJobsPanel(), JOBS);
         resultPanel = new ResultInspectorPanel(
                 session.execution(),
@@ -545,6 +549,8 @@ final class MainFrame extends JFrame {
             resultPanel.refresh();
         } else if (TOOLS.equals(view)) {
             catalogPanel.reload();
+        } else if (WORKFLOWS.equals(view)) {
+            workflowPanel.rebind();
         }
     }
 
@@ -665,6 +671,7 @@ final class MainFrame extends JFrame {
         refreshRecentProjects();
         setTitle(windowTitle());
         catalogPanel.rebind(session.execution());
+        workflowPanel.rebind();
         resultPanel.rebind(session.execution());
         refreshJobs();
     }

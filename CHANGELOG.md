@@ -4,6 +4,9 @@
 
 ### Added
 
+- The GUI adds a Workflows view with a JSON editor, live DAG preview,
+  validation, saved-project workflows, sequential execution, and per-step status
+  colors.
 - The Results panel parses result tables off the EDT and loads the visualization
   only when its tab is selected.
 - `plot.synteny` draws multi-genome chord/ribbon links from a cross-genome

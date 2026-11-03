@@ -66,6 +66,19 @@ Use the `opentools_run_workflow` tool with a workspace path:
 
 The MCP tool returns the same per-step structure. Submit individual jobs when you need a custom client-side scheduler.
 
-## Current scope
+## GUI editor
 
-The GUI does not yet include a workflow editor or DAG canvas. Workflows are created as JSON and executed through the CLI or MCP; the in-app Docs page links to this guide.
+Open **Workflows** in the main navigation to edit the same JSON format with a
+live DAG preview:
+
+- **New** loads a two-step template.
+- **Validate** parses the JSON, checks duplicate IDs, missing dependencies, and
+  cycles, then redraws the node graph.
+- **Save** writes the workflow under `workflows/<name>.json` in the current
+  project; saved files appear in the left list.
+- **Run** executes steps sequentially with the same placeholders, failure
+  policy, validation, and job records as the CLI/MCP runner.
+- The run log and node colors show `SUCCEEDED`, `FAILED`, and `SKIPPED`.
+
+The GUI runner is intentionally sequential; use the CLI/MCP workflow for
+scripted or remote execution. The JSON remains the portable source of truth.
