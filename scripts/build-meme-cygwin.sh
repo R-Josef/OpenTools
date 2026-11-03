@@ -62,12 +62,19 @@ rm -rf "$output_dir"
 mkdir -p "$output_dir/bin" "$output_dir/lib" "$output_dir/libexec" \
     "$output_dir/share/meme-$version"
 cp -a "$work_dir/install/bin/." "$output_dir/bin/"
+for directory in bin libexec "share/meme-$version"; do
+    [[ -d "$work_dir/install/$directory" ]] || {
+        printf 'MEME install directory is missing: %s\n' "$directory" >&2
+        exit 2
+    }
+done
+cp -a "$work_dir/install/bin/." "$output_dir/bin/"
 if [[ -d "$work_dir/install/lib" ]]; then
     cp -a "$work_dir/install/lib/." "$output_dir/lib/"
 fi
 cp -a "$work_dir/install/libexec/." "$output_dir/libexec/"
 cp -a "$work_dir/install/share/meme-$version/." "$output_dir/share/meme-$version/"
-cp -a /usr/bin/cygwin1.dll "$output_dir/bin/"
+cp -L /usr/bin/cygwin1.dll "$output_dir/bin/"
 if [[ -f "$source_dir/LICENSE" ]]; then
     cp -a "$source_dir/LICENSE" "$output_dir/LICENSE"
 fi
@@ -82,6 +89,14 @@ fi
     printf 'jobs=%s\n' "$jobs"
 } > "$output_dir/BUILD-INFO.txt"
 
-PATH="$output_dir/bin:$PATH" "$output_dir/bin/meme.exe" -version
-PATH="$output_dir/bin:$PATH" "$output_dir/bin/mast.exe" -version
+if ! PATH="$output_dir/bin:$PATH" "$output_dir/bin/meme.exe" -version; then
+    printf 'meme.exe -version failed in the portable tree\n' >&2
+    ls -l "$output_dir/bin" >&2 || true
+    file "$output_dir/bin/meme.exe" >&2 || true
+    exit 1
+fi
+if ! PATH="$output_dir/bin:$PATH" "$output_dir/bin/mast.exe" -version; then
+    printf 'mast.exe -version failed in the portable tree\n' >&2
+    exit 1
+fi
 printf 'Built MEME %s for Cygwin into %s\n' "$version" "$output_dir"
