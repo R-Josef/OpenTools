@@ -114,7 +114,6 @@ jobs:
       - uses: cygwin/cygwin-install-action@v7
         id: cygwin
         with:
-          add-to-path: false
           packages: >-
             gcc-core,gcc-g++,make,perl,autoconf,automake,libtool,pkg-config,
             libxml2-devel,libxslt-devel,zlib-devel,libpng-devel,libgd-devel,
