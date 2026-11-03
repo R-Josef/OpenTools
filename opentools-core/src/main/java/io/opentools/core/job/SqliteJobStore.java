@@ -55,13 +55,15 @@ public final class SqliteJobStore implements JobStore {
                         manifest_json TEXT,
                         error_code TEXT,
                         error_message TEXT,
-                        run_directory TEXT NOT NULL
+                        run_directory TEXT NOT NULL,
+                        cancel_requested INTEGER NOT NULL DEFAULT 0
                     )
                     """);
             statement.executeUpdate("CREATE INDEX IF NOT EXISTS jobs_created_idx ON jobs(created_at DESC)");
             ensureColumn(connection, "progress", "REAL NOT NULL DEFAULT 0");
             ensureColumn(connection, "progress_message", "TEXT");
             ensureColumn(connection, "heartbeat_at", "TEXT");
+            ensureColumn(connection, "cancel_requested", "INTEGER NOT NULL DEFAULT 0");
         }
         recoverInterrupted(Instant.now(), staleAfter());
     }
@@ -152,6 +154,28 @@ public final class SqliteJobStore implements JobStore {
             statement.setString(2, now.toString());
             statement.setString(3, cutoff);
             return statement.executeUpdate();
+        }
+    }
+
+    @Override
+    public boolean requestCancel(String runId) throws SQLException {
+        String sql = "UPDATE jobs SET cancel_requested = 1 "
+                + "WHERE run_id = ? AND status IN ('QUEUED', 'RUNNING')";
+        try (Connection connection = connect(); PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, runId);
+            return statement.executeUpdate() > 0;
+        }
+    }
+
+    @Override
+    public boolean isCancelRequested(String runId) throws SQLException {
+        try (Connection connection = connect();
+             PreparedStatement statement = connection.prepareStatement(
+                     "SELECT cancel_requested FROM jobs WHERE run_id = ?")) {
+            statement.setString(1, runId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next() && resultSet.getInt(1) != 0;
+            }
         }
     }
 

@@ -4,7 +4,10 @@
 
 ### Added
 
-- `sequence.primer-check`: electronic PCR against a genome FASTA with a
+- Cross-process job cancellation: `jobs cancel` and MCP `opentools_cancel_job`
+  mark active jobs in the shared project database; the owning process polls the
+  request and records `CANCELLED`.
+- `sequence.primer-check`:  electronic PCR against a genome FASTA with a
   tab-separated primer table, IUPAC bases, configurable mismatches and product
   window, nearest-downstream amplicon reporting, and truncation caps.
 - `sequence.ssr`: perfect SSR mining from FASTA with configurable motif length,

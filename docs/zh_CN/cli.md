@@ -50,6 +50,9 @@ opentools jobs retry <run-id>
 `-Dopentools.jobs.maxConcurrent=N` 设置，默认取 CPU 核数的一半（1–4）。异常退出
 遗留的作业会在下次打开项目时标记为 `JOB_INTERRUPTED`。
 
+`jobs cancel` 支持跨进程：在共享项目数据库中标记 queued/running 作业，拥有该
+作业的进程会在几秒内轮询到请求并写入 `CANCELLED`。
+
 ## 批处理
 
 批量文件按顺序执行相互独立的 JSON 项目。后续步骤需要前一步产物时，请使用工作流。

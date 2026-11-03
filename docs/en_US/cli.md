@@ -53,6 +53,10 @@ limit is configurable with `-Dopentools.jobs.maxConcurrent=N` (default: half the
 CPU count, clamped to 1–4). Jobs left behind by an abnormal exit are marked
 `JOB_INTERRUPTED` the next time the project opens.
 
+`jobs cancel` also works across processes: it marks a queued or running job in
+the shared project database, and the process that owns the job polls the request
+within a few seconds and records `CANCELLED`.
+
 ## Batch execution
 
 Batch files run independent jobs sequentially. Use a workflow when later steps

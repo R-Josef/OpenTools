@@ -71,6 +71,7 @@ public final class ToolExecutionService implements AutoCloseable {
         this.maxConcurrent = configuredConcurrency();
         this.concurrency = new Semaphore(maxConcurrent, true);
         this.heartbeatExecutor.scheduleAtFixedRate(this::refreshHeartbeats, 15, 15, TimeUnit.SECONDS);
+        this.heartbeatExecutor.scheduleAtFixedRate(this::pollCancellationRequests, 2, 2, TimeUnit.SECONDS);
     }
 
     /**
@@ -149,7 +150,14 @@ public final class ToolExecutionService implements AutoCloseable {
     public boolean cancel(String runId) {
         CancellationToken token = cancellations.get(runId);
         if (token == null) {
-            return false;
+            // The run belongs to another process (GUI, CLI, or MCP). Mark the
+            // persisted record; the owning process polls the flag and cancels.
+            try {
+                return jobStore.requestCancel(runId);
+            } catch (SQLException ex) {
+                Log.warn("Could not request cancellation for " + runId, ex);
+                return false;
+            }
         }
         token.cancel();
         boolean started = startedRuns.contains(runId);
@@ -482,6 +490,30 @@ public final class ToolExecutionService implements AutoCloseable {
             jobStore.heartbeat(Set.copyOf(activeRuns), Instant.now());
         } catch (SQLException ex) {
             Log.warn("Could not refresh job heartbeats", ex);
+        }
+    }
+
+    private void pollCancellationRequests() {
+        if (activeRuns.isEmpty() || closing) {
+            return;
+        }
+        for (String runId : List.copyOf(activeRuns)) {
+            try {
+                if (!jobStore.isCancelRequested(runId)) {
+                    continue;
+                }
+                CancellationToken token = cancellations.get(runId);
+                if (token == null) {
+                    continue;
+                }
+                token.cancel();
+                Future<?> future = futures.get(runId);
+                if (future != null) {
+                    future.cancel(true);
+                }
+            } catch (SQLException ex) {
+                Log.warn("Could not poll cancellation for " + runId, ex);
+            }
         }
     }
 

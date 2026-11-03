@@ -138,6 +138,28 @@ final class ToolExecutionServiceTest {
     }
 
     @Test
+    void observesCancellationRequestedByAnotherProcess() throws Exception {
+        Project project = new ProjectService().create(tempDir.resolve("cross-process-project"), "Test");
+        ToolRegistry registry = new ToolRegistry();
+        CountDownLatch started = new CountDownLatch(1);
+        registry.register(new InterruptibleTool(started));
+        SqliteJobStore store = new SqliteJobStore(project.databasePath());
+        store.initialize();
+
+        try (ToolExecutionService owner = new ToolExecutionService(registry, store)) {
+            String runId = owner.submit(project, new ToolRequest("test.interruptible", Map.of()));
+            assertTrue(started.await(5, TimeUnit.SECONDS));
+
+            try (ToolExecutionService other = new ToolExecutionService(new ToolRegistry(), store)) {
+                assertTrue(other.cancel(runId));
+                JobRecord cancelled = awaitTerminal(owner, runId);
+                assertEquals(JobStatus.CANCELLED, cancelled.status());
+                assertEquals("CANCELLED", cancelled.errorCode());
+            }
+        }
+    }
+
+    @Test
     void reportsProgressWhileTheJobRuns() throws Exception {
         Project project = new ProjectService().create(tempDir.resolve("progress-project"), "Test");
         ToolRegistry registry = new ToolRegistry();
@@ -210,6 +232,41 @@ final class ToolExecutionServiceTest {
             job = service.find(runId);
         }
         return job;
+    }
+
+    private static final class InterruptibleTool extends AbstractOpenTool {
+        private static final ToolDescriptor DESCRIPTOR = new ToolDescriptor(
+                "test.interruptible",
+                "Test interruptible",
+                "Waits until its cancellation token is triggered.",
+                "Test",
+                List.of(),
+                List.of(),
+                List.of("Text"),
+                "1.0.0",
+                List.of()
+        );
+
+        private final CountDownLatch started;
+
+        private InterruptibleTool(CountDownLatch started) {
+            this.started = started;
+        }
+
+        @Override
+        public ToolDescriptor descriptor() {
+            return DESCRIPTOR;
+        }
+
+        @Override
+        public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
+            started.countDown();
+            while (!context.cancellationToken().isCancelled()) {
+                Thread.sleep(25);
+            }
+            context.cancellationToken().throwIfCancelled();
+            return ToolResult.success("Interrupted task completed", "", null, List.of());
+        }
     }
 
     private static final class BlockingTool extends AbstractOpenTool {
