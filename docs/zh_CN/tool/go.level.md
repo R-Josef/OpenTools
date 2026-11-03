@@ -30,7 +30,8 @@
 
 | 参数 | 必填 | 默认值 | 选择建议 |
 | --- | --- | --- | --- |
-| `hierarchy` GO 层级关系 | 是 | 空 | 选择真实且完整的输入文件，不用示例占位路径替代。 两列 term/parent TSV，或包含 [Term] 段的 OBO 1.4；TSV 根节点父级使用 . 或留空。 |
+| `hierarchy` GO 层级关系 | 否 | 空 | 两列 term/parent TSV，或包含 [Term] 段的 OBO 1.4；未选择 `resourceId` 对应 GO 资源包时必填。 |
+| `resourceId` GO 资源包 | 否 | 空 | 可选的 `resource.manage` 资源包 ID；其 OBO 文件替代层级输入。 |
 | `termInfo` GO 项信息 | 否 | 空 | 选择真实且完整的输入文件，不用示例占位路径替代。 可选的 term/name/namespace 表。 |
 | `output` 输出 TSV | 否 | 空 | 留空时写入运行目录；自定义路径应位于工作区，并按格式填写扩展名。 留空时保存到本次运行目录。 |
 | `overwrite` 覆盖输出 | 否 | false | 默认 `false`；只有确认目标文件可替换时才设为 `true`。 允许替换已有输出。 |

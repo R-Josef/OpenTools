@@ -30,7 +30,8 @@ It performs one explicit, reproducible analysis step. The run record preserves n
 
 | Parameter | Required | Default | Guidance |
 | --- | --- | --- | --- |
-| `hierarchy` GO hierarchy | yes | empty | Select a complete real input file; do not submit the placeholder example path. Two-column term/parent TSV or OBO 1.4 with [Term] stanzas; TSV roots use . or a blank parent. |
+| `hierarchy` GO hierarchy | no | empty | Two-column term/parent TSV or OBO 1.4 with [Term] stanzas; required unless `resourceId` selects a GO pack. |
+| `resourceId` GO resource pack | no | empty | Optional pack id from `resource.manage`; its OBO file replaces the hierarchy input. |
 | `termInfo` Term information | no | empty | Select a complete real input file; do not submit the placeholder example path. Optional term/name/namespace table. |
 | `output` Output TSV | no | empty | Leave blank to write inside the run directory; custom paths should stay in the workspace and use the correct extension. Leave blank to save in the run directory. |
 | `overwrite` Overwrite output | no | false | Keep `false` unless the target is known to be safe to replace. Allow replacing an existing output. |

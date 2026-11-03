@@ -4,6 +4,10 @@
 
 ### Added
 
+- `resource.manage`: versioned local GO/KEGG resource packs with immutable
+  import, SHA-256 and entry counts, active-pack switching, and rollback by
+  reactivating a retained pack. `go.enrich`, `go.level`, and `kegg.enrich`
+  accept `resourceId` and record the resource id, version, and digest.
 - `alignment.blast.remote`: NCBI BLAST URL API search with explicit upload
   consent, RID-based polling, cancellation-aware waits, tabular output, and
   RID/program/database/hit metrics. HTTPS is enforced except for loopback tests.
@@ -26,7 +30,7 @@
   replacing the `param` node with `parameter`, fixes plugin metadata to
   `plugin.name/description`, derives result keys from the Tool ID, and locates
   tool guides at `docs/<language>/tool/<Tool ID>.md`.
-- Detailed English and Chinese beginner guides now cover all 87 built-in tools,
+- Detailed English and Chinese beginner guides now cover all 88 built-in tools,
   including input sketches, parameter selection, result interpretation,
   failure boundaries, and related next steps.
 - Bundled default example plugin with the interactive Coin Runner tool, JSON

@@ -30,7 +30,8 @@ It performs one explicit, reproducible analysis step. The run record preserves n
 
 | Parameter | Required | Default | Guidance |
 | --- | --- | --- | --- |
-| `annotations` Gene-GO annotation | yes | empty | Select a complete real input file; do not submit the placeholder example path. Two columns: gene and semicolon/comma-separated GO terms. |
+| `annotations` Gene-GO annotation | no | empty | Two columns: gene and semicolon/comma-separated GO terms. Required unless `resourceId` selects a GO pack. |
+| `resourceId` GO resource pack | no | empty | Optional pack id from `resource.manage`; its annotation table replaces the file input. |
 | `genes` Target genes | yes | empty | Select a complete real input file; do not submit the placeholder example path. One gene ID per line. |
 | `background` Background genes | no | empty | Select a complete real input file; do not submit the placeholder example path. Optional one-gene-per-line background list. |
 | `output` Output TSV | no | empty | Leave blank to write inside the run directory; custom paths should stay in the workspace and use the correct extension. Leave blank to save in the run directory. |

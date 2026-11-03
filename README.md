@@ -31,13 +31,15 @@ packages contain no agent or model code.
 
 ## Features
 
-- 87 built-in tools covering FASTA/FASTQ, GFF3/GTF, BED, tables, local and remote
+- 88 built-in tools covering FASTA/FASTQ, GFF3/GTF, BED, tables, local and remote
   BLAST, DIAMOND, HMMER, multiple sequence alignment, phylogeny, comparative
   genomics, expression, enrichment, SAM/BAM/CRAM, VCF/BCF, and plotting.
 - Projects, jobs, input hashes, parameters, logs, and result manifests are
   persisted together for reproducible reruns.
 - Jobs run through a bounded queue with persisted progress, cooperative
   cancellation, and startup recovery for runs interrupted by an abnormal exit.
+- Versioned GO/KEGG resource packs are imported once with counts and SHA-256
+  digests, then reused by id; enrichment results record the resource version.
 - GUI, CLI, and MCP share `ToolDescriptor`, validation, tool execution, and
   result contracts.
 - The bundled default plugin adds an interactive Coin Runner tool whose

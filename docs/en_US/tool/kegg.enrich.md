@@ -30,7 +30,8 @@ It performs one explicit, reproducible analysis step. The run record preserves n
 
 | Parameter | Required | Default | Guidance |
 | --- | --- | --- | --- |
-| `annotations` Gene-pathway annotation | yes | empty | Select a complete real input file; do not submit the placeholder example path. Two columns: gene and semicolon/comma-separated pathway IDs. |
+| `annotations` Gene-pathway annotation | no | empty | Two columns: gene and semicolon/comma-separated pathway IDs. Required unless `resourceId` selects a KEGG pack. |
+| `resourceId` KEGG resource pack | no | empty | Optional pack id from `resource.manage`; its mapping table replaces the file input. |
 | `genes` Target genes | yes | empty | Select a complete real input file; do not submit the placeholder example path. One gene ID per line. |
 | `background` Background genes | no | empty | Select a complete real input file; do not submit the placeholder example path. Optional background gene list. |
 | `output` Output TSV | no | empty | Leave blank to write inside the run directory; custom paths should stay in the workspace and use the correct extension. Leave blank to save in the run directory. |

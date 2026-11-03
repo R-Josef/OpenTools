@@ -37,8 +37,10 @@ public final class GoLevelTool extends AbstractOpenTool {
             List.of("TSV"),
             "1.1.0",
             List.of(
-                    ToolParameter.requiredFile("hierarchy", "GO hierarchy",
-                            "Two-column term/parent TSV or an OBO 1.4 file with [Term] stanzas."),
+                    ToolParameter.optionalFile("hierarchy", "GO hierarchy",
+                            "Two-column term/parent TSV or an OBO 1.4 file with [Term] stanzas. Optional when resourceId selects a GO pack."),
+                    ToolParameter.string("resourceId", "GO resource pack",
+                            "Optional pack id from resource.manage; its OBO file replaces the hierarchy input.", ""),
                     ToolParameter.optionalFile("termInfo", "Term information", "Optional term/name/namespace table."),
                     ToolParameter.optionalOutputFile("output", "Output TSV", "Leave blank to save in the run directory."),
                     ToolParameter.bool("overwrite", "Overwrite output", "Allow replacing an existing output.", false)
@@ -50,12 +52,63 @@ public final class GoLevelTool extends AbstractOpenTool {
 
     @Override
     public ValidationResult validate(ToolRequest request) {
-        return validateParameters(request).merge(FormatToolSupport.validateOutput(request, request.path("hierarchy")));
+        ValidationResult result = validateParameters(request)
+                .merge(FormatToolSupport.validateOutput(request, request.path("hierarchy")));
+        String resourceId = request.string("resourceId").trim();
+        if (resourceId.isEmpty() && request.path("hierarchy") == null) {
+            result = result.merge(ValidationResult.of(io.opentools.api.tool.ValidationIssue.error(
+                    "hierarchy", "Provide a GO hierarchy file or select a GO resource pack.",
+                    "Import a GO pack with resource.manage or choose an OBO/TSV hierarchy.")));
+        }
+        if (!resourceId.isEmpty()) {
+            try {
+                var pack = ResourcePacks.open().find(resourceId);
+                if (pack.isEmpty()) {
+                    result = result.merge(ValidationResult.of(io.opentools.api.tool.ValidationIssue.error(
+                            "resourceId", "GO resource pack not found: " + resourceId,
+                            "Run resource.manage with action=LIST.")));
+                } else if (pack.get().kind() != ResourcePacks.Kind.GO) {
+                    result = result.merge(ValidationResult.of(io.opentools.api.tool.ValidationIssue.error(
+                            "resourceId", "Resource pack is not a GO pack: " + resourceId,
+                            "Select a GO pack.")));
+                }
+            } catch (Exception ex) {
+                result = result.merge(ValidationResult.of(io.opentools.api.tool.ValidationIssue.error(
+                        "resourceId", "Could not read the resource library: " + ex.getMessage(),
+                        "Check the resource directory permissions.")));
+            }
+        }
+        return result;
     }
 
     @Override
     public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
-        Hierarchy hierarchy = readHierarchy(request.path("hierarchy"));
+        ResourcePacks.Pack pack = null;
+        Path hierarchyPath = request.path("hierarchy");
+        String resourceId = request.string("resourceId").trim();
+        if (!resourceId.isEmpty()) {
+            pack = ResourcePacks.open().find(resourceId).orElseThrow(() -> new OpenToolException(
+                    "RESOURCE_NOT_FOUND",
+                    "GO resource pack not found: " + resourceId,
+                    "Run resource.manage with action=LIST."
+            ));
+            if (pack.kind() != ResourcePacks.Kind.GO) {
+                throw new OpenToolException(
+                        "RESOURCE_KIND_MISMATCH",
+                        "Resource pack is not a GO pack: " + resourceId,
+                        "Select a GO pack."
+                );
+            }
+            hierarchyPath = pack.primary();
+        }
+        if (hierarchyPath == null) {
+            throw new OpenToolException(
+                    "HIERARCHY_REQUIRED",
+                    "No GO hierarchy was selected.",
+                    "Provide a hierarchy or a GO resource pack."
+            );
+        }
+        Hierarchy hierarchy = readHierarchy(hierarchyPath);
         Map<String, List<String>> info = new LinkedHashMap<>(hierarchy.info());
         if (request.path("termInfo") != null) {
             info.putAll(readInfo(request.path("termInfo")));
@@ -89,6 +142,11 @@ public final class GoLevelTool extends AbstractOpenTool {
         metrics.put("altIds", hierarchy.altIds());
         metrics.put("unresolvedParents", hierarchy.unresolvedParents());
         metrics.put("cycleOrUnreachableTerms", levelResult.unreachableTerms());
+        if (pack != null) {
+            metrics.put("resourceId", pack.id());
+            metrics.put("resourceVersion", pack.version());
+            metrics.put("resourceSha256", pack.sha256().values().stream().findFirst().orElse(""));
+        }
         return new ToolResult(
                 "Calculated levels for " + levels.size() + " GO terms", List.of(levels.size()),
                 "Format: " + hierarchy.format()

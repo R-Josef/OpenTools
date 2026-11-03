@@ -15,6 +15,7 @@ import io.opentools.analysis.expression.ExpressionPcaTool;
 import io.opentools.analysis.enrichment.GoEnrichTool;
 import io.opentools.analysis.enrichment.GoLevelTool;
 import io.opentools.analysis.enrichment.KeggEnrichTool;
+import io.opentools.analysis.enrichment.ResourceManageTool;
 import io.opentools.analysis.phylogeny.NewickTools;
 import io.opentools.analysis.hts.HtsTools;
 import io.opentools.analysis.table.TableTools;
@@ -40,6 +41,7 @@ public final class BuiltInAnalysis {
         registry.register(new GoEnrichTool());
         registry.register(new GoLevelTool());
         registry.register(new KeggEnrichTool());
+        registry.register(new ResourceManageTool());
         registry.register(new NewickTools.SummaryTool());
         registry.register(new NewickTools.SubsetTool());
         HtsTools.tools().forEach(registry::register);
