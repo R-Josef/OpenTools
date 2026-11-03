@@ -11,6 +11,10 @@
   decimals localize through `ValidationText` in the GUI form and CLI.
 - `meme.run` no longer passes the unsupported `-p` flag to MEME builds without
   parallel support. MEME/MAST are included in the Settings external-tool check.
+- Add a pinned MEME 5.5.9 Cygwin build script and regex patch, a Windows
+  GitHub Actions build workflow, and `tools/meme` bundling for Windows
+  releases. Relocated builds use `MEME_DATA_DIR`; MAST falls back to
+  `-hit_list` when the Cygwin XML writer fails.
 - Fix the Workflows view bottom toolbar being hidden by the run log.
 - FASTA base counting removes `Character.toUpperCase` and a second canonical
   test per base; in-memory transpose writes fields directly instead of allocating
