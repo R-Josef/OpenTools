@@ -3,7 +3,8 @@
 [English](README.md) | 简体中文
 
 <p align="center">
-  <img src="assets/branding/opentools-banner.svg" alt="OpenTools - 主要由 DeepSeek 与 Codex 作为 Agent 生成" width="100%">
+  <img src="assets/branding/opentools-banner.svg" alt="OpenTools - 主要由 DeepSeek 与 Codex 作为 Agent 生成" height="150">
+  <img src="https://img.aigengtu.com/0_preview/meme/2677.webp" alt="DeepSeek 鲸娘表情包" height="150">
 </p>
 
 <p align="center">
@@ -20,10 +21,6 @@ OpenTools 是一个本地优先、工具驱动的开源生物信息学工作台�
 程序保留各自许可证，详见 [第三方声明](THIRD_PARTY_NOTICES.md)。
 
 本项目的大部分内容由 **DeepSeek** 模型与 **Codex**（作为编码 Agent）生成。
-
-<p align="center">
-  <img src="https://img.aigengtu.com/0_preview/meme/2677.webp" width="180" alt="DeepSeek 鲸娘表情包">
-</p>
 
 ![OpenTools 工具目录](docs/zh_CN/assets/screenshots/tools-catalog.jpg)
 
