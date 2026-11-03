@@ -2,10 +2,9 @@
 
 [English](README.md) | 简体中文
 
-<p align="center">
-  <img src="assets/branding/opentools-banner.svg" alt="OpenTools - 主要由 DeepSeek 与 Codex 作为 Agent 生成" height="150">
-  <img src="https://img.aigengtu.com/0_preview/meme/2677.webp" alt="DeepSeek 鲸娘表情包" height="150">
-</p>
+| | |
+| :---: | :---: |
+| <img src="assets/branding/opentools-banner.svg" alt="OpenTools - 主要由 DeepSeek 与 Codex 作为 Agent 生成" width="600"> | <img src="https://img.aigengtu.com/0_preview/meme/2677.webp" alt="DeepSeek 鲸娘表情包" width="140"> |
 
 <p align="center">
   <a href="https://www.deepseek.com/"><img src="https://img.shields.io/badge/Generated_with-DeepSeek-4D6BFE" alt="Generated with DeepSeek"></a>
