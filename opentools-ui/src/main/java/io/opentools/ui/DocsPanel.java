@@ -188,8 +188,7 @@ final class DocsPanel extends JPanel {
             List<DefaultMutableTreeNode> matchingTools = new ArrayList<>();
             for (ToolDescriptor tool : tools) {
                 String name = localizedName(tool);
-                if (query.isEmpty() || groupMatches || name.toLowerCase(Locale.ROOT).contains(query)
-                        || tool.id().contains(query)) {
+                if (query.isEmpty() || groupMatches || toolText.searchText(tool).contains(query)) {
                     matchingTools.add(node(new DocChoice("tool:" + tool.id(), name, DocKind.TOOL)));
                 }
             }

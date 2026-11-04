@@ -84,6 +84,40 @@ public final class ToolTextResolver {
     }
 
     /**
+     * Builds searchable text from what the active language displays.
+     *
+     * <p>Includes the localized tool name, description, category, parameter
+     * titles/descriptions, formats, stable ID, and the optional
+     * `tool.<id>.search` language value. Descriptor aliases are deliberately
+     * not included, so the UI does not match a hidden English alias while
+     * showing a localized title.</p>
+     *
+     * @param tool tool descriptor
+     * @return lowercase search text
+     */
+    public String searchText(ToolDescriptor tool) {
+        StringBuilder search = new StringBuilder(256);
+        append(search, name(tool));
+        append(search, description(tool));
+        append(search, category(tool.category()));
+        append(search, tool.id());
+        append(search, text(tool, "tool." + tool.id() + ".search", ""));
+        append(search, String.join(" ", tool.inputFormats()));
+        append(search, String.join(" ", tool.outputFormats()));
+        for (ToolParameter parameter : tool.parameters()) {
+            append(search, parameterTitle(tool, parameter));
+            append(search, parameterDescription(tool, parameter));
+        }
+        return search.toString().toLowerCase(Locale.ROOT);
+    }
+
+    private static void append(StringBuilder target, String value) {
+        if (value != null && !value.isBlank()) {
+            target.append(' ').append(value);
+        }
+    }
+
+    /**
      * Resolves text using the exact registered owner of a tool ID.
      *
      * @param toolId stable tool identifier

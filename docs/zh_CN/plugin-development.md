@@ -188,6 +188,7 @@ game.start=开始
 | 插件页面标题 | `page.<页面 ID>.title` | 宿主 |
 | 四参数页面标题 | 插件传入的键 | 插件 |
 | 工具分类 | `category.<分类小写>` | 宿主语言文件 |
+| 工具搜索词 | `tool.<Tool ID>.search` | 宿主语言文件 |
 | 结果表格列名 | `result.<Tool ID>.column.<规范化列名>` | 宿主 |
 | 结果表格值 | `result.<Tool ID>.value.<规范化值>` | 宿主 |
 | 结果摘要/详情 | `result.<Tool ID>.summary` / `detail` | 宿主 |
@@ -198,6 +199,10 @@ game.start=开始
 
 分类本地化属于宿主应用。插件工具通常使用 descriptor 分类 `Plugin`，它对应宿主
 键 `category.plugin`。把 `category.plugin` 放进插件 JAR 不会改变宿主显示的分类。
+
+`tool.<Tool ID>.search` 是可选的逗号分隔搜索词。应用内搜索会读取本地化的名称、
+描述、分类、参数文字、格式、稳定 ID 和该值。UI 不再使用 descriptor aliases，
+因此不会出现搜索结果通过隐藏的英文别名匹配、却显示中文标题的情况。
 
 结果表格的列名和值会先经过显示用规范化：
 

@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -214,7 +215,12 @@ final class ToolCatalogPanel extends JPanel {
     }
 
     void reload() {
-        List<ToolDescriptor> matching = registry.search(activeFilter);
+        String needle = activeFilter == null ? "" : activeFilter.trim().toLowerCase(Locale.ROOT);
+        List<ToolDescriptor> matching = needle.isEmpty()
+                ? registry.list()
+                : registry.list().stream()
+                        .filter(tool -> toolText.searchText(tool).contains(needle))
+                        .toList();
         List<ToolDescriptor> allTools = registry.list();
         SwingUtilities.invokeLater(() -> {
             ToolDescriptor selected = selectedTool();

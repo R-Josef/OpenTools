@@ -194,6 +194,7 @@ from its own JAR.
 | Plugin Page title | `page.<Page ID>.title` | Host |
 | Four-argument page title | Key passed by the plugin | Plugin |
 | Tool category | `category.<lowercase category>` | Host language files |
+| Tool search terms | `tool.<Tool ID>.search` | Host language files |
 | Result table column | `result.<Tool ID>.column.<normalized column>` | Host |
 | Result table value | `result.<Tool ID>.value.<normalized value>` | Host |
 | Result summary/detail | `result.<Tool ID>.summary` / `detail` | Host |
@@ -208,6 +209,11 @@ Category localization is application-owned. A plugin tool normally uses the
 descriptor category `Plugin`, which maps to the host key `category.plugin`.
 Putting `category.plugin` in a plugin JAR does not localize the category shown
 by the host.
+
+`tool.<Tool ID>.search` is an optional comma-separated keyword list. The
+in-app search reads the localized name, description, category, parameter text,
+formats, stable ID, and this value. Descriptor aliases are not used by the UI,
+so a localized result is never matched through a hidden English-only alias.
 
 For result tables, the host normalizes the displayed column or cell text:
 
