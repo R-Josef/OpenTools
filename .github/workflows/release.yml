@@ -111,15 +111,30 @@ jobs:
           update: true
           install: make gcc
           path-type: inherit
+      - name: Restore MEME build cache
+        id: meme-cache
+        uses: actions/cache@v4
+        with:
+          path: target/meme-cygwin
+          key: meme-cygwin-5.5.9-${{ runner.os }}-${{ hashFiles('scripts/build-meme-cygwin.sh', 'scripts/patches/meme-5.5.9-cygwin.patch') }}
+      - name: Restore Cygwin package cache
+        if: steps.meme-cache.outputs.cache-hit != 'true'
+        uses: actions/cache@v4
+        with:
+          path: 'D:\cygwin-packages'
+          key: cygwin-packages-v1-${{ runner.os }}-${{ hashFiles('.github/workflows/release.yml') }}
       - uses: cygwin/cygwin-install-action@v7
         id: cygwin
+        if: steps.meme-cache.outputs.cache-hit != 'true'
         with:
+          work-vol: 'D:'
           packages: >-
             gcc-core,gcc-g++,make,perl,autoconf,automake,libtool,pkg-config,
             libxml2-devel,libxslt-devel,zlib-devel,libpng-devel,libgd-devel,
             freetype-devel,expat-devel,curl,tar,gzip,bzip2,python3,patch,
             perl-XML-Parser
       - name: Build MEME for Windows
+        if: steps.meme-cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
           $root = "${{ steps.cygwin.outputs.root }}"
