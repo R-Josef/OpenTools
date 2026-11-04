@@ -408,7 +408,9 @@ cli_version="$("$cli_launcher" --version)"
     exit 2
 }
 doctor_json="$("$cli_launcher" --project "$smoke_project" doctor --json)"
-if ! jq -e '.ok == true and ([.data.externalTools[].available] | all)' <<<"$doctor_json" >/dev/null; then
+# MEME/MAST are optional external tools on Unix packages; a missing copy is
+# surfaced in Settings rather than blocking an otherwise valid package.
+if ! jq -e '.ok == true and ([.data.externalTools[] | select(.id != "annotation.meme" and .id != "annotation.mast") | .available] | all)' <<<"$doctor_json" >/dev/null; then
     printf 'Packaged external tool doctor check failed.\n%s\n' "$doctor_json" >&2
     exit 2
 fi

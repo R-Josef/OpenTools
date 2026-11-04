@@ -143,8 +143,12 @@ $doctorJson = $doctor.Stdout | ConvertFrom-Json
 if ($doctorJson.data.tasks -ne 93) {
     throw "Doctor reported an unexpected task count."
 }
+$optionalTools = @("annotation.meme", "annotation.mast")
 foreach ($tool in $doctorJson.data.externalTools) {
     if (-not $tool.available) {
+        if ($optionalTools -contains $tool.id) {
+            continue
+        }
         throw "External tool is unavailable in the portable package: $($tool.id)"
     }
     $parts = [regex]::Split(
