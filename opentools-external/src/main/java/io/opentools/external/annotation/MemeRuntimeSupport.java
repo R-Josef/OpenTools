@@ -16,6 +16,33 @@ final class MemeRuntimeSupport {
     private MemeRuntimeSupport() {
     }
 
+    static Path runnableExecutable(Path executable) {
+        if (executable == null || isAscii(executable.toString())) {
+            return executable;
+        }
+        try {
+            Path source = executable.toAbsolutePath();
+            Path directory = Files.createTempDirectory("opentools-meme-bin-");
+            Path target = directory.resolve(source.getFileName().toString());
+            Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+            try (Stream<Path> children = Files.list(source.getParent())) {
+                for (Path child : children.filter(path -> path.getFileName().toString()
+                        .toLowerCase(java.util.Locale.ROOT).endsWith(".dll")).toList()) {
+                    Files.copy(child, directory.resolve(child.getFileName().toString()),
+                            StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+            target.toFile().deleteOnExit();
+            return target;
+        } catch (IOException ex) {
+            return executable;
+        }
+    }
+
+    private static boolean isAscii(String value) {
+        return value.codePoints().allMatch(codePoint -> codePoint < 128);
+    }
+
     static Map<String, String> environment(Path executable) {
         Path dataDirectory = findDataDirectory(executable);
         return dataDirectory == null

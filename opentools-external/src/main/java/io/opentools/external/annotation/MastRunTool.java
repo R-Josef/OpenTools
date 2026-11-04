@@ -79,6 +79,7 @@ public final class MastRunTool extends AbstractOpenTool {
                     "MAST was not found. " + mast.diagnostic(),
                     "Install the MEME Suite, provide executablePath, or set OPENTOOLS_MAST.");
         }
+        Path runnable = MemeRuntimeSupport.runnableExecutable(mast.executable());
         Path work = Files.createTempDirectory("opentools-mast-");
         try {
             Path motifs = work.resolve("motifs.xml");
@@ -89,7 +90,7 @@ public final class MastRunTool extends AbstractOpenTool {
             Files.createDirectories(outDir);
             MemeRuntimeSupport.copyTemplateIfAvailable(mast.executable(), work);
             List<String> command = new ArrayList<>();
-            command.add(mast.executable().toString());
+            command.add(runnable.toString());
             command.add(motifs.getFileName().toString());
             command.add(sequences.getFileName().toString());
             command.addAll(List.of("-oc", outDir.getFileName().toString(), "-nostatus"));

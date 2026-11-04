@@ -89,6 +89,7 @@ public final class MemeRunTool extends AbstractOpenTool {
                     "MEME was not found. " + meme.diagnostic(),
                     "Install the MEME Suite, provide executablePath, or set OPENTOOLS_MEME.");
         }
+        Path runnable = MemeRuntimeSupport.runnableExecutable(meme.executable());
         Path work = Files.createTempDirectory("opentools-meme-");
         try {
             Path input = work.resolve("sequences.fa");
@@ -97,7 +98,7 @@ public final class MemeRunTool extends AbstractOpenTool {
             Files.createDirectories(outDir);
             MemeRuntimeSupport.copyTemplateIfAvailable(meme.executable(), work);
             List<String> command = new ArrayList<>();
-            command.add(meme.executable().toString());
+            command.add(runnable.toString());
             command.add(input.getFileName().toString());
             command.addAll(List.of("-oc", outDir.getFileName().toString(), "-nostatus",
                     "-mod", "zoops",

@@ -120,6 +120,19 @@ final class MemeMastParserTest {
     }
 
     @Test
+    void mirrorsExecutableFromNonAsciiPath() throws Exception {
+        Path directory = Files.createDirectories(tempDir.resolve("中文"));
+        Path executable = directory.resolve("meme.exe");
+        Files.writeString(executable, "fake");
+        Path mirrored = MemeRuntimeSupport.runnableExecutable(executable);
+        org.junit.jupiter.api.Assertions.assertNotEquals(executable, mirrored);
+        assertEquals("meme.exe", mirrored.getFileName().toString());
+        assertEquals("fake", Files.readString(mirrored));
+        Path ascii = tempDir.resolve("ascii").resolve("meme.exe");
+        assertEquals(ascii, MemeRuntimeSupport.runnableExecutable(ascii));
+    }
+
+    @Test
     void rejectsMalformedXml() throws Exception {
         Path xml = tempDir.resolve("bad.xml");
         Files.writeString(xml, "<MEME><motifs>");
