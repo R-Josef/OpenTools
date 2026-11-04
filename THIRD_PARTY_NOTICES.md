@@ -35,6 +35,26 @@ package contains the following independent programs:
 | trimAl | 1.5.1 | GPL-3.0 | <https://github.com/inab/trimal> |
 | IQ-TREE | 2.4.0 | GPL-2.0 | <https://github.com/iqtree/iqtree2> |
 | MCScanX | 1.0.0 | BSD-2-Clause | <https://github.com/wyp1125/MCScanX> |
+| MEME Suite (MEME, MAST) | 5.5.9 | MEME Suite Academic/Non-Profit License | <https://meme-suite.org/meme/meme-software/5.5.9/meme-5.5.9.tar.gz> |
+| Cygwin runtime (`cygwin1.dll`) | build runner | LGPL-3.0-or-later | <https://cygwin.com/licensing.html> |
+
+MEME and MAST are source-built for Windows with Cygwin. The portable package
+contains `tools/meme/bin/meme.exe`, `tools/meme/bin/mast.exe`,
+`tools/meme/bin/cygwin1.dll`, and the required `tools/meme/share` tree.
+MEME's `COPYING` and `README` are copied to `licenses/tools/meme/`.
+
+MEME Suite is distributed under the Regents of the University of California
+academic/non-profit license. Educational, research, and non-profit use is
+permitted; commercial use or incorporation into commercial products requires
+permission from UCSD's Office of Innovation and Commercialization. This is not
+an OSI-approved license. Redistributing MEME with OpenTools requires a separate
+legal review.
+
+The Cygwin API library is covered by LGPL-3.0-or-later with Cygwin's linking
+exception. The package contains the runtime DLL only; Cygwin source is available
+from <https://cygwin.com/> and its licensing terms are at
+<https://cygwin.com/licensing.html>. Release maintainers must review Cygwin
+redistribution and source-availability obligations before publishing.
 
 The portable package includes complete upstream license/notice files under
 `licenses/tools/`, official-package notices under each tool's

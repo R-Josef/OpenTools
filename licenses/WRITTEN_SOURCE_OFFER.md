@@ -18,6 +18,14 @@ the exact upstream version and an unmodified official source archive URL. The
 build maintains an offline cache of every downloaded archive and records its
 SHA-256 before packaging.
 
+The Windows MEME/MAST runtime is built by `scripts/build-meme-cygwin.sh` from
+MEME Suite 5.5.9 at
+<https://meme-suite.org/meme/meme-software/5.5.9/meme-5.5.9.tar.gz>, with the
+expected SHA-256 recorded in that script. The bundled Cygwin runtime is covered
+by <https://cygwin.com/licensing.html>; Cygwin source is available from
+<https://cygwin.com/>. MEME's academic/non-profit license and Cygwin's LGPL
+terms require separate legal review before redistribution.
+
 Anyone redistributing this package is responsible for preserving these notices
 and for satisfying the applicable source-code distribution obligations. The
 OpenTools project does not provide a legal warranty. Release maintainers must
