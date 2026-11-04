@@ -86,6 +86,7 @@ target/release/opentools-<version>-macos-arm64.zip
 
 Windows 便携包需要 JDK 21 的 `jpackage`。维护者可先运行
 `scripts/package-windows.ps1`；下载和第三方构建只在构建阶段发生。
+默认缓存目录是 `.release-cache/windows`，可用 `-CacheDirectory` 指定其他位置。
 带标签发布会在 GitHub Actions 的原生 runner 上构建四种归档。
 
 ## 升级

@@ -91,7 +91,8 @@ target/release/opentools-<version>-macos-arm64.zip
 
 The Windows portable package uses JDK 21 `jpackage`. Maintainers can run
 `scripts/package-windows.ps1`; downloads and native builds happen only at build
-time and can be reused from the verified cache.
+time and can be reused from the verified cache. The default cache is
+`.release-cache/windows`; pass `-CacheDirectory` to use another location.
 Tagged releases build all four archives on native GitHub Actions runners.
 
 ## Updating
