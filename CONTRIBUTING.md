@@ -11,7 +11,7 @@ Public `CHANGELOG.md` entries describe only:
 
 Do not add:
 
-- competitor analysis or comparisons;
+- product comparisons or market-positioning analysis;
 - internal product strategy or roadmap decisions;
 - feature-coverage origin or prioritization rationale;
 - implementation-decision background that is not directly useful to users.
