@@ -4,7 +4,7 @@ set -euo pipefail
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
     printf 'Usage: build-meme-cygwin.sh OUTPUT_DIR\n'
     printf 'Environment: MEME_VERSION (default 5.5.9), MEME_SOURCE_ARCHIVE, MEME_SHA256,\n'
-    printf '             MEME_BUILD_JOBS, MEME_KEEP_FULL_SUITE=1. Runs under Cygwin.\n'
+    printf '             MEME_BUILD_JOBS. Runs under Cygwin.\n'
     exit 0
 fi
 
@@ -75,13 +75,6 @@ fi
 cp -a "$work_dir/install/libexec/." "$output_dir/libexec/"
 cp -a "$work_dir/install/share/meme-$version/." "$output_dir/share/meme-$version/"
 cp -L /usr/bin/cygwin1.dll "$output_dir/bin/"
-# OpenTools exposes meme.run and mast.run, not the rest of the MEME Suite.
-# Keep the package lean by default; set MEME_KEEP_FULL_SUITE=1 to retain all
-# installed MEME command-line tools.
-if [[ "${MEME_KEEP_FULL_SUITE:-0}" != "1" ]]; then
-    find "$output_dir/bin" -maxdepth 1 -type f \
-        ! -name 'meme.exe' ! -name 'mast.exe' ! -name 'cygwin1.dll' -delete
-fi
 for notice in LICENSE COPYING COPYING.LESSER README; do
     if [[ -f "$source_dir/$notice" ]]; then
         cp -a "$source_dir/$notice" "$output_dir/$notice"
