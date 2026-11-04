@@ -15,11 +15,14 @@ independent programs:
 | IQ-TREE | Maximum-likelihood phylogeny | `tools/iqtree/bin` |
 | MCScanX | Collinearity and duplicate-gene classification | `tools/mcscanx` |
 
-MEME and MAST are distributed by the MEME Suite. The official Windows option is
-WSL/Docker, so the Windows portable package does not bundle a native MEME build;
-Linux/macOS packages can use `tools/meme/bin`. Detection reports a clear missing
-diagnostic until the executables are available. Check the MEME Suite license
-before redistributing its binaries.
+The Windows portable package bundles a Cygwin-built MEME 5.5.9 under
+`tools/meme`; the Cygwin runtime DLL is included. Linux/macOS packages currently
+leave MEME/MAST optional and can use `tools/meme/bin`, `OPENTOOLS_*`, or PATH.
+Detection reports a clear missing diagnostic until the executables are available.
+If the executable path contains non-ASCII characters, OpenTools mirrors only the
+executable and its DLLs to an ASCII temporary directory; Chinese data and
+input/output paths remain supported. Check the MEME Suite license before
+redistributing its binaries.
 
 Remote BLAST is Java-native: it calls the NCBI BLAST URL API over HTTPS and does
 not need a local executable or database. It uploads the query only when the task
