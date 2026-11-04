@@ -176,6 +176,7 @@ final class DocsPanel extends JPanel {
                 t("docs.welcome", "Documentation home"), DocKind.DOCUMENT)));
         addLeaf(root, query, "quick-start.md", t("docs.quick_start", "Quick start"));
         addLeaf(root, query, "installation.md", t("docs.installation", "Installation and updates"));
+        addLeaf(root, query, "workflow.md", t("docs.workflow", "Workflows"));
 
         for (DocGroup group : GROUPS) {
             List<ToolDescriptor> tools = registry.list().stream()
