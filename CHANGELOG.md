@@ -119,10 +119,6 @@
 
 ### Changed
 
-- The project no longer supports TBtools legacy plugins. `plugins/legacy`,
-  legacy JAR metadata inspection, and `.plugin` script packages were removed
-  from the requirements; the plugin host only loads OpenTools SPI JARs (see
-  `OpenTools项目需求说明书.md` §10.6).
 - `run --no-wait` was removed. A one-shot CLI process cannot keep running a
   background job; use the GUI or MCP for asynchronous execution.
 - New pull-request CI workflow runs `mvn verify` on every push to `main` and
@@ -237,8 +233,6 @@
 - Process-level SQLite spool benchmark for 100,000-row transpose and 100,000
   sparse annotation intervals, including sampled working-set and temporary-file
   peaks.
-- Black-box TBtools performance comparison harness for FASTA statistics and
-  table transpose, using TBtools' public RPC without inspecting its internals.
 - Bounded ordered parallel record processing for FASTA/FASTQ/GXF/BED, indexed
   BAM/BED coverage, VCF statistics, Ka/Ks, expression correlation, and heatmap
   distance rows.
@@ -272,11 +266,6 @@
 
 ### Changed
 
-- Internal phase history, real-machine reports, benchmarks, and planning records
-  moved outside the public repository under the parent `docs/OpenToolsInternal`
-  archive.
-- Public distribution docs now use an explicit allowlist; no internal completion
-  notes or target-machine evidence is packaged.
 - Docs now selects `docs/en_US` or `docs/zh_CN` from the active interface
   language, with explicit English fallback for languages without a bundled guide.
 - Changing interface language in Settings now rebuilds the main window in the
@@ -390,8 +379,7 @@
 - Indexed VCF/BCF output requires a sequence dictionary and dictionary-ordered
   records; ordinary uncompressed VCF output remains unindexed.
 - Large VCF/BCF performance and working-set pressure have been tested locally;
-  results are environment-specific and documented in
-  `docs/目标环境与1GB压力验证.md`.
+  results are environment-specific.
 - Recent GUI projects are a single-machine setting; concurrent app instances use
   last-writer-wins behavior.
 - Parallel record tasks still use one sequential decompression reader and one
@@ -425,8 +413,6 @@
   response headers, longer explicit tokens, and stricter Origin behavior.
 - Batch automation is capped at 100 items and batch files at 10 MB.
 - Removed unused Batik dependency management.
-- P8 release engineering is paused in favor of prioritized TBtools feature
-  coverage waves documented in `docs/TBtools功能覆盖与后续开发交接.md`.
 
 ### Known limitations
 
