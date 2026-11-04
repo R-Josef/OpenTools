@@ -89,6 +89,33 @@ Windows 便携包需要 JDK 21 的 `jpackage`。维护者可先运行
 默认缓存目录是 `.release-cache/windows`，可用 `-CacheDirectory` 指定其他位置。
 带标签发布会在 GitHub Actions 的原生 runner 上构建四种归档。
 
+### 第三方工具源码构建
+
+发布包在构建阶段填充 `tools/`。需要自行编译外部工具时，可以复用同一套脚本：
+
+- **Linux/macOS：** 运行 `scripts/package-linux.sh` 或
+  `scripts/package-macos.sh x64|arm64`，脚本会下载固定版本源码并自动构建
+  HMMER、MCScanX、trimAl。要复用已编译好的二进制，传入
+  `--native-build-dir /path/to/native`。底层脚本为
+  `scripts/build-unix-dependencies.sh`，读取 `HMMER_SOURCE_DIR`、
+  `MCSCANX_SOURCE_DIR` 和 `TRIMAL_SOURCE_DIR`。
+- **Windows HMMER/MCScanX/trimAl：** 在 MSYS2 中运行
+  `scripts/build-msys-dependencies.sh TOOL_ROOT OUTPUT_DIR`。
+  `TOOL_ROOT` 需包含 `hmmer-3.4`、`MCScanX-1.0.0` 和
+  `trimal-1.5.1/source`。随后用
+  `scripts/package-windows.ps1 -NativeBuildDirectory OUTPUT_DIR` 打包。
+- **Windows MEME/MAST：** 在 Cygwin 中运行
+  `scripts/build-meme-cygwin.sh OUTPUT_DIR`，需安装 `gcc`、`make`、
+  `perl` 以及 libxml2/libxslt/gd 开发包。脚本会下载并校验 MEME 5.5.9，
+  应用 Cygwin 补丁，生成便携目录。随后用
+  `scripts/package-windows.ps1 -MemeDirectory OUTPUT_DIR` 打包。
+
+本地开发时，可把构建产物复制到 `tools/<tool>`，让正常发现顺序找到它；
+也可通过显式可执行文件路径、`OPENTOOLS_*` 或 `PATH` 指定。不要把编译产物
+提交到 Git。下载缓存位于 `.release-cache/<release>`。BLAST+、DIAMOND、
+IQ-TREE 和 MUSCLE 当前使用固定版本的上游二进制；如需源码构建，需自行编译，
+并同步修改对应 manifest 和许可证说明。
+
 ## 升级
 
 1. 退出 OpenTools，确认没有运行中的作业。

@@ -95,6 +95,36 @@ time and can be reused from the verified cache. The default cache is
 `.release-cache/windows`; pass `-CacheDirectory` to use another location.
 Tagged releases build all four archives on native GitHub Actions runners.
 
+### Building third-party tools from source
+
+Release packages populate `tools/` at build time. Developers who want to
+compile the external tools themselves can use the same scripts:
+
+- **Linux/macOS:** `scripts/package-linux.sh` and
+  `scripts/package-macos.sh x64|arm64` download the pinned source archives and
+  build HMMER, MCScanX, and trimAl automatically. To reuse prebuilt binaries,
+  pass `--native-build-dir /path/to/native`. The lower-level script is
+  `scripts/build-unix-dependencies.sh`; it reads `HMMER_SOURCE_DIR`,
+  `MCSCANX_SOURCE_DIR`, and `TRIMAL_SOURCE_DIR`.
+- **Windows HMMER/MCScanX/trimAl:** run
+  `scripts/build-msys-dependencies.sh TOOL_ROOT OUTPUT_DIR` from an MSYS2 shell.
+  `TOOL_ROOT` must contain `hmmer-3.4`, `MCScanX-1.0.0`, and
+  `trimal-1.5.1/source`. Then package with
+  `scripts/package-windows.ps1 -NativeBuildDirectory OUTPUT_DIR`.
+- **Windows MEME/MAST:** run `scripts/build-meme-cygwin.sh OUTPUT_DIR` from
+  Cygwin with `gcc`, `make`, `perl`, and the libxml2/libxslt/gd development
+  packages. It downloads and verifies MEME 5.5.9, applies the Cygwin patch, and
+  writes a portable tree. Package it with
+  `scripts/package-windows.ps1 -MemeDirectory OUTPUT_DIR`.
+
+For local development, copy a build output to `tools/<tool>` so the normal
+discovery order finds it, or point to it with an explicit executable path,
+`OPENTOOLS_*`, or `PATH`. Do not commit compiled tool binaries to Git. The
+scripts cache downloads under `.release-cache/<release>`. BLAST+, DIAMOND,
+IQ-TREE, and MUSCLE are currently installed from pinned upstream binaries, not
+built by these source scripts; build them manually only if you also update the
+matching manifest and notices.
+
 ## Updating
 
 1. Exit OpenTools and wait for active jobs.
