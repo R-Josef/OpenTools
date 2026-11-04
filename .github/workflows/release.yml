@@ -178,8 +178,19 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" dist/* --clobber
           else
-            gh release create "$TAG" dist/* \
+            # --generate-notes can hit transient GitHub API 500s. Fall back to
+            # a simple body and upload to an already-created release if needed.
+            if ! gh release create "$TAG" dist/* \
               --title "$TAG" \
               --generate-notes \
-              --verify-tag
+              --verify-tag; then
+              if gh release view "$TAG" >/dev/null 2>&1; then
+                gh release upload "$TAG" dist/* --clobber
+              else
+                gh release create "$TAG" dist/* \
+                  --title "$TAG" \
+                  --notes "OpenTools $TAG" \
+                  --verify-tag
+              fi
+            fi
           fi
