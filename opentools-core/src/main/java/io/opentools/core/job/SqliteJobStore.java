@@ -28,6 +28,7 @@ public final class SqliteJobStore implements JobStore {
     private final Path databasePath;
 
     public SqliteJobStore(Path databasePath) {
+        SqliteNativeSupport.prepare();
         this.databasePath = databasePath.toAbsolutePath().normalize();
     }
 

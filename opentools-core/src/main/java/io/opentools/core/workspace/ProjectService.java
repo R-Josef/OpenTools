@@ -3,6 +3,7 @@ package io.opentools.core.workspace;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.opentools.core.job.SqliteJobStore;
+import io.opentools.core.job.SqliteNativeSupport;
 import io.opentools.api.tool.OpenToolException;
 
 import java.io.IOException;
@@ -12,6 +13,10 @@ import java.time.Instant;
 import java.util.UUID;
 
 public final class ProjectService {
+    static {
+        SqliteNativeSupport.prepare();
+    }
+
     private static final String PROJECT_FILE = "project.json";
 
     private final ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);

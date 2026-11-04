@@ -10,6 +10,14 @@ param(
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
+
+function Get-RelativePathCompat {
+    param([string]$Base, [string]$Target)
+    $basePath = [IO.Path]::GetFullPath($Base).TrimEnd([IO.Path]::DirectorySeparatorChar)
+    $baseUri = [Uri]($basePath + [IO.Path]::DirectorySeparatorChar)
+    $targetUri = [Uri][IO.Path]::GetFullPath($Target)
+    return [Uri]::UnescapeDataString($baseUri.MakeRelativeUri($targetUri).ToString()).Replace("/", "\")
+}
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $manifestPath = Join-Path $projectRoot "packaging\windows\tools.json"
 $manifest = Get-Content -Raw -LiteralPath $manifestPath | ConvertFrom-Json
@@ -29,7 +37,13 @@ if (-not (Test-Path -LiteralPath $jpackage -PathType Leaf)) {
 if (-not (Test-Path -LiteralPath $java -PathType Leaf)) {
     throw "java was not found under JAVA_HOME: $java"
 }
-$javaVersion = & $java -version 2>&1 | Select-Object -First 1
+$previousErrorAction = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+try {
+    $javaVersion = & $java -version 2>&1 | Select-Object -First 1
+} finally {
+    $ErrorActionPreference = $previousErrorAction
+}
 if ($javaVersion -notmatch '"21(\.|")') {
     throw "Windows packaging requires JDK 21. Found: $javaVersion"
 }
@@ -313,6 +327,24 @@ if (-not (Test-Path -LiteralPath (Join-Path $imageRoot "OpenTools.exe") -PathTyp
     throw "jpackage did not create OpenTools.exe."
 }
 
+$sqliteJar = @(
+    (Join-Path $imageRoot "app\opentools.jar"),
+    (Join-Path $imageRoot "opentools.jar")
+) | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+if ($sqliteJar) {
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $sqliteZip = [IO.Compression.ZipFile]::OpenRead($sqliteJar)
+    try {
+        $sqliteEntry = $sqliteZip.GetEntry("org/sqlite/native/Windows/x86_64/sqlitejdbc.dll")
+        if ($sqliteEntry) {
+            $sqliteTarget = Join-Path (Split-Path -Parent $sqliteJar) "sqlitejdbc.dll"
+            [IO.Compression.ZipFileExtensions]::ExtractToFile($sqliteEntry, $sqliteTarget, $true)
+        }
+    } finally {
+        $sqliteZip.Dispose()
+    }
+}
+
 Copy-Item -LiteralPath (Join-Path $projectRoot "lang") -Destination (Join-Path $imageRoot "lang") -Recurse
 $packageDocs = Join-Path $imageRoot "docs"
 New-Item -ItemType Directory -Force -Path $packageDocs | Out-Null
@@ -428,7 +460,7 @@ foreach ($tool in $manifest.tools) {
         $noticeFiles = @(Get-ChildItem -LiteralPath $toolArchiveRoots[$tool.id] -Recurse -File |
             Where-Object { $_.Name -match '^(LICEN[CS]E|COPYING|NOTICE|COPYRIGHT)' })
         foreach ($notice in $noticeFiles) {
-            $relative = [IO.Path]::GetRelativePath($toolArchiveRoots[$tool.id], $notice.FullName)
+            $relative = Get-RelativePathCompat $toolArchiveRoots[$tool.id] $notice.FullName
             $target = Join-Path $officialLicenseDir $relative
             New-Item -ItemType Directory -Force -Path (Split-Path -Parent $target) | Out-Null
             Copy-Item -LiteralPath $notice.FullName -Destination $target -Force
@@ -535,7 +567,7 @@ Compress-Archive -LiteralPath $imageRoot -DestinationPath $archive -CompressionL
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $zip = [IO.Compression.ZipFile]::OpenRead($archive)
 try {
-    $entries = @($zip.Entries.FullName)
+    $entries = @($zip.Entries | ForEach-Object { $_.FullName.Replace("\", "/") })
     foreach ($required in @(
         "OpenTools/OpenTools.exe",
         "OpenTools/OpenToolsCLI.exe",
