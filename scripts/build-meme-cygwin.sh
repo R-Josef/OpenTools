@@ -75,9 +75,11 @@ fi
 cp -a "$work_dir/install/libexec/." "$output_dir/libexec/"
 cp -a "$work_dir/install/share/meme-$version/." "$output_dir/share/meme-$version/"
 cp -L /usr/bin/cygwin1.dll "$output_dir/bin/"
-if [[ -f "$source_dir/LICENSE" ]]; then
-    cp -a "$source_dir/LICENSE" "$output_dir/LICENSE"
-fi
+for notice in LICENSE COPYING COPYING.LESSER README; do
+    if [[ -f "$source_dir/$notice" ]]; then
+        cp -a "$source_dir/$notice" "$output_dir/$notice"
+    fi
+done
 
 {
     printf 'memeVersion=%s\n' "$version"

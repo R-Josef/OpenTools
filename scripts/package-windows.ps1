@@ -366,9 +366,11 @@ if ($MemeDirectory) {
     Copy-Item -Path (Join-Path $memeRoot "*") -Destination $memeDestination -Recurse -Force
     $memeLicenseDir = Join-Path $licensesRoot "tools\meme"
     New-Item -ItemType Directory -Force -Path $memeLicenseDir | Out-Null
-    if (Test-Path -LiteralPath (Join-Path $memeRoot "LICENSE") -PathType Leaf) {
-        Copy-Item -LiteralPath (Join-Path $memeRoot "LICENSE") -Destination (Join-Path $memeLicenseDir "LICENSE") -Force
-    }
+    Get-ChildItem -LiteralPath $memeRoot -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -match '^(LICEN[CS]E|COPYING|NOTICE|README)' } |
+        ForEach-Object {
+            Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $memeLicenseDir $_.Name) -Force
+        }
     $toolRows += [pscustomobject]@{
         Tool = "MEME Suite"
         Version = "5.5.9"
