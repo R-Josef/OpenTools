@@ -59,21 +59,32 @@ source_dir="$work_dir/source/meme-$version"
 )
 
 rm -rf "$output_dir"
-mkdir -p "$output_dir/bin" "$output_dir/lib" "$output_dir/libexec" \
-    "$output_dir/share/meme-$version"
-cp -a "$work_dir/install/bin/." "$output_dir/bin/"
-for directory in bin libexec "share/meme-$version"; do
-    [[ -d "$work_dir/install/$directory" ]] || {
-        printf 'MEME install directory is missing: %s\n' "$directory" >&2
+mkdir -p "$output_dir/bin" "$output_dir/share/meme-$version"
+for file in meme.exe mast.exe; do
+    [[ -f "$work_dir/install/bin/$file" ]] || {
+        printf 'MEME binary is missing: %s\n' "$file" >&2
         exit 2
     }
 done
-cp -a "$work_dir/install/bin/." "$output_dir/bin/"
-if [[ -d "$work_dir/install/lib" ]]; then
-    cp -a "$work_dir/install/lib/." "$output_dir/lib/"
+[[ -d "$work_dir/install/share/meme-$version" ]] || {
+    printf 'MEME share directory is missing.\n' >&2
+    exit 2
+}
+if [[ "${MEME_KEEP_FULL_SUITE:-0}" == "1" ]]; then
+    mkdir -p "$output_dir/lib" "$output_dir/libexec"
+    cp -a "$work_dir/install/bin/." "$output_dir/bin/"
+    if [[ -d "$work_dir/install/lib" ]]; then
+        cp -a "$work_dir/install/lib/." "$output_dir/lib/"
+    fi
+    cp -a "$work_dir/install/libexec/." "$output_dir/libexec/"
+else
+    cp -a "$work_dir/install/bin/meme.exe" "$output_dir/bin/"
+    cp -a "$work_dir/install/bin/mast.exe" "$output_dir/bin/"
 fi
-cp -a "$work_dir/install/libexec/." "$output_dir/libexec/"
 cp -a "$work_dir/install/share/meme-$version/." "$output_dir/share/meme-$version/"
+if [[ "${MEME_KEEP_FULL_SUITE:-0}" != "1" ]]; then
+    rm -rf "$output_dir/share/meme-$version/doc" "$output_dir/share/meme-$version/tests"
+fi
 cp -L /usr/bin/cygwin1.dll "$output_dir/bin/"
 for notice in LICENSE COPYING COPYING.LESSER README; do
     if [[ -f "$source_dir/$notice" ]]; then
