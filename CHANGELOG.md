@@ -64,6 +64,9 @@
   supported insertions/deletions, variant/indel tables, and provenance BED that
   distinguishes read-supported, heterozygous, deleted, low-confidence, and
   reference-filled positions.
+- The Results panel adds the Visualization tab only when a result has a
+  visualization artifact; tools without visualization output no longer show a
+  disabled placeholder tab.
 - The Results panel adds an AB1 tab for `sanger.assemble` jobs, showing trace
   channels, basecalls, quality shading, per-read selection, horizontal zoom/fit,
   and vertical Y zoom/fit controls. The default Y range fits the highest peak,

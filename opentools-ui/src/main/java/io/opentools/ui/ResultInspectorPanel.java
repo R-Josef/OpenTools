@@ -45,7 +45,7 @@ final class ResultInspectorPanel extends JPanel {
     private final JTextArea paths = new JTextArea(2, 40);
     private final JTabbedPane views = new JTabbedPane();
     private final PlotViewerPanel plotViewer;
-    private final int plotTabIndex;
+    private int plotTabIndex = -1;
     private BlastViewerPanel blastViewer;
     private int blastTabIndex = -1;
     private MemeViewerPanel memeViewer;
@@ -121,12 +121,10 @@ final class ResultInspectorPanel extends JPanel {
         dataView.add(new JScrollPane(table), BorderLayout.CENTER);
         plotViewer = new PlotViewerPanel(language);
         views.addTab(language.text("results.tab.data", "Data"), dataView);
-        views.addTab(language.text("results.tab.visualization", "Visualization"), plotViewer);
-        plotTabIndex = views.indexOfComponent(plotViewer);
-        views.setEnabledAt(plotTabIndex, false);
         views.setTabLayoutPolicy(JTabbedPane.WRAP_TAB_LAYOUT);
         views.addChangeListener(ignored -> {
-            if (views.getSelectedIndex() == plotTabIndex && !plotLoaded && currentResult != null) {
+            if (plotTabIndex >= 0 && views.getSelectedIndex() == plotTabIndex
+                    && !plotLoaded && currentResult != null) {
                 loadPlot(currentResult);
             }
         });
@@ -327,9 +325,13 @@ final class ResultInspectorPanel extends JPanel {
                 break;
             }
         }
-        views.setEnabledAt(plotTabIndex, hasPlot);
         if (!hasPlot) {
+            clearPlotTab();
             return;
+        }
+        if (plotTabIndex < 0) {
+            views.addTab(language.text("results.tab.visualization", "Visualization"), plotViewer);
+            plotTabIndex = views.indexOfComponent(plotViewer);
         }
         Path preview = null;
         Path full = null;
@@ -393,7 +395,6 @@ final class ResultInspectorPanel extends JPanel {
             } else {
                 plotViewer.loadImage(image);
             }
-            views.setEnabledAt(plotTabIndex, true);
             if (preview != null && !preview.equals(full)) {
                 views.setToolTipTextAt(plotTabIndex, language.text(
                         "results.plot_preview",
@@ -402,7 +403,6 @@ final class ResultInspectorPanel extends JPanel {
             }
         } catch (Exception ex) {
             plotViewer.showLoadFailure(rootMessage(ex));
-            views.setEnabledAt(plotTabIndex, true);
         }
     }
 
@@ -513,13 +513,20 @@ final class ResultInspectorPanel extends JPanel {
     }
 
     private void clearPlot() {
-        plotViewer.clear();
-        views.setEnabledAt(plotTabIndex, false);
-        plotLoaded = false;
+        clearPlotTab();
         currentResult = null;
-        if (views.getSelectedIndex() == plotTabIndex) {
-            views.setSelectedIndex(0);
+    }
+
+    private void clearPlotTab() {
+        plotViewer.clear();
+        if (plotTabIndex >= 0) {
+            if (views.getSelectedIndex() == plotTabIndex && views.getTabCount() > 1) {
+                views.setSelectedIndex(0);
+            }
+            views.remove(plotViewer);
+            plotTabIndex = -1;
         }
+        plotLoaded = false;
     }
 
     private void open(Path path) {
