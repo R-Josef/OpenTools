@@ -56,17 +56,20 @@ final class SangerAssemblyViewerPanel extends JPanel {
         Path finalConsensus = artifact(root, "Consensus with indels");
         Path readsTable = artifact(root, "Read and placement summary");
         String reference = reference(job);
-        String assemblySequence = firstSequence(insert);
-        if (assemblySequence.isBlank()) assemblySequence = firstSequence(assembly);
+        String insertSequence = firstSequence(insert);
+        String assemblySequence = firstSequence(assembly);
+        if (assemblySequence.isBlank()) assemblySequence = insertSequence;
         String consensus = firstSequence(finalConsensus);
         if (consensus.isBlank()) consensus = firstSequence(corrected);
         if (reference.isBlank()) reference = consensus;
         if (assemblySequence.isBlank()) assemblySequence = consensus;
+        int assemblyOffset = insertSequence.isBlank() ? 0
+                : Math.max(0, assemblySequence.indexOf(insertSequence));
         List<ReadAlignment> reads = readAlignments(readsTable);
         loadTraces(job);
 
-        canvas = new AssemblyCanvas(reference, consensus, assemblySequence, reads);
-        ab1Canvas = new Ab1ReferenceCanvas(reference.length(), reads);
+        canvas = new AssemblyCanvas(reference, consensus, assemblySequence, assemblyOffset, reads);
+        ab1Canvas = new Ab1ReferenceCanvas(reference.length(), assemblyOffset, reads);
         canvas.setSelectionListener((read, coordinate) -> {
             if (read != null) {
                 Ab1Reader.Trace trace = traces.get(read);
@@ -133,7 +136,7 @@ final class SangerAssemblyViewerPanel extends JPanel {
         JPanel ab1Section = new JPanel(new BorderLayout(0, 4));
         ab1Section.add(ab1Controls, BorderLayout.NORTH);
         ab1Section.add(ab1Scroll, BorderLayout.CENTER);
-        ab1Section.setPreferredSize(new Dimension(0, 250));
+        ab1Section.setPreferredSize(new Dimension(0, 145));
         JPanel bottom = new JPanel(new BorderLayout(0, 2));
         bottom.add(ab1Section, BorderLayout.CENTER);
         bottom.add(selection, BorderLayout.SOUTH);
@@ -260,6 +263,7 @@ final class SangerAssemblyViewerPanel extends JPanel {
         private final String assembly;
         private final List<ReadAlignment> reads;
         private final int[] coverage;
+        private final int assemblyOffset;
         private final int rowHeight = 22;
         private final int top = 118;
         private long selectedCoordinate = -1;
@@ -270,10 +274,12 @@ final class SangerAssemblyViewerPanel extends JPanel {
         private ReadAlignment traceRead;
         private SelectionListener listener = (read, coordinate) -> { };
 
-        AssemblyCanvas(String reference, String consensus, String assembly, List<ReadAlignment> reads) {
+        AssemblyCanvas(String reference, String consensus, String assembly, int assemblyOffset,
+                       List<ReadAlignment> reads) {
             this.reference = reference;
             this.consensus = consensus;
             this.assembly = assembly;
+            this.assemblyOffset = Math.max(0, assemblyOffset);
             this.reads = reads;
             this.coverage = coverage(reference.length(), reads);
             setBackground(Color.WHITE);
@@ -390,7 +396,9 @@ final class SangerAssemblyViewerPanel extends JPanel {
         }
 
         private void resize() {
-            int width = Math.max(600, (int) Math.round(Math.max(1, reference.length()) * 7 * zoom) + 100);
+            int offsetPixels = (int) Math.round(assemblyOffset * 7 * zoom);
+            int width = Math.max(600, offsetPixels
+                    + (int) Math.round(Math.max(1, reference.length()) * 7 * zoom) + 100);
             setPreferredSize(new Dimension(width,
                     top + Math.max(3, reads.size()) * rowHeight + 20));
             revalidate();
@@ -403,20 +411,23 @@ final class SangerAssemblyViewerPanel extends JPanel {
             try {
                 g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 int left = 84;
-                int width = Math.max(120, getWidth() - left - 16);
+                double pixelsPerBase = 7 * zoom;
+                int referenceLeft = left + (int) Math.round(assemblyOffset * pixelsPerBase);
+                int width = Math.max(120,
+                        (int) Math.round(Math.max(1, reference.length()) * pixelsPerBase));
                 int length = Math.max(1, reference.length());
                 g.setFont(getFont().deriveFont(Font.PLAIN, 10f));
-                drawTrack(g, "Reference", reference, 20, left, width, new Color(80, 120, 150));
-                drawTrack(g, "Consensus", consensus, 45, left, width, new Color(36, 139, 135));
-                drawTrack(g, "Assembly", assembly, 70, left, width, new Color(190, 130, 40));
-                drawCoverage(g, left, width, 96, length);
+                drawTrack(g, "Reference", reference, 20, referenceLeft, width, new Color(80, 120, 150), false);
+                drawTrack(g, "Consensus", consensus, 45, referenceLeft, width, new Color(36, 139, 135), false);
+                drawTrack(g, "Assembly", assembly, 70, left, width, new Color(190, 130, 40), true);
+                drawCoverage(g, referenceLeft, width, 96, length);
                 int maxCoverage = 1;
                 for (int value : coverage) maxCoverage = Math.max(maxCoverage, value);
                 for (int index = 0; index < reads.size(); index++) {
                     ReadAlignment read = reads.get(index);
                     int y = top + index * rowHeight;
-                    int x1 = left + (int) Math.round(width * Math.max(0, read.start()) / (double) length);
-                    int x2 = left + (int) Math.round(width * Math.min(length, read.end()) / (double) length);
+                    int x1 = referenceLeft + (int) Math.round(width * Math.max(0, read.start()) / (double) length);
+                    int x2 = referenceLeft + (int) Math.round(width * Math.min(length, read.end()) / (double) length);
                     g.setColor(index == selected ? new Color(42, 112, 190) : new Color(150, 168, 180));
                     g.fillRoundRect(x1, y, Math.max(3, x2 - x1), 13, 5, 5);
                     g.setColor(new Color(55, 65, 72));
@@ -424,7 +435,7 @@ final class SangerAssemblyViewerPanel extends JPanel {
                     g.drawString(read.orientation().startsWith("reverse") ? "<" : ">", Math.max(x1, x2 - 8), y + 11);
                 }
                 if (selectedCoordinate >= 0) {
-                    int x = left + (int) Math.round(width * selectedCoordinate / (double) length);
+                    int x = referenceLeft + (int) Math.round(width * selectedCoordinate / (double) length);
                     g.setColor(new Color(255, 190, 80, 150));
                     g.fillRect(x - 1, 8, 3, getHeight() - 16);
                 }
@@ -434,7 +445,7 @@ final class SangerAssemblyViewerPanel extends JPanel {
         }
 
         private void drawTrack(Graphics2D g, String label, String sequence, int y,
-                               int left, int width, Color color) {
+                               int left, int width, Color color, boolean assemblyTrack) {
             g.setColor(new Color(55, 65, 72));
             g.drawString(label, 4, y + 10);
             if (sequence == null || sequence.isEmpty()) return;
@@ -442,13 +453,17 @@ final class SangerAssemblyViewerPanel extends JPanel {
             int referenceLength = Math.max(1, reference.length());
             g.setColor(color);
             for (int index = 0; index < sequenceLength; index++) {
-                int x = left + (int) Math.round(width * index / (double) referenceLength);
+                int x = assemblyTrack
+                        ? left + (int) Math.round((index - assemblyOffset) * 7 * zoom)
+                        : left + (int) Math.round(width * index / (double) referenceLength);
                 if (index % 10 == 0) g.drawLine(x, y, x, y + 18);
             }
             if (width / (double) referenceLength >= 4.5) {
                 g.setFont(getFont().deriveFont(Font.BOLD, 9f));
                 for (int index = 0; index < sequenceLength; index++) {
-                    int x = left + (int) Math.round(width * index / (double) referenceLength);
+                    int x = assemblyTrack
+                            ? left + (int) Math.round((index - assemblyOffset) * 7 * zoom)
+                            : left + (int) Math.round(width * index / (double) referenceLength);
                     char base = sequence.charAt(index);
                     g.setColor(switch (base) {
                         case 'A' -> new Color(37, 132, 74);
@@ -578,14 +593,16 @@ final class SangerAssemblyViewerPanel extends JPanel {
 
     private static final class Ab1ReferenceCanvas extends JPanel {
         private final int referenceLength;
+        private final int assemblyOffset;
         private final List<ReadAlignment> reads;
         private Ab1Reader.Trace trace;
         private ReadAlignment traceRead;
         private double zoom = 1.0;
         private double yZoom = 1.0;
 
-        Ab1ReferenceCanvas(int referenceLength, List<ReadAlignment> reads) {
+        Ab1ReferenceCanvas(int referenceLength, int assemblyOffset, List<ReadAlignment> reads) {
             this.referenceLength = Math.max(1, referenceLength);
+            this.assemblyOffset = Math.max(0, assemblyOffset);
             this.reads = reads;
             setBackground(Color.WHITE);
             resize();
@@ -613,8 +630,9 @@ final class SangerAssemblyViewerPanel extends JPanel {
         }
 
         private void resize() {
-            int width = Math.max(600, (int) Math.round(referenceLength * 7 * zoom) + 100);
-            int height = (int) Math.round(210 * yZoom);
+            int width = Math.max(600, (int) Math.round(
+                    (assemblyOffset + referenceLength) * 7 * zoom) + 100);
+            int height = (int) Math.round(105 * yZoom);
             setPreferredSize(new Dimension(width, height));
             revalidate();
             repaint();
@@ -626,8 +644,9 @@ final class SangerAssemblyViewerPanel extends JPanel {
             try {
                 g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 int left = 84;
-                int width = Math.max(120, getWidth() - left - 16);
-                int height = Math.max(80, getHeight() - 40);
+                int referenceLeft = left + (int) Math.round(assemblyOffset * 7 * zoom);
+                int width = Math.max(120, (int) Math.round(referenceLength * 7 * zoom));
+                int height = Math.max(60, getHeight() - 32);
                 g.setColor(new Color(55, 65, 72));
                 g.drawString("AB1", 4, 24);
                 if (trace == null || traceRead == null) {
@@ -663,9 +682,13 @@ final class SangerAssemblyViewerPanel extends JPanel {
                                 / Math.max(1, samples - 1));
                         int alignedIndex = traceRead.orientation().startsWith("reverse")
                                 ? readLength - 1 - baseIndex : baseIndex;
-                        int reference = referencePosition(alignedIndex);
+                        int reference = traceRead.cigar().isBlank()
+                                ? traceRead.start() + (int) Math.round(
+                                        (traceRead.end() - traceRead.start()) * sample
+                                                / (double) Math.max(1, samples - 1))
+                                : referencePosition(alignedIndex);
                         if (reference < 0) continue;
-                        int x = left + (int) Math.round(width * reference
+                        int x = referenceLeft + (int) Math.round(width * reference
                                 / (double) Math.max(1, referenceLength - 1));
                         int y = Math.max(0, height - (int) Math.round(
                                 height * values[Math.min(sample, values.length - 1)]
@@ -679,9 +702,13 @@ final class SangerAssemblyViewerPanel extends JPanel {
                 for (int index = 0; index < trace.sequence().length(); index++) {
                     int alignedIndex = traceRead.orientation().startsWith("reverse")
                             ? readLength - 1 - index : index;
-                    int reference = referencePosition(alignedIndex);
+                    int reference = traceRead.cigar().isBlank()
+                            ? traceRead.start() + (int) Math.round(
+                                    (traceRead.end() - traceRead.start()) * index
+                                            / (double) Math.max(1, readLength - 1))
+                            : referencePosition(alignedIndex);
                     if (reference < 0) continue;
-                    int x = left + (int) Math.round(width * reference
+                    int x = referenceLeft + (int) Math.round(width * reference
                             / (double) Math.max(1, referenceLength - 1));
                     char base = trace.sequence().charAt(index);
                     g.setColor(colors[Math.max(0, Math.min(3, "ACGT".indexOf(base)))]);

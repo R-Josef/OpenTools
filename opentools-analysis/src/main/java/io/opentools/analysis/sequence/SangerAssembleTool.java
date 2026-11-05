@@ -654,7 +654,6 @@ public final class SangerAssembleTool extends AbstractOpenTool {
             }
             String oriented = alignment.orientedRead();
             String insert = oriented.substring(alignment.readStart(), alignment.readEnd());
-            if (alignment.reverse()) insert = reverseComplement(insert);
             result.add(contig.withSequence(insert));
         }
         return result;
