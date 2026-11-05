@@ -77,7 +77,9 @@
   combining reference/consensus/assembly tracks, coverage, read placement, and
   the selected read's AB1 chromatogram. The standalone AB1 tab was removed.
   Trace controls include horizontal and Y zoom/fit, and signed trace values are
-  interpreted correctly.
+  interpreted correctly. The assembly track uses the vector-trimmed insert,
+  selected AB1 traces are projected onto the reference coordinate axis, and
+  individual read chromatograms can be viewed without a separate scroll area.
 - `sanger.assemble` trims common sequencing primers and optional user-supplied
   primer/vector FASTA sequences from both read ends, records the evidence in
   `trimming.tsv`, and can use the reference alignment to write a vector-trimmed

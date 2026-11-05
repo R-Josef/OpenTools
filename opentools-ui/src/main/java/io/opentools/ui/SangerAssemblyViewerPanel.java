@@ -40,10 +40,7 @@ final class SangerAssemblyViewerPanel extends JPanel {
     private static final ObjectMapper JSON = new ObjectMapper();
     private final LanguageManager language;
     private final AssemblyCanvas canvas;
-    private final Ab1ChromatogramPanel chromatogram = new Ab1ChromatogramPanel();
     private final JLabel selection = new JLabel(" ");
-    private final JLabel traceLabel = new JLabel(" ");
-    private final JPanel traceHost = new JPanel(new BorderLayout());
     private final Map<String, Ab1Reader.Trace> traces = new LinkedHashMap<>();
     private final Map<String, String> readPaths = new LinkedHashMap<>();
 
@@ -57,7 +54,8 @@ final class SangerAssemblyViewerPanel extends JPanel {
         Path finalConsensus = artifact(root, "Consensus with indels");
         Path readsTable = artifact(root, "Read and placement summary");
         String reference = reference(job);
-        String assemblySequence = firstSequence(assembly);
+        String assemblySequence = firstSequence(insert);
+        if (assemblySequence.isBlank()) assemblySequence = firstSequence(assembly);
         String consensus = firstSequence(finalConsensus);
         if (consensus.isBlank()) consensus = firstSequence(corrected);
         if (reference.isBlank()) reference = consensus;
@@ -69,29 +67,18 @@ final class SangerAssemblyViewerPanel extends JPanel {
         canvas.setSelectionListener((read, coordinate) -> {
             if (read != null) {
                 Ab1Reader.Trace trace = traces.get(read);
+                ReadAlignment alignment = canvas.alignment(read);
+                canvas.setTrace(trace, alignment);
                 if (trace != null) {
-                    chromatogram.setTrace(trace);
-                    traceLabel.setText(language.text("assembly.trace", "AB1: {0}", trace.name()));
+                    selection.setText(language.text("assembly.selected_read",
+                            "Read: {0} · reference position {1} · AB1 trace", read, coordinate + 1));
                 } else {
-                    chromatogram.setTrace(null);
-                    traceLabel.setText(language.text("assembly.no_trace",
-                            "No AB1 trace for the selected read."));
+                    selection.setText(language.text("assembly.selected_read_no_trace",
+                            "Read: {0} · reference position {1} · no AB1 trace", read, coordinate + 1));
                 }
-                selection.setText(language.text("assembly.selected_read",
-                        "Read: {0} · reference position {1}", read, coordinate + 1));
             } else if (coordinate >= 0) {
                 selection.setText(language.text("assembly.position",
                         "Reference position {0}", coordinate + 1));
-            }
-        });
-        chromatogram.setBaseSelectionListener(index -> {
-            String text = canvas.selectedReadName();
-            if (text != null) {
-                int coordinate = canvas.referencePosition(text, index);
-                if (coordinate >= 0) canvas.setCoordinate(coordinate);
-                selection.setText(language.text("assembly.selected_base",
-                        "Read: {0} · base {1} · reference {2}",
-                        text, index + 1, coordinate + 1));
             }
         });
 
@@ -99,12 +86,21 @@ final class SangerAssemblyViewerPanel extends JPanel {
         JButton zoomOut = new JButton("−");
         JButton zoomIn = new JButton("+");
         JButton fit = new JButton(language.text("assembly.fit", "Fit"));
+        JButton yOut = new JButton("Y−");
+        JButton yIn = new JButton("Y+");
+        JButton yFit = new JButton(language.text("assembly.y_fit", "Y fit"));
         zoomOut.addActionListener(event -> canvas.zoomBy(1 / 1.3));
         zoomIn.addActionListener(event -> canvas.zoomBy(1.3));
         fit.addActionListener(event -> canvas.fit());
+        yOut.addActionListener(event -> canvas.yZoomBy(1 / 1.25));
+        yIn.addActionListener(event -> canvas.yZoomBy(1.25));
+        yFit.addActionListener(event -> canvas.yFit());
         controls.add(zoomOut);
         controls.add(zoomIn);
         controls.add(fit);
+        controls.add(yOut);
+        controls.add(yIn);
+        controls.add(yFit);
         JPanel top = new JPanel(new BorderLayout(0, 4));
         top.add(new JLabel(language.text("assembly.title",
                 "Reference, reads, assembly and AB1")), BorderLayout.WEST);
@@ -113,14 +109,8 @@ final class SangerAssemblyViewerPanel extends JPanel {
 
         JScrollPane scroll = new JScrollPane(canvas);
         scroll.getHorizontalScrollBar().setUnitIncrement(20);
-        JPanel tracePanel = new JPanel(new BorderLayout(0, 4));
-        tracePanel.add(traceLabel, BorderLayout.NORTH);
-        traceHost.add(chromatogram, BorderLayout.CENTER);
-        tracePanel.add(traceHost, BorderLayout.CENTER);
-        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, scroll, tracePanel);
-        split.setResizeWeight(0.62);
-        split.setDividerSize(7);
-        add(split, BorderLayout.CENTER);
+        scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        add(scroll, BorderLayout.CENTER);
         add(selection, BorderLayout.SOUTH);
         if (!reads.isEmpty()) {
             canvas.selectRead(0);
@@ -234,6 +224,9 @@ final class SangerAssemblyViewerPanel extends JPanel {
         private long selectedCoordinate = -1;
         private int selected = -1;
         private double zoom = 1.0;
+        private double yZoom = 1.0;
+        private Ab1Reader.Trace trace;
+        private ReadAlignment traceRead;
         private SelectionListener listener = (read, coordinate) -> { };
 
         AssemblyCanvas(String reference, String consensus, String assembly, List<ReadAlignment> reads) {
@@ -246,7 +239,13 @@ final class SangerAssemblyViewerPanel extends JPanel {
             addMouseListener(new MouseAdapter() {
                 @Override public void mouseClicked(MouseEvent event) {
                     int row = (event.getY() - top) / rowHeight;
-                    if (row >= 0 && row < reads.size()) {
+                    int traceTop = top + Math.max(3, reads.size()) * rowHeight + 14;
+                    if (event.getY() >= traceTop && trace != null && traceRead != null) {
+                        int coordinate = coordinateAt(event.getX());
+                        selectedCoordinate = coordinate;
+                        listener.selected(traceRead.name(), coordinate);
+                        repaint();
+                    } else if (row >= 0 && row < reads.size()) {
                         selectRead(row);
                         int coordinate = coordinateAt(event.getX());
                         listener.selected(reads.get(row).name(), coordinate);
@@ -266,6 +265,27 @@ final class SangerAssemblyViewerPanel extends JPanel {
         int selectedRead() { return selected; }
         String selectedReadName() {
             return selected >= 0 && selected < reads.size() ? reads.get(selected).name() : null;
+        }
+
+        ReadAlignment alignment(String name) {
+            for (ReadAlignment read : reads) if (read.name().equals(name)) return read;
+            return null;
+        }
+
+        void setTrace(Ab1Reader.Trace trace, ReadAlignment read) {
+            this.trace = trace;
+            this.traceRead = read;
+            repaint();
+        }
+
+        void yZoomBy(double factor) {
+            yZoom = Math.max(0.25, Math.min(8.0, yZoom * factor));
+            repaint();
+        }
+
+        void yFit() {
+            yZoom = 1.0;
+            repaint();
         }
 
         void setCoordinate(int coordinate) {
@@ -324,7 +344,8 @@ final class SangerAssemblyViewerPanel extends JPanel {
 
         private void resize() {
             int width = Math.max(600, (int) Math.round(Math.max(1, reference.length()) * 7 * zoom) + 100);
-            setPreferredSize(new Dimension(width, top + Math.max(3, reads.size()) * rowHeight + 20));
+            setPreferredSize(new Dimension(width,
+                    top + Math.max(3, reads.size()) * rowHeight + 250));
             revalidate();
             repaint();
         }
@@ -360,6 +381,7 @@ final class SangerAssemblyViewerPanel extends JPanel {
                     g.setColor(new Color(255, 190, 80, 150));
                     g.fillRect(x - 1, 8, 3, getHeight() - 16);
                 }
+                drawTrace(g, left, width, length);
             } finally {
                 g.dispose();
             }
@@ -393,6 +415,70 @@ final class SangerAssemblyViewerPanel extends JPanel {
             }
             g.setColor(new Color(210, 216, 220));
             g.drawLine(left, y + 18, left + width, y + 18);
+        }
+
+        private void drawTrace(Graphics2D g, int left, int width, int length) {
+            int traceTop = top + Math.max(3, reads.size()) * rowHeight + 14;
+            g.setColor(new Color(55, 65, 72));
+            g.drawString("AB1", 4, traceTop + 12);
+            if (trace == null || traceRead == null) {
+                g.setColor(new Color(120, 126, 130));
+                g.drawString("No AB1 trace for the selected read.", left, traceTop + 24);
+                return;
+            }
+            int samples = 0;
+            int maximum = 1;
+            for (int[] channel : trace.channels()) {
+                samples = Math.max(samples, channel.length);
+                for (int value : channel) maximum = Math.max(maximum, value);
+            }
+            if (samples == 0) {
+                g.drawString("No trace channels.", left, traceTop + 24);
+                return;
+            }
+            int traceHeight = Math.max(80, getHeight() - traceTop - 42);
+            int yMaximum = Math.max(1, (int) Math.round(maximum / yZoom));
+            g.setColor(new Color(230, 233, 235));
+            g.drawLine(left, traceTop + traceHeight, left + width, traceTop + traceHeight);
+            Color[] colors = {
+                    new Color(37, 132, 74), new Color(49, 98, 180),
+                    new Color(196, 116, 26), new Color(178, 48, 48)
+            };
+            int readLength = Math.max(1, trace.sequence().length());
+            for (int channel = 0; channel < trace.channels().length; channel++) {
+                int[] values = trace.channels()[channel];
+                if (values.length == 0) continue;
+                g.setColor(colors[Math.min(channel, colors.length - 1)]);
+                int previousX = -1;
+                int previousY = -1;
+                for (int sample = 0; sample < samples; sample++) {
+                    int baseIndex = (int) Math.round(sample * (readLength - 1.0)
+                            / Math.max(1, samples - 1));
+                    int alignedIndex = traceRead.orientation().startsWith("reverse")
+                            ? readLength - 1 - baseIndex : baseIndex;
+                    int reference = referencePosition(traceRead.name(), alignedIndex);
+                    if (reference < 0) continue;
+                    int x = left + (int) Math.round(width * reference / (double) length);
+                    int y = Math.max(0, traceTop + traceHeight
+                            - (int) Math.round(traceHeight * values[Math.min(sample, values.length - 1)]
+                                    / (double) yMaximum));
+                    if (previousX >= 0) g.drawLine(previousX, previousY, x, y);
+                    previousX = x;
+                    previousY = y;
+                }
+            }
+            g.setFont(getFont().deriveFont(10f));
+            int peaks = trace.peakPositions().length;
+            for (int index = 0; index < trace.sequence().length(); index++) {
+                int alignedIndex = traceRead.orientation().startsWith("reverse")
+                        ? trace.sequence().length() - 1 - index : index;
+                int reference = referencePosition(traceRead.name(), alignedIndex);
+                if (reference < 0) continue;
+                int x = left + (int) Math.round(width * reference / (double) length);
+                char base = trace.sequence().charAt(index);
+                g.setColor(colors[Math.max(0, Math.min(3, "ACGT".indexOf(base)))]);
+                g.drawString(String.valueOf(base), x - 3, traceTop + traceHeight + 15);
+            }
         }
 
         private void drawCoverage(Graphics2D g, int left, int width, int y, int length) {
