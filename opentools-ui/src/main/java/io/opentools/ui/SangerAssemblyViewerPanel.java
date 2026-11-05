@@ -716,19 +716,21 @@ final class SangerAssemblyViewerPanel extends JPanel {
                         new Color(196, 116, 26), new Color(178, 48, 48)
                 };
                 int readLength = Math.max(1, trace.sequence().length());
+                boolean reverse = traceRead.orientation().startsWith("reverse");
+                int[] reverseColors = {3, 2, 1, 0};
                 for (int channel = 0; channel < trace.channels().length; channel++) {
                     int[] values = trace.channels()[channel];
                     if (values.length == 0) continue;
-                    g.setColor(colors[Math.min(channel, colors.length - 1)]);
+                    int colorIndex = reverse
+                            ? reverseColors[Math.min(channel, reverseColors.length - 1)]
+                            : Math.min(channel, colors.length - 1);
+                    g.setColor(colors[colorIndex]);
                     int previousX = -1;
                     int previousY = -1;
-                    for (int sample = 0; sample < samples; sample++) {
-                        int baseIndex = (int) Math.round(sample * (readLength - 1.0)
-                                / Math.max(1, samples - 1));
-                        int alignedIndex = traceRead.orientation().startsWith("reverse")
-                                ? readLength - 1 - baseIndex : baseIndex;
+                    for (int step = 0; step < samples; step++) {
+                        int sample = reverse ? samples - 1 - step : step;
                         int reference = traceRead.start() + (int) Math.round(
-                                (traceRead.end() - traceRead.start()) * sample
+                                (traceRead.end() - traceRead.start()) * step
                                         / (double) Math.max(1, samples - 1));
                         if (reference < 0) continue;
                         int x = referenceLeft + (int) Math.round(width * reference
@@ -742,22 +744,32 @@ final class SangerAssemblyViewerPanel extends JPanel {
                     }
                 }
                 g.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 10));
-                for (int index = 0; index < trace.sequence().length(); index++) {
-                    int alignedIndex = traceRead.orientation().startsWith("reverse")
-                            ? readLength - 1 - index : index;
+                for (int index = 0; index < readLength; index++) {
+                    int source = reverse ? readLength - 1 - index : index;
                     int reference = traceRead.start() + (int) Math.round(
                             (traceRead.end() - traceRead.start()) * index
                                     / (double) Math.max(1, readLength - 1));
                     if (reference < 0) continue;
                     int x = referenceLeft + (int) Math.round(width * reference
                             / (double) Math.max(1, referenceLength - 1));
-                    char base = trace.sequence().charAt(index);
+                    char base = trace.sequence().charAt(source);
+                    if (reverse) base = complement(base);
                     g.setColor(colors[Math.max(0, Math.min(3, "ACGT".indexOf(base)))]);
                     g.drawString(String.valueOf(base), x - 3, height + 14);
                 }
             } finally {
                 g.dispose();
             }
+        }
+
+        private static char complement(char base) {
+            return switch (base) {
+                case 'A' -> 'T';
+                case 'C' -> 'G';
+                case 'G' -> 'C';
+                case 'T' -> 'A';
+                default -> 'N';
+            };
         }
 
         private int referencePosition(int readBase) {

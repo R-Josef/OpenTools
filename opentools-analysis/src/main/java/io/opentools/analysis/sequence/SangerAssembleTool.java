@@ -172,6 +172,7 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         if (referencePath != null) {
             reference = readReference(referencePath);
             anchor = ReferenceAnchor.place(reference.sequence(), reads, minOverlap);
+            assembly = orientToReference(assembly, reference);
         }
 
         writeFasta(outputs.get("assembly"), assembly.contigs());
@@ -541,6 +542,18 @@ public final class SangerAssembleTool extends AbstractOpenTool {
             result[index] = values[values.length - 1 - index];
         }
         return result;
+    }
+
+    private static Assembly orientToReference(Assembly assembly, FastaRecord reference) {
+        List<Contig> oriented = new ArrayList<>();
+        for (Contig contig : assembly.contigs()) {
+            SangerAligner.Alignment alignment = SangerAligner.best(
+                    reference.sequence(), contig.sequence());
+            oriented.add(alignment != null && alignment.reverse()
+                    ? contig.withSequence(reverseComplement(contig.sequence()))
+                    : contig);
+        }
+        return new Assembly(List.copyOf(oriented), assembly.warnings());
     }
 
     static String reverseComplement(String sequence) {
