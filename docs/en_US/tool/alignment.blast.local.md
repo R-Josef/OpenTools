@@ -1,6 +1,6 @@
 # Local BLAST
 
-`alignment.blast.local` · Alignment · v1.2.0
+`alignment.blast.local` · Alignment · v1.3.0
 
 ## What this tool does
 
@@ -59,7 +59,7 @@ ATGCGTTCGT
 | `maxTargetSeqs` Maximum target sequences | no | 10 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Maximum subject hits per query. |
 | `threads` Threads | no | 4 | The default is aligned with the external program; increase it only when CPU, memory, and scheduling allow. Number of BLAST worker threads. |
 | `timeoutMinutes` Timeout minutes | no | 30 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Maximum runtime for each external command. |
-| `output` Output BLAST table | no | empty | Leave blank to write inside the run directory; custom paths should stay in the workspace and use the correct extension. Leave blank to save inside the run directory. |
+| `output` Output BLAST XML | no | empty | Leave blank to write inside the run directory; custom paths should stay in the workspace and use the correct extension. Leave blank to save blast.xml; tabular and alignment TSVs are derived beside it. |
 | `blastBin` BLAST bin directory | no | empty | Choose a writable directory and check disk space and naming conflicts before batch output. Directory containing BLAST+ executables. |
 | `cacheEnabled` Reuse BLAST database | no | true | Start with the default and change it only after understanding the explanation. Reuse a database keyed by subject hash, makeblastdb version, program, and database type. |
 | `refreshDatabase` Refresh BLAST cache | no | false | Start with the default and change it only after understanding the explanation. Rebuild the matching cache entry before running BLAST. |
@@ -71,8 +71,8 @@ ATGCGTTCGT
 
 ## Read the result
 
-- Output formats: `BLAST tabular`, `TSV`
-- The output is a BLAST table of queries against the subject database; verify cache identity, E-value, coverage, and program type.
+- Output formats: `BLAST XML`, `TSV`
+- The primary output is BLAST XML with derived tabular and alignment TSVs; verify cache identity, E-value, coverage, and program type, then open the BLAST viewer in the Results panel.
 - The result panel is the quick-review surface; complete data, manifests, and logs live in the run directory.
 - Thread count affects execution path and speed, not the scientific result. Investigate differences by comparing logs, inputs, and parameters.
 

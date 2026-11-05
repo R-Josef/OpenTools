@@ -1,6 +1,6 @@
 # 本地 BLAST
 
-`alignment.blast.local` · 比对 · v1.2.0
+`alignment.blast.local` · 比对 · v1.3.0
 
 ## 一句话说明
 
@@ -59,7 +59,7 @@ ATGCGTTCGT
 | `maxTargetSeqs` 最大目标序列数 | 否 | 10 | 先使用默认值；调整阈值时记录理由，并与输入数据规模或统计目标对应。 每个查询最多报告的目标命中数。 |
 | `threads` 线程数 | 否 | 4 | 默认值已按外部程序配置；仅在 CPU、内存或调度策略明确允许时增加。 BLAST 工作线程数。 |
 | `timeoutMinutes` 超时分钟数 | 否 | 30 | 先使用默认值；调整阈值时记录理由，并与输入数据规模或统计目标对应。 每个外部命令的最大运行时间。 |
-| `output` 输出 BLAST 表格 | 否 | 空 | 留空时写入运行目录；自定义路径应位于工作区，并按格式填写扩展名。 留空时保存到本次运行目录。 |
+| `output` 输出 BLAST XML | 否 | 空 | 留空时写入运行目录；自定义路径应位于工作区，并按格式填写扩展名。 留空时保存 blast.xml；同目录派生表格和对齐 TSV。 |
 | `blastBin` BLAST bin 目录 | 否 | 空 | 选择可写目录；批量输出前确认磁盘空间和命名冲突。 包含 BLAST+ 可执行文件的目录。 |
 | `cacheEnabled` 复用 BLAST 数据库 | 否 | true | 从默认值开始；只有在理解上方说明后才改变。 按 subject 哈希、makeblastdb 版本、程序和数据库类型复用数据库。 |
 | `refreshDatabase` 刷新 BLAST 缓存 | 否 | false | 从默认值开始；只有在理解上方说明后才改变。 运行 BLAST 前重建匹配的缓存条目。 |
@@ -71,8 +71,8 @@ ATGCGTTCGT
 
 ## 结果怎么读
 
-- 输出格式：`BLAST tabular`、`TSV`
-- 输出是查询序列对 subject 数据库的 BLAST 表格；先核对数据库缓存、E-value、覆盖度与 program 类型。
+- 输出格式：`BLAST XML`、`TSV`
+- 输出以 BLAST XML 为主，并派生表格和 alignment TSV；先核对数据库缓存、E-value、覆盖度与 program 类型，结果面板可直接打开 BLAST viewer。
 - 结果面板是快速检查入口；完整数据、运行清单和日志位于本次运行目录。
 - 线程数只影响执行路径和速度；改变线程不应改变科学结果。发现差异时应比较日志、输入和参数。
 

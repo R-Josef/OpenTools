@@ -386,7 +386,8 @@ final class ResultInspectorPanel extends JPanel {
 
     private void prepareBlastTab(JsonNode root, JobRecord job) {
         clearBlast();
-        if (!"alignment.blast.alignments".equals(job.toolId())) {
+        if (!"alignment.blast.alignments".equals(job.toolId())
+                && !"alignment.blast.local".equals(job.toolId())) {
             return;
         }
         String path = null;

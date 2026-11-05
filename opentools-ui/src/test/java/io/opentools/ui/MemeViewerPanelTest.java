@@ -34,6 +34,9 @@ final class MemeViewerPanelTest {
                           <value letter_id="G">0.8</value><value letter_id="T">0.05</value>
                         </alphabet_array>
                       </alphabet_matrix></probabilities>
+                      <contributing_sites>
+                        <contributing_site sequence_id="seq1" position="10" strand="plus" pvalue="1e-6"/>
+                      </contributing_sites>
                     </motif>
                   </motifs>
                 </MEME>
@@ -51,6 +54,7 @@ final class MemeViewerPanelTest {
         assertEquals(1, panel.motifCount());
         assertEquals(0, panel.selectedMotif());
         assertEquals("AG", panel.consensusText());
+        assertEquals(1, panel.siteCount());
         assertTrue(panel.consensusText().contains("A"));
     }
 }

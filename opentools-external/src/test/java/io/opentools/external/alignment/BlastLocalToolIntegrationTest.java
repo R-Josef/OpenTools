@@ -33,7 +33,7 @@ final class BlastLocalToolIntegrationTest {
 
         Path query = tempDir.resolve("query.fa");
         Path subject = tempDir.resolve("subject.fa");
-        Path output = tempDir.resolve("hits.tsv");
+        Path output = tempDir.resolve("hits.xml");
         Path cache = tempDir.resolve("blast-cache");
         Files.createDirectories(cache);
         String sequence = "GATTACAGTCGATCGTAGCTAGGCTAACGTTAGCGATCGTACGATCGATGCTAGCATCGATCGTAGCTAGCTACGATCGATCGA";
@@ -70,6 +70,8 @@ final class BlastLocalToolIntegrationTest {
         );
 
         assertTrue(Files.isRegularFile(output));
+        assertTrue(Files.isRegularFile(tempDir.resolve("hits.tsv")));
+        assertTrue(Files.isRegularFile(tempDir.resolve("hits-alignments.tsv")));
         assertTrue(
                 ((Number) result.metrics().get("totalHits")).longValue() >= 1,
                 String.join("\n", logs) + "\nOUTPUT:\n" + Files.readString(output)
@@ -77,7 +79,7 @@ final class BlastLocalToolIntegrationTest {
         assertFalse((Boolean) result.metrics().get("cacheHit"));
         assertFalse((Boolean) result.metrics().get("databaseReused"));
 
-        Path secondOutput = tempDir.resolve("hits-cached.tsv");
+        Path secondOutput = tempDir.resolve("hits-cached.xml");
         var cached = new BlastLocalTool().execute(
                 new ToolRequest("alignment.blast.local", parameters(
                         "query", query.toString(),
@@ -107,7 +109,7 @@ final class BlastLocalToolIntegrationTest {
 
         Path query = tempDir.resolve("fail-query.fa");
         Path subject = tempDir.resolve("fail-subject.fa");
-        Path output = tempDir.resolve("must-not-exist.tsv");
+        Path output = tempDir.resolve("must-not-exist.xml");
         String sequence = "GATTACAGTCGATCGTAGCTAGGCTAACGTTAGCGATCGTACGATCGATGCTAGCATCGATCGTAGCTAGCTACGATCGATCGA";
         Files.writeString(query, ">q1\n" + sequence + "\n");
         Files.writeString(subject, ">s1\n" + sequence + "\n");

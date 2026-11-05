@@ -973,7 +973,7 @@ public final class GenerateToolGuides {
         values.put("table.join", "输出列由左右表拼接生成；检查 join type、键重复导致的行数扩张、空键和缺失值。");
         values.put("kaks.calculate", "每对 CDS 输出 Ka/Ks 估计；比对质量、密码子对齐、序列差异和零替换情况都会影响解释。");
         values.put("kegg.enrich", "结果按 pathway 报告命中、背景、fold enrichment 和 BH 校正值；反应注释版本与基因 ID 体系可能不同。");
-        values.put("alignment.blast.local", "输出是查询序列对 subject 数据库的 BLAST 表格；先核对数据库缓存、E-value、覆盖度与 program 类型。");
+        values.put("alignment.blast.local", "输出以 BLAST XML 为主，并派生表格和 alignment TSV；先核对数据库缓存、E-value、覆盖度与 program 类型，结果面板可直接打开 BLAST viewer。");
         values.put("gxf.id-map", "输出重写指定属性的 ID；必须检查重复新 ID、父子引用是否一致以及未映射项。");
         values.put("fasta.merge", "输出按输入列表顺序拼接 FASTA；检查重复 ID、文件顺序和来源记录，必要时先统计各输入。");
         values.put("gxf.merge-split", "合并结果保留输入记录但可能产生重复 ID；拆分结果按序列或类型生成多个文件，应检查目录和命名冲突。");
@@ -1073,7 +1073,7 @@ public final class GenerateToolGuides {
         values.put("table.join", "The output concatenates left and right columns; inspect join type, row expansion from duplicate keys, empty keys, and missing values.");
         values.put("kaks.calculate", "Each adjacent CDS pair has a Ka/Ks estimate; alignment quality, codon alignment, sequence divergence, and zero substitutions all affect interpretation.");
         values.put("kegg.enrich", "Each pathway row reports hits, background, fold enrichment, and BH-adjusted values; pathway annotation versions and gene-ID systems may differ.");
-        values.put("alignment.blast.local", "The output is a BLAST table of queries against the subject database; verify cache identity, E-value, coverage, and program type.");
+        values.put("alignment.blast.local", "The primary output is BLAST XML with derived tabular and alignment TSVs; verify cache identity, E-value, coverage, and program type, then open the BLAST viewer in the Results panel.");
         values.put("gxf.id-map", "The output rewrites selected attribute IDs; check duplicate new IDs, parent-child consistency, and unmapped values.");
         values.put("fasta.merge", "FASTA records are concatenated in the listed order; check duplicate identifiers, file order, and per-input counts.");
         values.put("gxf.merge-split", "Merged output preserves input records and may contain duplicate IDs; split output creates files by sequence or type, so inspect naming and directories.");

@@ -68,15 +68,15 @@ packages contain no agent or model code.
 
 ## Download
 
-The latest snapshot `0.10.2-SNAPSHOT` ships four portable packages. Every archive
+The latest snapshot `0.11.0-SNAPSHOT` ships four portable packages. Every archive
 has a matching `.sha256.json` checksum file in the same release.
 
 | Platform | Package | Checksum |
 | --- | --- | --- |
-| Windows x64 | [opentools-0.10.2-SNAPSHOT-windows-x64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.10.2-SNAPSHOT/opentools-0.10.2-SNAPSHOT-windows-x64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.10.2-SNAPSHOT/opentools-0.10.2-SNAPSHOT-windows-x64.zip.sha256.json) |
-| Linux x64 | [opentools-0.10.2-SNAPSHOT-linux-x64.tar.gz](https://github.com/R-Josef/OpenTools/releases/download/0.10.2-SNAPSHOT/opentools-0.10.2-SNAPSHOT-linux-x64.tar.gz) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.10.2-SNAPSHOT/opentools-0.10.2-SNAPSHOT-linux-x64.tar.gz.sha256.json) |
-| macOS x64 (Intel) | [opentools-0.10.2-SNAPSHOT-macos-x64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.10.2-SNAPSHOT/opentools-0.10.2-SNAPSHOT-macos-x64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.10.2-SNAPSHOT/opentools-0.10.2-SNAPSHOT-macos-x64.zip.sha256.json) |
-| macOS arm64 (Apple Silicon) | [opentools-0.10.2-SNAPSHOT-macos-arm64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.10.2-SNAPSHOT/opentools-0.10.2-SNAPSHOT-macos-arm64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.10.2-SNAPSHOT/opentools-0.10.2-SNAPSHOT-macos-arm64.zip.sha256.json) |
+| Windows x64 | [opentools-0.11.0-SNAPSHOT-windows-x64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.11.0-SNAPSHOT/opentools-0.11.0-SNAPSHOT-windows-x64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.11.0-SNAPSHOT/opentools-0.11.0-SNAPSHOT-windows-x64.zip.sha256.json) |
+| Linux x64 | [opentools-0.11.0-SNAPSHOT-linux-x64.tar.gz](https://github.com/R-Josef/OpenTools/releases/download/0.11.0-SNAPSHOT/opentools-0.11.0-SNAPSHOT-linux-x64.tar.gz) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.11.0-SNAPSHOT/opentools-0.11.0-SNAPSHOT-linux-x64.tar.gz.sha256.json) |
+| macOS x64 (Intel) | [opentools-0.11.0-SNAPSHOT-macos-x64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.11.0-SNAPSHOT/opentools-0.11.0-SNAPSHOT-macos-x64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.11.0-SNAPSHOT/opentools-0.11.0-SNAPSHOT-macos-x64.zip.sha256.json) |
+| macOS arm64 (Apple Silicon) | [opentools-0.11.0-SNAPSHOT-macos-arm64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.11.0-SNAPSHOT/opentools-0.11.0-SNAPSHOT-macos-arm64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.11.0-SNAPSHOT/opentools-0.11.0-SNAPSHOT-macos-arm64.zip.sha256.json) |
 
 [Browse all releases](https://github.com/R-Josef/OpenTools/releases) |
 [Latest release](https://github.com/R-Josef/OpenTools/releases/latest)

@@ -42,8 +42,8 @@ public final class BlastLocalTool extends AbstractOpenTool {
             "Alignment",
             List.of("BLAST", "blastn", "blastp", "本地 BLAST", "序列比对"),
             List.of("FASTA", "FASTA.gz"),
-            List.of("BLAST tabular", "TSV"),
-            "1.2.0",
+            List.of("BLAST XML", "TSV"),
+            "1.3.0",
             List.of(
                     ToolParameter.requiredFile("query", "Query FASTA", "Query sequences."),
                     ToolParameter.requiredFile("subject", "Subject FASTA", "Subject sequences used to build a temporary BLAST database."),
@@ -64,7 +64,8 @@ public final class BlastLocalTool extends AbstractOpenTool {
                     ToolParameter.integer("maxTargetSeqs", "Maximum target sequences", "Maximum subject hits per query.", 10, 1, 10_000),
                     ToolParameter.integer("threads", "Threads", "Number of BLAST worker threads.", 4, 1, 256),
                     ToolParameter.integer("timeoutMinutes", "Timeout minutes", "Maximum runtime for each external command.", 30, 1, 1440),
-                    ToolParameter.optionalOutputFile("output", "Output BLAST table", "Leave blank to save inside the run directory."),
+                    ToolParameter.optionalOutputFile("output", "Output BLAST XML",
+                            "Leave blank to save blast.xml; tabular and alignment TSVs are derived beside it."),
                     ToolParameter.optionalDirectory("blastBin", "BLAST bin directory", "Directory containing BLAST+ executables."),
                     ToolParameter.bool("cacheEnabled", "Reuse BLAST database",
                             "Reuse an immutable database keyed by subject hash, BLAST version, program, and database type.",
@@ -126,7 +127,7 @@ public final class BlastLocalTool extends AbstractOpenTool {
         Path subject = request.path("subject");
         Path output = request.path("output");
         if (output == null || output.toString().isBlank()) {
-            output = context.defaultOutputPath("blast-hits.tsv");
+            output = context.defaultOutputPath("blast.xml");
         }
         Path outputParent = output.toAbsolutePath().getParent();
         if (outputParent != null) {
@@ -152,7 +153,9 @@ public final class BlastLocalTool extends AbstractOpenTool {
         Path workDirectory = Files.createTempDirectory("opentools-blast-");
         Path stagedQuery = workDirectory.resolve("query.fasta");
         Files.copy(query, stagedQuery, StandardCopyOption.REPLACE_EXISTING);
+        Path stagedXml = workDirectory.resolve("hits.xml");
         Path stagedHits = workDirectory.resolve("hits.tsv");
+        Path stagedAlignments = workDirectory.resolve("alignments.tsv");
         context.log("BLAST program: " + program + " (query=" + queryKind + ", subject=" + subjectKind + ")");
         context.log("makeblastdb version: " + databaseBuilder.version());
         context.log(program.executable() + " version: " + blastStatus.version());
@@ -211,7 +214,7 @@ public final class BlastLocalTool extends AbstractOpenTool {
             throw ex;
         }
 
-        Files.deleteIfExists(stagedHits);
+        Files.deleteIfExists(stagedXml);
         List<String> blastCommand = new ArrayList<>();
         blastCommand.add(blastStatus.executable().toString());
         blastCommand.add("-query");
@@ -219,9 +222,9 @@ public final class BlastLocalTool extends AbstractOpenTool {
         blastCommand.add("-db");
         blastCommand.add(databaseArgument);
         blastCommand.add("-out");
-        blastCommand.add(stagedHits.getFileName().toString());
+        blastCommand.add(stagedXml.getFileName().toString());
         blastCommand.add("-outfmt");
-        blastCommand.add("6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen slen");
+        blastCommand.add("5");
         blastCommand.add("-evalue");
         blastCommand.add(Double.toString(decimal(request, "evalue", 1e-5)));
         blastCommand.add("-max_target_seqs");
@@ -240,19 +243,33 @@ public final class BlastLocalTool extends AbstractOpenTool {
                     context::log
             );
             requireSuccess("BLAST_FAILED", program.executable(), blastResult);
-            if (!Files.isRegularFile(stagedHits)) {
-                Files.createFile(stagedHits);
+            if (!Files.isRegularFile(stagedXml)) {
+                throw new OpenToolException(
+                        "BLAST_XML_MISSING",
+                        "BLAST did not create its XML output.",
+                        "Check the BLAST version and output permissions."
+                );
             }
-            moveOutput(stagedHits, output);
+            List<BlastXmlResult.Alignment> alignments = BlastXmlResult.read(stagedXml);
+            BlastXmlResult.writeTabular(stagedHits, alignments);
+            BlastXmlResult.writeAlignments(stagedAlignments, alignments);
+            moveOutput(stagedXml, output);
+            Path tableOutput = derivedOutput(output, ".tsv");
+            Path alignmentOutput = derivedOutput(output, "-alignments.tsv");
+            moveOutput(stagedHits, tableOutput);
+            moveOutput(stagedAlignments, alignmentOutput);
         } catch (Exception ex) {
+            Files.deleteIfExists(stagedXml);
             Files.deleteIfExists(stagedHits);
+            Files.deleteIfExists(stagedAlignments);
             throw ex;
         } finally {
             TemporaryFiles.deleteRecursively(workDirectory);
             releaseCachedDatabase(cachedDatabase, cacheLimits, context);
         }
 
-        AlignmentTableSummary summary = new AlignmentTableParser().parse(output);
+        Path tableOutput = derivedOutput(output, ".tsv");
+        AlignmentTableSummary summary = new AlignmentTableParser().parse(tableOutput);
         Path summaryOutput = context.defaultOutputPath("blast-summary.tsv");
         AlignmentSummaryWriter.write(summaryOutput, summary);
         summary.metrics().put("program", program.name());
@@ -278,8 +295,11 @@ public final class BlastLocalTool extends AbstractOpenTool {
             summary.metrics().put("databaseDirectory", cachedDatabase.databasePath().getParent().toString());
         }
 
+        Path alignmentOutput = derivedOutput(output, "-alignments.tsv");
         List<OutputArtifact> artifacts = List.of(
-                new OutputArtifact(output, "BLAST tabular hits", "text/tab-separated-values"),
+                new OutputArtifact(output, "BLAST XML", "application/xml"),
+                new OutputArtifact(tableOutput, "BLAST tabular hits", "text/tab-separated-values"),
+                new OutputArtifact(alignmentOutput, "BLAST alignments", "text/tab-separated-values"),
                 new OutputArtifact(summaryOutput, "BLAST best-hit summary", "text/tab-separated-values")
         );
         context.progress(1.0, "BLAST completed");
@@ -471,6 +491,14 @@ public final class BlastLocalTool extends AbstractOpenTool {
         }
         String trimmed = value.strip();
         return trimmed.length() <= maximum ? trimmed : trimmed.substring(trimmed.length() - maximum);
+    }
+
+    private static Path derivedOutput(Path output, String suffix) {
+        String name = output.getFileName().toString();
+        String base = name.toLowerCase(java.util.Locale.ROOT).endsWith(".xml")
+                ? name.substring(0, name.length() - 4)
+                : name;
+        return output.resolveSibling(base + suffix);
     }
 
     private static long countRecords(Path fasta) throws Exception {

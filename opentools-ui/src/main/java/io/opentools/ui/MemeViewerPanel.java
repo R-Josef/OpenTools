@@ -8,14 +8,17 @@ import org.w3c.dom.NodeList;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
+import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
+import javax.swing.table.DefaultTableModel;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -40,6 +43,7 @@ final class MemeViewerPanel extends JPanel {
     private final JList<Motif> list = new JList<>(model);
     private final JLabel summary = new JLabel(" ", SwingConstants.LEFT);
     private final JLabel consensus = new JLabel(" ", SwingConstants.CENTER);
+    private final DefaultTableModel siteModel = new DefaultTableModel();
     private final MotifLogo logo = new MotifLogo();
     private final JPanel right = new JPanel(new BorderLayout(0, 6));
 
@@ -67,7 +71,23 @@ final class MemeViewerPanel extends JPanel {
         left.add(new JScrollPane(list), BorderLayout.CENTER);
         left.setPreferredSize(new Dimension(230, 400));
         right.add(logo, BorderLayout.CENTER);
-        right.add(consensus, BorderLayout.SOUTH);
+        JPanel lower = new JPanel(new BorderLayout(0, 4));
+        lower.add(consensus, BorderLayout.NORTH);
+        JTable siteTable = new JTable(siteModel);
+        siteTable.setFillsViewportHeight(true);
+        siteModel.setColumnIdentifiers(new Object[]{"Sequence", "Position", "Strand", "P-value"});
+        JPanel sitePanel = new JPanel(new BorderLayout(0, 3));
+        sitePanel.add(new JLabel(language.text("meme.viewer.sites", "Contributing sites")), BorderLayout.NORTH);
+        sitePanel.add(new JScrollPane(siteTable), BorderLayout.CENTER);
+        sitePanel.setPreferredSize(new Dimension(0, 150));
+        lower.add(sitePanel, BorderLayout.CENTER);
+        JButton copy = new JButton(language.text("meme.viewer.copy_consensus", "Copy consensus"));
+        copy.addActionListener(event -> {
+            java.awt.Toolkit.getDefaultToolkit().getSystemClipboard()
+                    .setContents(new java.awt.datatransfer.StringSelection(consensus.getText()), null);
+        });
+        lower.add(copy, BorderLayout.SOUTH);
+        right.add(lower, BorderLayout.SOUTH);
         JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, left, right);
         split.setDividerSize(7);
         split.setResizeWeight(0);
@@ -82,6 +102,7 @@ final class MemeViewerPanel extends JPanel {
 
     int motifCount() { return motifs.size(); }
     int selectedMotif() { return list.getSelectedIndex(); }
+    int siteCount() { return siteModel.getRowCount(); }
     String consensusText() { return consensus.getText(); }
 
     void selectMotif(int index) {
@@ -94,6 +115,10 @@ final class MemeViewerPanel extends JPanel {
         consensus.setText(motif.consensus());
         summary.setText(motif.id() + " · width " + motif.width() + " · sites " + motif.sites()
                 + " · E=" + motif.evalue());
+        siteModel.setRowCount(0);
+        for (Site site : motif.siteList()) {
+            siteModel.addRow(new Object[]{site.sequence(), site.position(), site.strand(), site.pvalue()});
+        }
     }
 
     private static List<Motif> parse(Path xml) throws Exception {
@@ -129,6 +154,17 @@ final class MemeViewerPanel extends JPanel {
                 }
             }
             if (matrix.isEmpty()) continue;
+            List<Site> sites = new ArrayList<>();
+            NodeList siteNodes = element.getElementsByTagName("contributing_site");
+            for (int siteIndex = 0; siteIndex < siteNodes.getLength(); siteIndex++) {
+                Element site = (Element) siteNodes.item(siteIndex);
+                sites.add(new Site(
+                        site.getAttribute("sequence_id"),
+                        site.getAttribute("position"),
+                        site.getAttribute("strand"),
+                        site.getAttribute("pvalue")
+                ));
+            }
             result.add(new Motif(
                     element.getAttribute("alt").isBlank()
                             ? id : element.getAttribute("alt"),
@@ -136,7 +172,8 @@ final class MemeViewerPanel extends JPanel {
                     integer(element.getAttribute("sites")),
                     element.getAttribute("e_value").isBlank()
                             ? element.getAttribute("evalue") : element.getAttribute("e_value"),
-                    matrix
+                    matrix,
+                    sites
             ));
         }
         return result;
@@ -166,7 +203,17 @@ final class MemeViewerPanel extends JPanel {
         }
     }
 
-    private record Motif(String id, int width, int sites, String evalue, List<Map<String, Double>> matrix) {
+    private record Site(String sequence, String position, String strand, String pvalue) {
+    }
+
+    private record Motif(
+            String id,
+            int width,
+            int sites,
+            String evalue,
+            List<Map<String, Double>> matrix,
+            List<Site> siteList
+    ) {
         String consensus() {
             StringBuilder text = new StringBuilder();
             for (Map<String, Double> row : matrix) {

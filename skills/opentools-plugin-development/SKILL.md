@@ -34,7 +34,7 @@ META-INF/opentools/i18n/zh_CN.properties   # optional
    <dependency>
      <groupId>io.opentools</groupId>
      <artifactId>opentools-plugin-api</artifactId>
-     <version>0.10.2-SNAPSHOT</version>
+     <version>0.11.0-SNAPSHOT</version>
      <scope>provided</scope>
    </dependency>
    ```
