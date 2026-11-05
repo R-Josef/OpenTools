@@ -56,7 +56,7 @@ final class SangerAssembleToolTest {
         Files.writeString(referencePath, ">ref\n" + reference + "\n");
         String read = reference.substring(0, 100);
         Path reads = tempDir.resolve("gap.fastq");
-        Files.writeString(reads, fastq("only-forward", read));
+        Files.writeString(reads, fastq("only-forward", read) + fastq("only-forward-2", read));
         Path output = Files.createDirectories(tempDir.resolve("gap-out"));
 
         execute(referencePath, reads, output);
@@ -94,7 +94,7 @@ final class SangerAssembleToolTest {
         Files.writeString(referencePath, ">ref\n" + reference + "\n");
         String read = reference.substring(0, 80) + "AAA" + reference.substring(80);
         Path reads = tempDir.resolve("indel.fastq");
-        Files.writeString(reads, fastq("read", read));
+        Files.writeString(reads, fastq("read", read) + fastq("read-2", read));
         Path output = Files.createDirectories(tempDir.resolve("indel-out"));
 
         execute(referencePath, reads, output);
@@ -113,7 +113,7 @@ final class SangerAssembleToolTest {
         Files.writeString(referencePath, ">ref\n" + reference + "\n");
         String read = reference.substring(0, 80) + reference.substring(83);
         Path reads = tempDir.resolve("deletion.fastq");
-        Files.writeString(reads, fastq("read", read));
+        Files.writeString(reads, fastq("read", read) + fastq("read-2", read));
         Path output = Files.createDirectories(tempDir.resolve("deletion-out"));
 
         execute(referencePath, reads, output);
@@ -130,7 +130,7 @@ final class SangerAssembleToolTest {
 
     private ToolResult execute(Path reference, Path reads, Path output, Path adapter) throws Exception {
         Map<String, Object> parameters = new LinkedHashMap<>();
-        parameters.put("readsDirectory", reads.getParent().toString());
+        parameters.put("reads", java.util.List.of(reads.toString()));
         if (adapter != null) {
             parameters.put("adapterFile", adapter.toString());
             parameters.put("minAdapterMatch", 8);
@@ -165,7 +165,7 @@ final class SangerAssembleToolTest {
         String read = "GTAAAACGACGGCCAGT" + reference.substring(0, 120)
                 + "CAGGAAACAGCTATGAC";
         Path reads = tempDir.resolve("primer.fastq");
-        Files.writeString(reads, fastq("primer-read", read));
+        Files.writeString(reads, fastq("primer-read", read) + fastq("primer-read-2", read));
         Path output = Files.createDirectories(tempDir.resolve("primer-out"));
 
         execute(referencePath, reads, output);
@@ -187,7 +187,7 @@ final class SangerAssembleToolTest {
         Files.writeString(adapter, ">pUC-vector\nGGGGGGGGGGGG\n");
         String read = "GGGGGGGGGGGG" + reference.substring(0, 110);
         Path reads = tempDir.resolve("vector.fastq");
-        Files.writeString(reads, fastq("vector-read", read));
+        Files.writeString(reads, fastq("vector-read", read) + fastq("vector-read-2", read));
         Path output = Files.createDirectories(tempDir.resolve("vector-out"));
 
         execute(referencePath, reads, output, adapter);

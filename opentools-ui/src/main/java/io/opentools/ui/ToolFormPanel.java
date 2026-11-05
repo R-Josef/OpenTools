@@ -213,6 +213,7 @@ final class ToolFormPanel extends JPanel {
         control.setOpaque(false);
         switch (parameter.type()) {
             case FILE -> addFileControl(control, parameter, false);
+            case FILES -> addFilesControl(control, parameter);
             case OUTPUT_FILE -> addFileControl(control, parameter, true);
             case DIRECTORY -> addDirectoryControl(control, parameter);
             case TEXT -> addTextControl(control, parameter);
@@ -235,6 +236,59 @@ final class ToolFormPanel extends JPanel {
         controlConstraints.insets = new Insets(8, 0, 8, 0);
         fieldsPanel.add(control, controlConstraints);
         row++;
+    }
+
+    private void addFilesControl(JPanel control, ToolParameter parameter) {
+        JTextField field = new JTextField();
+        field.setEditable(false);
+        field.setToolTipText(parameter.description());
+        useAvailableWidth(field);
+        JButton choose = new JButton(language.text("form.choose_files", "Choose files..."));
+        JButton clear = new JButton(language.text("form.clear_files", "Clear"));
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+        buttons.setOpaque(false);
+        buttons.add(choose);
+        buttons.add(clear);
+        java.util.List<Path> selected = new java.util.ArrayList<>();
+        Runnable update = () -> {
+            if (selected.isEmpty()) {
+                field.setText(language.text("form.no_files", "No files selected"));
+                field.setToolTipText(parameter.description());
+            } else if (selected.size() == 1) {
+                field.setText(selected.getFirst().getFileName().toString());
+                field.setToolTipText(selected.getFirst().toString());
+            } else {
+                field.setText(language.text("form.file_count", "{0} files selected", selected.size()));
+                field.setToolTipText(selected.stream().map(Path::toString)
+                        .collect(java.util.stream.Collectors.joining(System.lineSeparator())));
+            }
+        };
+        update.run();
+        choose.addActionListener(ignored -> {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setDialogTitle(language.text("form.choose_files_title",
+                    "Select read files (multiple)"));
+            chooser.setMultiSelectionEnabled(true);
+            chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            chooser.setAcceptAllFileFilterUsed(true);
+            chooser.addChoosableFileFilter(new FileNameExtensionFilter(
+                    "AB1 / FASTQ / FASTA", "ab1", "fastq", "fq", "fa", "fasta", "seq"));
+            if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                selected.clear();
+                for (java.io.File file : chooser.getSelectedFiles()) {
+                    selected.add(file.toPath().toAbsolutePath().normalize());
+                }
+                update.run();
+            }
+        });
+        clear.addActionListener(ignored -> {
+            selected.clear();
+            update.run();
+        });
+        valueReaders.put(parameter.id(), () -> selected.stream()
+                .map(Path::toString).toList());
+        control.add(field, BorderLayout.CENTER);
+        control.add(buttons, BorderLayout.EAST);
     }
 
     private void addFileControl(JPanel control, ToolParameter parameter, boolean output) {

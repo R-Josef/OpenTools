@@ -40,11 +40,10 @@ public final class SangerAssembleTool extends AbstractOpenTool {
             List.of("Sanger", "AB1", "assembly", "consensus", "测序拼接"),
             List.of("AB1", "FASTQ", "FASTA"),
             List.of("FASTA", "TSV", "BED"),
-            "1.2.0",
+            "1.3.0",
             List.of(
-                    new ToolParameter("readsDirectory", "Reads directory",
-                            "Directory containing AB1, FASTQ, or FASTA reads. AB1 is preferred when present.",
-                            ParameterType.DIRECTORY, true, null, List.of(), null, null, false, null),
+                    ToolParameter.requiredFiles("reads", "Read files",
+                            "AB1/FASTQ/FASTA read files. Select multiple files; one file may contain multiple reads."),
                     ToolParameter.optionalFile("reference", "Reference FASTA",
                             "Optional reference sequence used to anchor reads and fill uncovered positions."),
                     ToolParameter.integer("minOverlap", "Minimum overlap",
@@ -87,12 +86,6 @@ public final class SangerAssembleTool extends AbstractOpenTool {
     @Override
     public ValidationResult validate(ToolRequest request) {
         ValidationResult result = validateParameters(request);
-        Path reads = request.path("readsDirectory");
-        if (reads != null && !Files.isDirectory(reads)) {
-            result = result.merge(ValidationResult.of(ValidationIssue.error(
-                    "readsDirectory", "Reads directory does not exist: " + reads,
-                    "Choose a directory containing AB1, FASTQ, or FASTA reads.")));
-        }
         Path reference = request.path("reference");
         if (reference != null && !Files.isRegularFile(reference)) {
             result = result.merge(ValidationResult.of(ValidationIssue.error(
@@ -104,7 +97,7 @@ public final class SangerAssembleTool extends AbstractOpenTool {
 
     @Override
     public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
-        Path readsDirectory = request.path("readsDirectory");
+        List<Path> readFiles = request.paths("reads");
         Path referencePath = request.path("reference");
         Path outputDirectory = request.path("outputDirectory");
         if (outputDirectory == null) outputDirectory = context.outputDirectory();
@@ -126,12 +119,12 @@ public final class SangerAssembleTool extends AbstractOpenTool {
                 request.bool("trimAdapters"), request.path("adapterFile"));
         int minimumAdapterMatch = request.integer("minAdapterMatch");
         if (minimumAdapterMatch <= 0) minimumAdapterMatch = 12;
-        List<Path> files = readFiles(readsDirectory, referencePath);
+        List<Path> files = readFiles;
         if (files.isEmpty()) {
             throw new OpenToolException(
                     "SANGER_NO_READS",
-                    "No AB1, FASTQ, or FASTA reads were found in " + readsDirectory,
-                    "Add AB1/FASTQ/FASTA reads to the directory."
+                    "No read files were selected.",
+                    "Choose one or more AB1/FASTQ/FASTA files."
             );
         }
         int trimQuality = request.integer("trimQuality");
@@ -148,6 +141,13 @@ public final class SangerAssembleTool extends AbstractOpenTool {
                     "SANGER_READS_EMPTY",
                     "All reads were empty or shorter than the minimum length after trimming.",
                     "Lower minReadLength or trimQuality."
+            );
+        }
+        if (reads.size() < 2) {
+            throw new OpenToolException(
+                    "SANGER_TOO_FEW_READS",
+                    "At least two reads are required for assembly.",
+                    "Select another read file or provide a FASTQ/FASTA file containing multiple reads."
             );
         }
         int minOverlap = request.integer("minOverlap");
@@ -266,36 +266,6 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         names.put("indels", directory.resolve("indels.tsv"));
         names.put("expanded", directory.resolve("consensus_with_indels.fa"));
         return names;
-    }
-
-    private static List<Path> readFiles(Path directory, Path reference) throws Exception {
-        Set<Path> files = new LinkedHashSet<>();
-        try (var stream = Files.list(directory)) {
-            stream.filter(Files::isRegularFile)
-                    .filter(path -> reference == null
-                            || !path.toAbsolutePath().normalize().equals(reference.toAbsolutePath().normalize()))
-                    .forEach(files::add);
-        }
-        List<Path> ab1 = filter(files, ".ab1");
-        if (!ab1.isEmpty()) return ab1;
-        List<Path> fastq = filter(files, ".fastq", ".fq");
-        if (!fastq.isEmpty()) return fastq;
-        return filter(files, ".fa", ".fasta", ".seq");
-    }
-
-    private static List<Path> filter(Set<Path> files, String... extensions) {
-        List<Path> result = new ArrayList<>();
-        for (Path path : files) {
-            String name = path.getFileName().toString().toLowerCase(Locale.ROOT);
-            for (String extension : extensions) {
-                if (name.endsWith(extension)) {
-                    result.add(path);
-                    break;
-                }
-            }
-        }
-        result.sort(Comparator.comparing(path -> path.getFileName().toString().toLowerCase(Locale.ROOT)));
-        return result;
     }
 
     private static List<ReadRecord> loadReads(

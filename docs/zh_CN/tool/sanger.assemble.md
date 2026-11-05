@@ -16,7 +16,7 @@
 ## 输入准备
 
 - 声明格式：`AB1`、`FASTQ`、`FASTA`
-- 必须提供：`readsDirectory`
+- 必须提供：`reads`
 - 确认序列 ID 不重复、FASTA/FASTQ 记录完整；gzip 文件应保持原始记录格式。
 
 ## 推荐运行步骤
@@ -30,7 +30,7 @@
 
 | 参数 | 必填 | 默认值 | 选择建议 |
 | --- | --- | --- | --- |
-| `readsDirectory` Reads 目录 | 是 | 空 | 选择可写目录；批量输出前确认磁盘空间和命名冲突。 包含 AB1、FASTQ 或 FASTA reads 的目录；有 AB1 时优先使用 AB1。 |
+| `reads` Read 文件 | 是 | 空 | 应选择多个 read 文件。支持 AB1/FASTQ/FASTA；一个文件可以包含多条 reads。 |
 | `reference` 参考 FASTA | 否 | 空 | 选择真实且完整的输入文件，不用示例占位路径替代。 可选的参考序列，用于锚定 reads 并填充未覆盖位置。 |
 | `minOverlap` 最小 overlap | 否 | 30 | 先使用默认值；调整阈值时记录理由，并与输入数据规模或统计目标对应。 连接 reads 所需的最小 overlap 长度。 |
 | `minIdentity` 最小 overlap 一致性 | 否 | 0.85 | 先使用默认值；调整阈值时记录理由，并与输入数据规模或统计目标对应。 overlap 中匹配碱基的最小比例。 |
@@ -58,7 +58,7 @@
 ## 最小运行示例
 
 ```powershell
-opentools run sanger.assemble --param readsDirectory=C:\data\readsDirectory
+opentools run sanger.assemble --param reads=C:\data\reads-1.dat,C:\data\reads-2.dat
 ```
 
 把占位路径替换为工作区中的真实文件。参数名必须保持原样，布尔值使用 `true` 或 `false`。

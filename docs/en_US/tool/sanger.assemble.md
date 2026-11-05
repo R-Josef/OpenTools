@@ -16,7 +16,7 @@ It performs one explicit, reproducible analysis step. The run record preserves n
 ## Prepare the input
 
 - Declared formats: `AB1`, `FASTQ`, `FASTA`
-- Required parameters: `readsDirectory`
+- Required parameters: `reads`
 - Check that identifiers are unambiguous and FASTA/FASTQ records are complete; gzip files must preserve the original record structure.
 
 ## Recommended workflow
@@ -30,7 +30,7 @@ It performs one explicit, reproducible analysis step. The run record preserves n
 
 | Parameter | Required | Default | Guidance |
 | --- | --- | --- | --- |
-| `readsDirectory` Reads directory | yes | empty | Choose a writable directory and check disk space and naming conflicts before batch output. Directory containing AB1, FASTQ, or FASTA reads. AB1 is preferred when present. |
+| `reads` Read files | yes | empty | Select multiple read files. AB1/FASTQ/FASTA are supported; one file may contain multiple reads. |
 | `reference` Reference FASTA | no | empty | Select a complete real input file; do not submit the placeholder example path. Optional reference sequence used to anchor reads and fill uncovered positions. |
 | `minOverlap` Minimum overlap | no | 30 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Minimum overlap length for joining reads. |
 | `minIdentity` Minimum overlap identity | no | 0.85 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Minimum fraction of matching bases in an overlap. |
@@ -58,7 +58,7 @@ It performs one explicit, reproducible analysis step. The run record preserves n
 ## Minimal command example
 
 ```powershell
-opentools run sanger.assemble --param readsDirectory=C:\data\readsDirectory
+opentools run sanger.assemble --param reads=C:\data\reads-1.dat,C:\data\reads-2.dat
 ```
 
 Replace placeholder paths with real workspace files. Keep parameter IDs unchanged and use `true` or `false` for booleans.

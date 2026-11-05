@@ -351,21 +351,25 @@ public final class ToolExecutionService implements AutoCloseable {
 
         List<Map<String, Object>> inputs = new ArrayList<>();
         for (ToolParameter parameter : tool.descriptor().parameters()) {
-            if (parameter.type() != ParameterType.FILE) {
+            if (parameter.type() != ParameterType.FILE && parameter.type() != ParameterType.FILES) {
                 continue;
             }
-            String pathValue = request.string(parameter.id());
-            if (pathValue.isBlank()) {
-                continue;
+            List<Path> paths = parameter.type() == ParameterType.FILES
+                    ? request.paths(parameter.id())
+                    : (request.path(parameter.id()) == null
+                            ? List.of() : List.of(request.path(parameter.id())));
+            for (Path candidate : paths) {
+                if (candidate == null) continue;
+                Path path = candidate.toAbsolutePath().normalize();
+                if (!Files.isRegularFile(path)) continue;
+                Map<String, Object> input = new LinkedHashMap<>();
+                input.put("parameter", parameter.id());
+                input.put("path", path.toString());
+                input.put("size", Files.size(path));
+                input.put("sha256", Hashing.sha256(path));
+                inputs.add(input);
+                context.log("Input " + parameter.id() + ": " + path);
             }
-            Path path = Path.of(pathValue).toAbsolutePath().normalize();
-            Map<String, Object> input = new LinkedHashMap<>();
-            input.put("parameter", parameter.id());
-            input.put("path", path.toString());
-            input.put("size", Files.size(path));
-            input.put("sha256", Hashing.sha256(path));
-            inputs.add(input);
-            context.log("Input " + parameter.id() + ": " + path);
         }
         manifest.put("inputs", inputs);
         return manifest;

@@ -2,6 +2,7 @@ package io.opentools.api.tool;
 
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -85,6 +86,39 @@ public final class ToolRequest {
      */
     public Path path(String id) {
         return optionalString(id).map(Path::of).orElse(null);
+    }
+
+    /**
+     * Reads a multi-file parameter. Values may be a list, an array, or a
+     * comma-separated string supplied through the CLI.
+     *
+     * @param id parameter identifier
+     * @return immutable list of paths, never null
+     */
+    public List<Path> paths(String id) {
+        Object value = parameters.get(id);
+        if (value == null) return List.of();
+        List<String> parts = new java.util.ArrayList<>();
+        if (value instanceof Iterable<?> iterable) {
+            for (Object item : iterable) {
+                if (item != null) parts.add(String.valueOf(item).trim());
+            }
+        } else if (value.getClass().isArray()) {
+            int length = java.lang.reflect.Array.getLength(value);
+            for (int index = 0; index < length; index++) {
+                Object item = java.lang.reflect.Array.get(value, index);
+                if (item != null) parts.add(String.valueOf(item).trim());
+            }
+        } else {
+            for (String item : String.valueOf(value).split(",")) {
+                parts.add(item.trim());
+            }
+        }
+        List<Path> paths = new java.util.ArrayList<>();
+        for (String part : parts) {
+            if (!part.isBlank()) paths.add(Path.of(part));
+        }
+        return List.copyOf(paths);
     }
 
     /**

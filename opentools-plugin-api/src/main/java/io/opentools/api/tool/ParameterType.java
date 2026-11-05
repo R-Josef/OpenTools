@@ -7,6 +7,7 @@ public enum ParameterType {
     STRING,
     TEXT,
     FILE,
+    FILES,
     OUTPUT_FILE,
     DIRECTORY,
     INTEGER,

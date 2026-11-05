@@ -488,14 +488,26 @@ final class ResultInspectorPanel extends JPanel {
         }
         try {
             JsonNode params = objectMapper.readTree(job.paramsJson());
-            String directory = params.path("readsDirectory").asText("");
-            if (directory.isBlank()) return;
             java.util.List<Path> files = new java.util.ArrayList<>();
-            try (var stream = Files.list(Path.of(directory))) {
-                stream.filter(Files::isRegularFile)
-                        .filter(path -> path.getFileName().toString().toLowerCase(Locale.ROOT)
-                                .endsWith(".ab1"))
-                        .forEach(files::add);
+            JsonNode readsNode = params.path("reads");
+            if (readsNode.isArray()) {
+                readsNode.forEach(node -> {
+                    Path path = Path.of(node.asText(""));
+                    if (path.getFileName() != null
+                            && path.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".ab1")
+                            && Files.isRegularFile(path)) {
+                        files.add(path);
+                    }
+                });
+            } else if (readsNode.isTextual()) {
+                for (String value : readsNode.asText("").split(",")) {
+                    Path path = Path.of(value.trim());
+                    if (path.getFileName() != null
+                            && path.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".ab1")
+                            && Files.isRegularFile(path)) {
+                        files.add(path);
+                    }
+                }
             }
             if (files.isEmpty()) return;
             ab1Viewer = new Ab1ViewerPanel(language, files);

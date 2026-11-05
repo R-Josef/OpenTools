@@ -57,6 +57,10 @@
   minimum repeats, and locus cap; reports 1-based coordinates and per-motif counts.
 - `fastq.split`: split FASTQ by record count while preserving headers, sequences,
   and qualities.
+- `sanger.assemble` now accepts multiple read files through the multi-file
+  `reads` parameter (CLI: `--param reads=a.ab1,b.ab1`) instead of a directory;
+  one FASTQ/FASTA file may still contain multiple reads, and at least two reads
+  are required.
 - `sanger.assemble`: read AB1/FASTQ/FASTA Sanger reads, trim low-quality ends,
   assemble overlapping reads, optionally anchor them to a reference with
   indel-aware local alignment, call IUPAC heterozygous bases, and emit a full

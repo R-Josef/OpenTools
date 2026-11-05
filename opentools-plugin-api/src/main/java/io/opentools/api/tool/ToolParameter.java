@@ -50,6 +50,14 @@ public record ToolParameter(
         return new ToolParameter(id, title, description, ParameterType.FILE, false, null, List.of(), null, null, false, null);
     }
 
+    public static ToolParameter requiredFiles(String id, String title, String description) {
+        return new ToolParameter(id, title, description, ParameterType.FILES, true, null, List.of(), null, null, false, null);
+    }
+
+    public static ToolParameter optionalFiles(String id, String title, String description) {
+        return new ToolParameter(id, title, description, ParameterType.FILES, false, null, List.of(), null, null, false, null);
+    }
+
     public static ToolParameter optionalOutputFile(String id, String title, String description) {
         return new ToolParameter(id, title, description, ParameterType.OUTPUT_FILE, false, null, List.of(), null, null, false, null);
     }

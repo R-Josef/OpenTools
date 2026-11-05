@@ -106,6 +106,8 @@ final class ToolDocumentation {
     private static String exampleValue(ToolParameter parameter, boolean chinese) {
         return switch (parameter.type()) {
             case FILE -> "C:\\data\\" + parameter.id() + ".dat";
+            case FILES -> "C:\\data\\" + parameter.id() + "-1.dat,C:\\data\\"
+                    + parameter.id() + "-2.dat";
             case OUTPUT_FILE -> "C:\\data\\output-" + parameter.id() + ".dat";
             case DIRECTORY -> "C:\\data\\" + parameter.id();
             case INTEGER -> String.valueOf(parameter.defaultValue() == null ? 1 : parameter.defaultValue());

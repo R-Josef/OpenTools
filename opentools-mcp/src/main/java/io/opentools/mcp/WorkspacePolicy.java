@@ -82,7 +82,38 @@ public final class WorkspacePolicy {
             if (value == null || String.valueOf(value).isBlank()) {
                 continue;
             }
-            if (parameter.type() == ParameterType.FILE
+            if (parameter.type() == ParameterType.FILES) {
+                java.util.List<String> normalized = new ArrayList<>();
+                java.util.List<String> rawValues = new ArrayList<>();
+                if (value instanceof Iterable<?> iterable) {
+                    for (Object item : iterable) {
+                        if (item != null) rawValues.add(String.valueOf(item).trim());
+                    }
+                } else {
+                    for (String item : String.valueOf(value).split(",")) {
+                        if (!item.isBlank()) rawValues.add(item.trim());
+                    }
+                }
+                for (String raw : rawValues) {
+                    try {
+                        Path path = resolvePath(raw);
+                        if (!isAllowed(path)) {
+                            issues.add(outsideWorkspace(parameter.id(), path));
+                        }
+                        normalized.add(path.toString());
+                    } catch (InvalidPathException ex) {
+                        issues.add(new AutomationIssue(
+                                "INVALID_PATH",
+                                parameter.id(),
+                                "ERROR",
+                                "Invalid path: " + raw,
+                                "Use absolute paths or paths relative to the project."
+                        ));
+                        normalized.add(raw);
+                    }
+                }
+                effective.put(parameter.id(), normalized);
+            } else if (parameter.type() == ParameterType.FILE
                     || parameter.type() == ParameterType.OUTPUT_FILE
                     || parameter.type() == ParameterType.DIRECTORY) {
                 try {

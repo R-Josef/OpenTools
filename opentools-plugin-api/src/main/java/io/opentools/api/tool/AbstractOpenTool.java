@@ -20,14 +20,36 @@ public abstract class AbstractOpenTool implements OpenTool {
         List<ValidationIssue> issues = new ArrayList<>();
         for (ToolParameter parameter : descriptor().parameters()) {
             Object value = request.value(parameter.id());
-            if (value == null || String.valueOf(value).isBlank()) {
+            boolean missing = value == null || String.valueOf(value).isBlank()
+                    || value instanceof java.util.Collection<?> collection && collection.isEmpty();
+            if (missing) {
                 if (parameter.required()) {
                     issues.add(ValidationIssue.error(parameter.id(), parameter.title() + " is required.", "Choose or enter a value."));
                 }
                 continue;
             }
 
-            if (parameter.type() == ParameterType.FILE) {
+            if (parameter.type() == ParameterType.FILES) {
+                java.util.List<Path> paths = request.paths(parameter.id());
+                if (paths.isEmpty()) {
+                    if (parameter.required()) {
+                        issues.add(ValidationIssue.error(parameter.id(),
+                                parameter.title() + " is required.",
+                                "Select at least one file."));
+                    }
+                }
+                for (Path path : paths) {
+                    if (!Files.isRegularFile(path)) {
+                        issues.add(ValidationIssue.error(parameter.id(),
+                                "File does not exist: " + path,
+                                "Choose existing readable files."));
+                    } else if (!Files.isReadable(path)) {
+                        issues.add(ValidationIssue.error(parameter.id(),
+                                "File is not readable: " + path,
+                                "Check file permissions."));
+                    }
+                }
+            } else if (parameter.type() == ParameterType.FILE) {
                 try {
                     Path path = Path.of(String.valueOf(value));
                     if (!Files.isRegularFile(path)) {

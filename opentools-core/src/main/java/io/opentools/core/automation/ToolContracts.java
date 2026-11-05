@@ -69,7 +69,10 @@ public final class ToolContracts {
         if (parameter.advanced()) {
             schema.put("x-opentools-advanced", true);
         }
-        if (parameter.type() == ParameterType.FILE
+        if (parameter.type() == ParameterType.FILES) {
+            schema.put("items", java.util.Map.of("type", "string", "format", "path"));
+            schema.put("x-opentools-path-kind", "files");
+        } else if (parameter.type() == ParameterType.FILE
                 || parameter.type() == ParameterType.OUTPUT_FILE
                 || parameter.type() == ParameterType.DIRECTORY) {
             schema.put("format", "path");
@@ -84,6 +87,7 @@ public final class ToolContracts {
             case DECIMAL -> "number";
             case BOOLEAN -> "boolean";
             case STRING, TEXT, FILE, OUTPUT_FILE, DIRECTORY, ENUM -> "string";
+            case FILES -> "array";
         };
     }
 

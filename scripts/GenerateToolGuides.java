@@ -536,6 +536,8 @@ public final class GenerateToolGuides {
             case ENUM -> parameter.options().isEmpty() ? "VALUE" : parameter.options().getFirst();
             case TEXT, STRING -> exampleText(parameter.id(), chinese);
             case FILE, OUTPUT_FILE, DIRECTORY -> "C:\\data\\" + parameter.id();
+            case FILES -> "C:\\data\\" + parameter.id() + "-1.dat,C:\\data\\"
+                    + parameter.id() + "-2.dat";
         };
     }
 
