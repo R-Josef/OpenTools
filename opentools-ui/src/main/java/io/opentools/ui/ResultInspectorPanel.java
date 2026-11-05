@@ -45,7 +45,6 @@ final class ResultInspectorPanel extends JPanel {
     private final JTextArea paths = new JTextArea(2, 40);
     private final JTabbedPane views = new JTabbedPane();
     private final PlotViewerPanel plotViewer;
-    private int plotTabIndex = -1;
     private BlastViewerPanel blastViewer;
     private int blastTabIndex = -1;
     private MemeViewerPanel memeViewer;
@@ -123,7 +122,7 @@ final class ResultInspectorPanel extends JPanel {
         views.addTab(language.text("results.tab.data", "Data"), dataView);
         views.setTabLayoutPolicy(JTabbedPane.WRAP_TAB_LAYOUT);
         views.addChangeListener(ignored -> {
-            if (plotTabIndex >= 0 && views.getSelectedIndex() == plotTabIndex
+            if (views.getSelectedComponent() == plotViewer
                     && !plotLoaded && currentResult != null) {
                 loadPlot(currentResult);
             }
@@ -329,10 +328,10 @@ final class ResultInspectorPanel extends JPanel {
             clearPlotTab();
             return;
         }
-        if (plotTabIndex < 0) {
+        if (views.indexOfComponent(plotViewer) < 0) {
             views.addTab(language.text("results.tab.visualization", "Visualization"), plotViewer);
-            plotTabIndex = views.indexOfComponent(plotViewer);
         }
+        int plotTabIndex = views.indexOfComponent(plotViewer);
         Path preview = null;
         Path full = null;
         for (JsonNode artifact : root.path("artifacts")) {
@@ -357,6 +356,9 @@ final class ResultInspectorPanel extends JPanel {
                     "results.plot_preview",
                     "A bounded preview is shown; exported tool files use the complete matrix."
             ));
+        }
+        if (views.getSelectedComponent() == plotViewer) {
+            loadPlot(root);
         }
     }
 
@@ -395,8 +397,9 @@ final class ResultInspectorPanel extends JPanel {
             } else {
                 plotViewer.loadImage(image);
             }
-            if (preview != null && !preview.equals(full)) {
-                views.setToolTipTextAt(plotTabIndex, language.text(
+            int plotIndex = views.indexOfComponent(plotViewer);
+            if (preview != null && !preview.equals(full) && plotIndex >= 0) {
+                views.setToolTipTextAt(plotIndex, language.text(
                         "results.plot_preview",
                         "A bounded preview is shown; exported tool files use the complete matrix."
                 ));
@@ -519,12 +522,11 @@ final class ResultInspectorPanel extends JPanel {
 
     private void clearPlotTab() {
         plotViewer.clear();
-        if (plotTabIndex >= 0) {
-            if (views.getSelectedIndex() == plotTabIndex && views.getTabCount() > 1) {
+        if (views.indexOfComponent(plotViewer) >= 0) {
+            if (views.getSelectedComponent() == plotViewer && views.getTabCount() > 1) {
                 views.setSelectedIndex(0);
             }
             views.remove(plotViewer);
-            plotTabIndex = -1;
         }
         plotLoaded = false;
     }

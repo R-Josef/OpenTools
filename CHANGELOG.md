@@ -67,6 +67,8 @@
 - The Results panel adds the Visualization tab only when a result has a
   visualization artifact; tools without visualization output no longer show a
   disabled placeholder tab.
+- Fix Visualization image loading after a Sanger job by tracking the plot tab by
+  component instead of a cached tab index.
 - The Results panel adds an AB1 tab for `sanger.assemble` jobs, showing trace
   channels, basecalls, quality shading, per-read selection, horizontal zoom/fit,
   and vertical Y zoom/fit controls. The default Y range fits the highest peak,
