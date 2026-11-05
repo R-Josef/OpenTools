@@ -1,0 +1,10 @@
+# Inputs that must invalidate the Windows MEME build cache.
+# The release workflow hashes this file together with the build script and patch.
+# Bump cache-schema when the cache layout or build environment changes.
+cache-schema=1
+meme-version=5.5.9
+meme-sha256=0406FB7B1DC27F6AAB3D6D3A29ECDF617BBDD946690CFA97CA2129BC210BFD12
+build-script=scripts/build-meme-cygwin.sh
+patch=scripts/patches/meme-5.5.9-cygwin.patch
+cygwin-packages=gcc-core,gcc-g++,make,perl,autoconf,automake,libtool,pkg-config,libxml2-devel,libxslt-devel,zlib-devel,libpng-devel,libgd-devel,freetype-devel,expat-devel,curl,tar,gzip,bzip2,python3,patch,perl-XML-Parser
+build-command=bash scripts/build-meme-cygwin.sh
