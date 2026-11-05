@@ -99,6 +99,8 @@ final class SangerAssembleToolTest {
         String indels = Files.readString(output.resolve("indels.tsv"));
         assertTrue(indels.contains("INSERTION"));
         assertTrue(indels.contains("AAA"));
+        assertEquals(reference.substring(0, 80) + "AAA" + reference.substring(80),
+                fastaSequence(output.resolve("consensus_with_indels.fa")));
     }
 
     @Test
@@ -115,6 +117,8 @@ final class SangerAssembleToolTest {
 
         assertTrue(Files.readString(output.resolve("indels.tsv")).contains("DELETION"));
         assertTrue(Files.readString(output.resolve("provenance.bed")).contains("DELETION"));
+        assertEquals(reference.substring(0, 80) + reference.substring(83),
+                fastaSequence(output.resolve("consensus_with_indels.fa")));
     }
 
     private ToolResult execute(Path reference, Path reads, Path output) throws Exception {
@@ -136,6 +140,12 @@ final class SangerAssembleToolTest {
                 ignored -> { }, ignored -> { }, new CancellationToken());
         return new SangerAssembleTool().execute(
                 new ToolRequest("sanger.assemble", parameters), context);
+    }
+
+    private static String fastaSequence(Path path) throws Exception {
+        return Files.readString(path).lines()
+                .filter(line -> !line.startsWith(">"))
+                .collect(java.util.stream.Collectors.joining());
     }
 
     private static String fastq(String name, String sequence) {

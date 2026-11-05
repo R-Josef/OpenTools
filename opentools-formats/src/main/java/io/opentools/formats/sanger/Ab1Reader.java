@@ -14,7 +14,13 @@ public final class Ab1Reader {
     private Ab1Reader() {
     }
 
-    public record Trace(String name, String sequence, int[] qualities, int[] peakPositions) {
+    public record Trace(
+            String name,
+            String sequence,
+            int[] qualities,
+            int[] peakPositions,
+            int[][] channels
+    ) {
         public char base(int index) {
             return sequence.charAt(index);
         }
@@ -51,10 +57,16 @@ public final class Ab1Reader {
             }
         }
         int[] peaks = tagShorts(bytes, directory, "PLOC", 1, little);
+        int[][] channels = new int[4][];
+        for (int channel = 0; channel < 4; channel++) {
+            int[] values = tagInts(bytes, directory, "DATA", channel + 1, little);
+            channels[channel] = values == null ? new int[0] : values;
+        }
         String name = path.getFileName().toString();
         int dot = name.lastIndexOf('.');
         if (dot > 0) name = name.substring(0, dot);
-        return new Trace(name, sequence, qualities, peaks == null ? new int[0] : peaks);
+        return new Trace(name, sequence, qualities,
+                peaks == null ? new int[0] : peaks, channels);
     }
 
     private static String clean(String sequence) {
@@ -131,6 +143,23 @@ public final class Ab1Reader {
         // ABIF stores values of four bytes or fewer in the offset field itself.
         // The caller only reaches this path for very small tags.
         return entry.dataOffset();
+    }
+
+    private static int[] tagInts(byte[] bytes, Directory directory, String tag, int number, boolean little) {
+        Entry entry = find(directory, tag, number);
+        if (entry == null || entry.count() <= 0) return null;
+        int count = entry.count();
+        int offset = entry.dataOffset();
+        int elementSize = entry.elementSize();
+        if (offset <= 0 || offset + count * Math.max(1, elementSize) > bytes.length) return null;
+        ByteBuffer buffer = ByteBuffer.wrap(bytes).order(little ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN);
+        int[] values = new int[count];
+        for (int index = 0; index < count; index++) {
+            values[index] = elementSize >= 4
+                    ? buffer.getInt(offset + index * elementSize)
+                    : Short.toUnsignedInt(buffer.getShort(offset + index * elementSize));
+        }
+        return values;
     }
 
     private static int[] tagShorts(byte[] bytes, Directory directory, String tag, int number, boolean little) {

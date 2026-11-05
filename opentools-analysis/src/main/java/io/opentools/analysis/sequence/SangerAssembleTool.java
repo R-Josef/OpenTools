@@ -63,6 +63,8 @@ public final class SangerAssembleTool extends AbstractOpenTool {
                             "Minimum second-base fraction for an IUPAC heterozygous call.", 0.25, 0.05, 0.5),
                     ToolParameter.integer("minHeterozygousCoverage", "Heterozygous coverage",
                             "Minimum coverage before a heterozygous call is considered.", 4, 2, 10_000),
+                    ToolParameter.integer("minIndelSupport", "Minimum indel support",
+                            "Minimum reads supporting an insertion or deletion in the expanded consensus.", 1, 1, 10_000),
                     ToolParameter.optionalDirectory("outputDirectory", "Output directory",
                             "Leave blank to save in the run directory."),
                     ToolParameter.bool("overwrite", "Overwrite outputs",
@@ -166,6 +168,8 @@ public final class SangerAssembleTool extends AbstractOpenTool {
             writeVariants(outputs.get("variants"), reference, consensus);
             writeProvenance(outputs.get("provenance"), reference, consensus);
             writeIndels(outputs.get("indels"), consensus);
+            writeExpandedConsensus(outputs.get("expanded"), reference, consensus,
+                    Math.max(1, request.integer("minIndelSupport")));
         }
 
         List<OutputArtifact> artifacts = new ArrayList<>();
@@ -181,6 +185,8 @@ public final class SangerAssembleTool extends AbstractOpenTool {
                     "text/plain"));
             artifacts.add(new OutputArtifact(outputs.get("indels"), "Consensus indels",
                     "text/tab-separated-values"));
+            artifacts.add(new OutputArtifact(outputs.get("expanded"),
+                    "Consensus with indels", "text/x-fasta"));
         }
         long totalLength = assembly.contigs().stream().mapToLong(contig -> contig.sequence().length()).sum();
         Map<String, Object> metrics = new LinkedHashMap<>();
@@ -222,6 +228,7 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         names.put("variants", directory.resolve("variants.tsv"));
         names.put("provenance", directory.resolve("provenance.bed"));
         names.put("indels", directory.resolve("indels.tsv"));
+        names.put("expanded", directory.resolve("consensus_with_indels.fa"));
         return names;
     }
 
@@ -578,13 +585,48 @@ public final class SangerAssembleTool extends AbstractOpenTool {
 
     private static void writeIndels(Path path, Consensus consensus) throws Exception {
         StringBuilder text = new StringBuilder();
-        text.append("position\ttype\tsequence\tsupport\treads\n");
+        text.append("position\ttype\tsequence\tlength\tsupport\treads\n");
         for (IndelCall indel : consensus.indels()) {
             text.append(indel.position() + 1).append('\t')
                     .append(indel.type()).append('\t')
                     .append(indel.sequence()).append('\t')
+                    .append(indel.length()).append('\t')
                     .append(indel.support()).append('\t')
                     .append(String.join(",", indel.reads())).append('\n');
+        }
+        Files.writeString(path, text.toString(), StandardCharsets.UTF_8);
+    }
+
+    private static void writeExpandedConsensus(
+            Path path,
+            FastaRecord reference,
+            Consensus consensus,
+            int minimumSupport
+    ) throws Exception {
+        Map<Integer, String> insertions = new LinkedHashMap<>();
+        boolean[] deleted = new boolean[consensus.sequence().length()];
+        for (IndelCall indel : consensus.indels()) {
+            if (indel.support() < minimumSupport) continue;
+            if ("INSERTION".equals(indel.type())) {
+                insertions.merge(indel.position(), indel.sequence(), String::concat);
+            } else if ("DELETION".equals(indel.type())) {
+                int end = Math.min(deleted.length, indel.position() + indel.length());
+                for (int index = Math.max(0, indel.position()); index < end; index++) {
+                    deleted[index] = true;
+                }
+            }
+        }
+        StringBuilder sequence = new StringBuilder();
+        for (int index = 0; index <= consensus.sequence().length(); index++) {
+            String insertion = insertions.get(index);
+            if (insertion != null) sequence.append(insertion);
+            if (index == consensus.sequence().length()) break;
+            if (!deleted[index]) sequence.append(consensus.sequence().charAt(index));
+        }
+        StringBuilder text = new StringBuilder();
+        text.append('>').append(reference.id()).append("_consensus_with_indels\n");
+        for (int offset = 0; offset < sequence.length(); offset += 80) {
+            text.append(sequence, offset, Math.min(sequence.length(), offset + 80)).append('\n');
         }
         Files.writeString(path, text.toString(), StandardCharsets.UTF_8);
     }
@@ -752,8 +794,9 @@ public final class SangerAssembleTool extends AbstractOpenTool {
                             readIndex++;
                             operationIndex++;
                         }
+                        String inserted = sequence.substring(start, readIndex);
                         addIndel(indels, new IndelCall("INSERTION", referenceIndex,
-                                sequence.substring(start, readIndex), 0, new LinkedHashSet<>()), read.name());
+                                inserted, inserted.length(), 0, new LinkedHashSet<>()), read.name());
                     } else {
                         int start = referenceIndex;
                         while (operationIndex < operations.size()
@@ -764,8 +807,9 @@ public final class SangerAssembleTool extends AbstractOpenTool {
                         for (int deleted = start; deleted < referenceIndex; deleted++) {
                             deletions[deleted]++;
                         }
+                        int deletedLength = referenceIndex - start;
                         addIndel(indels, new IndelCall("DELETION", start,
-                                "-", 0, new LinkedHashSet<>()), read.name());
+                                "-", deletedLength, 0, new LinkedHashSet<>()), read.name());
                     }
                 }
             }
@@ -816,7 +860,8 @@ public final class SangerAssembleTool extends AbstractOpenTool {
                 IndelCall event,
                 String read
         ) {
-            String key = event.type() + ":" + event.position() + ":" + event.sequence();
+            String key = event.type() + ":" + event.position() + ":" + event.length()
+                    + ":" + event.sequence();
             IndelCall existing = indels.get(key);
             if (existing == null) {
                 event.reads().add(read);
@@ -845,13 +890,22 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         private final String type;
         private final int position;
         private final String sequence;
+        private final int length;
         private int support;
         private final Set<String> reads;
 
-        private IndelCall(String type, int position, String sequence, int support, Set<String> reads) {
+        private IndelCall(
+                String type,
+                int position,
+                String sequence,
+                int length,
+                int support,
+                Set<String> reads
+        ) {
             this.type = type;
             this.position = position;
             this.sequence = sequence;
+            this.length = length;
             this.support = support;
             this.reads = reads;
         }
@@ -859,6 +913,7 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         String type() { return type; }
         int position() { return position; }
         String sequence() { return sequence; }
+        int length() { return length; }
         int support() { return support; }
         Set<String> reads() { return reads; }
     }

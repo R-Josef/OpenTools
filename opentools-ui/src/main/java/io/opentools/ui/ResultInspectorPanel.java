@@ -50,6 +50,8 @@ final class ResultInspectorPanel extends JPanel {
     private int blastTabIndex = -1;
     private MemeViewerPanel memeViewer;
     private int memeTabIndex = -1;
+    private Ab1ViewerPanel ab1Viewer;
+    private int ab1TabIndex = -1;
     private JobRecord current;
     private JsonNode currentResult;
     private boolean plotLoaded;
@@ -195,6 +197,7 @@ final class ResultInspectorPanel extends JPanel {
         clearPlot();
         clearBlast();
         clearMeme();
+        clearAb1();
         refresh();
     }
 
@@ -221,6 +224,7 @@ final class ResultInspectorPanel extends JPanel {
             clearPlot();
             clearBlast();
             clearMeme();
+            clearAb1();
             return;
         }
         Thread.ofVirtual().start(() -> {
@@ -272,6 +276,7 @@ final class ResultInspectorPanel extends JPanel {
                     preparePlotTab(root);
                     prepareBlastTab(root, job);
                     prepareMemeTab(root, job);
+                    prepareAb1Tab(root, job);
                 });
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> {
@@ -287,6 +292,7 @@ final class ResultInspectorPanel extends JPanel {
                     clearPlot();
                     clearBlast();
                     clearMeme();
+                    clearAb1();
                 });
             }
         });
@@ -453,6 +459,40 @@ final class ResultInspectorPanel extends JPanel {
             views.remove(memeViewer);
             memeViewer = null;
             memeTabIndex = -1;
+        }
+    }
+
+    private void prepareAb1Tab(JsonNode root, JobRecord job) {
+        clearAb1();
+        if (!"sanger.assemble".equals(job.toolId()) || job.paramsJson() == null) {
+            return;
+        }
+        try {
+            JsonNode params = objectMapper.readTree(job.paramsJson());
+            String directory = params.path("readsDirectory").asText("");
+            if (directory.isBlank()) return;
+            java.util.List<Path> files = new java.util.ArrayList<>();
+            try (var stream = Files.list(Path.of(directory))) {
+                stream.filter(Files::isRegularFile)
+                        .filter(path -> path.getFileName().toString().toLowerCase(Locale.ROOT)
+                                .endsWith(".ab1"))
+                        .forEach(files::add);
+            }
+            if (files.isEmpty()) return;
+            ab1Viewer = new Ab1ViewerPanel(language, files);
+            views.addTab(language.text("results.tab.ab1", "AB1"), ab1Viewer);
+            ab1TabIndex = views.indexOfComponent(ab1Viewer);
+        } catch (Exception ex) {
+            ab1Viewer = null;
+            ab1TabIndex = -1;
+        }
+    }
+
+    private void clearAb1() {
+        if (ab1Viewer != null) {
+            views.remove(ab1Viewer);
+            ab1Viewer = null;
+            ab1TabIndex = -1;
         }
     }
 

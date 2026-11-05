@@ -40,13 +40,14 @@
 | `consensusThreshold` Consensus 阈值 | 否 | 0.6 | 先使用默认值；调整阈值时记录理由，并与输入数据规模或统计目标对应。 判定可信碱基所需的质量加权比例。 |
 | `heterozygousThreshold` 杂合阈值 | 否 | 0.25 | 先使用默认值；调整阈值时记录理由，并与输入数据规模或统计目标对应。 判定 IUPAC 杂合碱基所需的第二碱基比例。 |
 | `minHeterozygousCoverage` 杂合覆盖度 | 否 | 4 | 先使用默认值；调整阈值时记录理由，并与输入数据规模或统计目标对应。 考虑杂合判定所需的最小覆盖度。 |
+| `minIndelSupport` 最小 indel 支持 | 否 | 1 | 先使用默认值；调整阈值时记录理由，并与输入数据规模或统计目标对应。 展开 consensus 时插入/缺失所需的最小 reads 支持数。 |
 | `outputDirectory` 输出目录 | 否 | 空 | 选择可写目录；批量输出前确认磁盘空间和命名冲突。 留空时保存到本次运行目录。 |
 | `overwrite` 覆盖输出 | 否 | false | 默认 `false`；只有确认目标文件可替换时才设为 `true`。 允许替换已存在的输出文件。 |
 
 ## 结果怎么读
 
 - 输出格式：`FASTA`、`TSV`、`BED`
-- 先看 overlap 与 reads 表，再看 assembly.fa 的完整组装；corrected.fa 是参考锚定结果，indels.tsv 与 variants.tsv 记录插入/缺失和杂合位点，provenance.bed 标记 READ_CONSENSUS、HETEROZYGOUS、DELETION、LOW_CONFIDENCE 和 REFERENCE_FILL。不能把参考填充区当作测序证据。
+- 先看 overlap 与 reads 表，再看 assembly.fa 的完整组装；corrected.fa 是参考坐标结果，consensus_with_indels.fa 把支持度达标的插入/缺失展开为最终序列；indels.tsv 与 variants.tsv 记录插入/缺失和杂合位点，provenance.bed 标记 READ_CONSENSUS、HETEROZYGOUS、DELETION、LOW_CONFIDENCE 和 REFERENCE_FILL。不能把参考填充区当作测序证据。
 - 结果面板是快速检查入口；完整数据、运行清单和日志位于本次运行目录。
 
 ## 最小运行示例

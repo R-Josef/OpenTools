@@ -40,13 +40,14 @@ It performs one explicit, reproducible analysis step. The run record preserves n
 | `consensusThreshold` Consensus threshold | no | 0.6 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Minimum quality-weighted base fraction for a confident call. |
 | `heterozygousThreshold` Heterozygous threshold | no | 0.25 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Minimum second-base fraction for an IUPAC heterozygous call. |
 | `minHeterozygousCoverage` Heterozygous coverage | no | 4 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Minimum coverage before a heterozygous call is considered. |
+| `minIndelSupport` Minimum indel support | no | 1 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Minimum reads supporting an insertion or deletion in the expanded consensus. |
 | `outputDirectory` Output directory | no | empty | Choose a writable directory and check disk space and naming conflicts before batch output. Leave blank to save in the run directory. |
 | `overwrite` Overwrite outputs | no | false | Keep `false` unless the target is known to be safe to replace. Allow replacing existing output files. |
 
 ## Read the result
 
 - Output formats: `FASTA`, `TSV`, `BED`
-- Review the read/overlap table first, then assembly.fa for the full de novo contig; corrected.fa is reference-anchored, indels.tsv and variants.tsv record insertions/deletions and heterozygous sites, and provenance.bed marks READ_CONSENSUS, HETEROZYGOUS, DELETION, LOW_CONFIDENCE, and REFERENCE_FILL. Never treat reference-filled positions as sequencing evidence.
+- Review the read/overlap table first, then assembly.fa for the full de novo contig; corrected.fa uses reference coordinates, consensus_with_indels.fa expands supported insertions/deletions into the final sequence; indels.tsv and variants.tsv record indels and heterozygous sites, and provenance.bed marks READ_CONSENSUS, HETEROZYGOUS, DELETION, LOW_CONFIDENCE, and REFERENCE_FILL. Never treat reference-filled positions as sequencing evidence.
 - The result panel is the quick-review surface; complete data, manifests, and logs live in the run directory.
 
 ## Minimal command example
