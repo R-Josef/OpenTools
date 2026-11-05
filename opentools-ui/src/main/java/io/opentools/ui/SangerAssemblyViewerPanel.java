@@ -63,13 +63,17 @@ final class SangerAssemblyViewerPanel extends JPanel {
         if (consensus.isBlank()) consensus = firstSequence(corrected);
         if (reference.isBlank()) reference = consensus;
         if (assemblySequence.isBlank()) assemblySequence = consensus;
-        int assemblyOffset = insertSequence.isBlank() ? 0
-                : Math.max(0, assemblySequence.indexOf(insertSequence));
+        if (!reference.isBlank()) {
+            boolean forward = containsKmer(assemblySequence, reference);
+            boolean reverse = containsKmer(assemblySequence, reverseComplement(reference));
+            if (!forward && reverse) assemblySequence = reverseComplement(assemblySequence);
+        }
+        int assemblyOffset = findAssemblyOffset(assemblySequence, reference, insertSequence);
         List<ReadAlignment> reads = readAlignments(readsTable);
         loadTraces(job);
 
         canvas = new AssemblyCanvas(reference, consensus, assemblySequence, assemblyOffset, reads);
-        ab1Canvas = new Ab1ReferenceCanvas(reference.length(), assemblyOffset, reads);
+        ab1Canvas = new Ab1ReferenceCanvas(reference.length(), assemblySequence.length(), assemblyOffset, reads);
         canvas.setSelectionListener((read, coordinate) -> {
             if (read != null) {
                 Ab1Reader.Trace trace = traces.get(read);
@@ -181,6 +185,46 @@ final class SangerAssemblyViewerPanel extends JPanel {
         String value = params.path("reference").asText("");
         if (value.isBlank() || !Files.isRegularFile(Path.of(value))) return "";
         return firstSequence(Path.of(value));
+    }
+
+    private static boolean containsKmer(String assembly, String sequence) {
+        if (sequence == null || sequence.length() < 20) return false;
+        return assembly.contains(sequence.substring(0, 20));
+    }
+
+    private static int findAssemblyOffset(String assembly, String reference, String insert) {
+        if (assembly == null || reference == null || reference.isBlank()) return 0;
+        int exact = assembly.indexOf(reference);
+        if (exact >= 0) return exact;
+        for (int length = 60; length >= 15; length -= 5) {
+            if (reference.length() < length) continue;
+            int position = assembly.indexOf(reference.substring(0, length));
+            if (position >= 0) return position;
+        }
+        if (insert != null && !insert.isBlank()) {
+            int position = assembly.indexOf(insert);
+            if (position >= 0) return position;
+            for (int length = 40; length >= 15; length -= 5) {
+                if (insert.length() < length) continue;
+                position = assembly.indexOf(insert.substring(0, length));
+                if (position >= 0) return position;
+            }
+        }
+        return 0;
+    }
+
+    private static String reverseComplement(String sequence) {
+        StringBuilder result = new StringBuilder(sequence.length());
+        for (int index = sequence.length() - 1; index >= 0; index--) {
+            result.append(switch (sequence.charAt(index)) {
+                case 'A' -> 'T';
+                case 'C' -> 'G';
+                case 'G' -> 'C';
+                case 'T' -> 'A';
+                default -> 'N';
+            });
+        }
+        return result.toString();
     }
 
     private static String firstSequence(Path path) throws Exception {
@@ -396,9 +440,8 @@ final class SangerAssemblyViewerPanel extends JPanel {
         }
 
         private void resize() {
-            int offsetPixels = (int) Math.round(assemblyOffset * 7 * zoom);
-            int width = Math.max(600, offsetPixels
-                    + (int) Math.round(Math.max(1, reference.length()) * 7 * zoom) + 100);
+            int width = Math.max(600,
+                    (int) Math.round(Math.max(1, assembly.length()) * 7 * zoom) + 100);
             setPreferredSize(new Dimension(width,
                     top + Math.max(3, reads.size()) * rowHeight + 20));
             revalidate();
@@ -593,6 +636,7 @@ final class SangerAssemblyViewerPanel extends JPanel {
 
     private static final class Ab1ReferenceCanvas extends JPanel {
         private final int referenceLength;
+        private final int gridLength;
         private final int assemblyOffset;
         private final List<ReadAlignment> reads;
         private Ab1Reader.Trace trace;
@@ -600,8 +644,10 @@ final class SangerAssemblyViewerPanel extends JPanel {
         private double zoom = 1.0;
         private double yZoom = 1.0;
 
-        Ab1ReferenceCanvas(int referenceLength, int assemblyOffset, List<ReadAlignment> reads) {
+        Ab1ReferenceCanvas(int referenceLength, int gridLength, int assemblyOffset,
+                           List<ReadAlignment> reads) {
             this.referenceLength = Math.max(1, referenceLength);
+            this.gridLength = Math.max(1, gridLength);
             this.assemblyOffset = Math.max(0, assemblyOffset);
             this.reads = reads;
             setBackground(Color.WHITE);
@@ -630,8 +676,7 @@ final class SangerAssemblyViewerPanel extends JPanel {
         }
 
         private void resize() {
-            int width = Math.max(600, (int) Math.round(
-                    (assemblyOffset + referenceLength) * 7 * zoom) + 100);
+            int width = Math.max(600, (int) Math.round(gridLength * 7 * zoom) + 100);
             int height = (int) Math.round(105 * yZoom);
             setPreferredSize(new Dimension(width, height));
             revalidate();
