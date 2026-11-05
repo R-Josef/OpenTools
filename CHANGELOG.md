@@ -67,6 +67,11 @@
   qseq/hseq, and midlines from BLAST XML for pairwise alignment review.
 - `annotation.meme.results`: convert MEME motif and MAST hit XML into readable
   motif and hit tables.
+- The Results panel adds a BLAST tab for `alignment.blast.alignments`: a
+  query-coordinate overview, clickable hit selection, and a colored pairwise
+  alignment view.
+- The Results panel adds a lightweight MEME tab for `meme.run`: motif list,
+  consensus, and a SeqLogo-style motif logo rendered from MEME XML.
 - `plot.collinearity` now plots MCScanX pairs as a gene-order dot plot between
   two GFF3/GTF-annotated genomes, with block coloring, unmapped-pair counts, and
   genome/chromosome metrics.

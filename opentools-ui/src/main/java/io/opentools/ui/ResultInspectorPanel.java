@@ -46,6 +46,10 @@ final class ResultInspectorPanel extends JPanel {
     private final JTabbedPane views = new JTabbedPane();
     private final PlotViewerPanel plotViewer;
     private final int plotTabIndex;
+    private BlastViewerPanel blastViewer;
+    private int blastTabIndex = -1;
+    private MemeViewerPanel memeViewer;
+    private int memeTabIndex = -1;
     private JobRecord current;
     private JsonNode currentResult;
     private boolean plotLoaded;
@@ -171,6 +175,7 @@ final class ResultInspectorPanel extends JPanel {
                         summary.setText(language.text("results.none", "This project has no run results yet."));
                         tableModel.setDataVector(new Object[0][0], new Object[0]);
                         clearPlot();
+                        clearBlast();
                     }
                     loadSelected();
                 });
@@ -188,6 +193,8 @@ final class ResultInspectorPanel extends JPanel {
         tableModel.setDataVector(new Object[0][0], new Object[0]);
         paths.setText("");
         clearPlot();
+        clearBlast();
+        clearMeme();
         refresh();
     }
 
@@ -212,6 +219,8 @@ final class ResultInspectorPanel extends JPanel {
                     + ErrorText.localize(language, job.errorCode(), job.errorMessage())));
             tableModel.setDataVector(new Object[0][0], new Object[0]);
             clearPlot();
+            clearBlast();
+            clearMeme();
             return;
         }
         Thread.ofVirtual().start(() -> {
@@ -261,6 +270,8 @@ final class ResultInspectorPanel extends JPanel {
                             + "\n" + language.text("results.manifest", "Input hashes and parameters: manifest.json"));
                     tableModel.setDataVector(rows, columns.toArray());
                     preparePlotTab(root);
+                    prepareBlastTab(root, job);
+                    prepareMemeTab(root, job);
                 });
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> {
@@ -274,6 +285,8 @@ final class ResultInspectorPanel extends JPanel {
                     ));
                     tableModel.setDataVector(new Object[0][0], new Object[0]);
                     clearPlot();
+                    clearBlast();
+                    clearMeme();
                 });
             }
         });
@@ -368,6 +381,77 @@ final class ResultInspectorPanel extends JPanel {
         } catch (Exception ex) {
             plotViewer.showLoadFailure(rootMessage(ex));
             views.setEnabledAt(plotTabIndex, true);
+        }
+    }
+
+    private void prepareBlastTab(JsonNode root, JobRecord job) {
+        clearBlast();
+        if (!"alignment.blast.alignments".equals(job.toolId())) {
+            return;
+        }
+        String path = null;
+        for (JsonNode artifact : root.path("artifacts")) {
+            String title = artifact.path("title").asText("");
+            if (title.contains("BLAST") && title.contains("alignment")) {
+                path = artifact.path("path").asText("");
+                break;
+            }
+        }
+        if (path == null || !Files.isRegularFile(Path.of(path))) {
+            return;
+        }
+        try {
+            blastViewer = new BlastViewerPanel(language, Path.of(path));
+            views.addTab(language.text("results.tab.blast", "BLAST"), blastViewer);
+            blastTabIndex = views.indexOfComponent(blastViewer);
+        } catch (Exception ex) {
+            blastViewer = null;
+            blastTabIndex = -1;
+        }
+    }
+
+    private void clearBlast() {
+        if (blastViewer != null) {
+            views.remove(blastViewer);
+            blastViewer = null;
+            blastTabIndex = -1;
+        }
+        if (views.getSelectedIndex() >= views.getTabCount() && views.getTabCount() > 0) {
+            views.setSelectedIndex(0);
+        }
+    }
+
+    private void prepareMemeTab(JsonNode root, JobRecord job) {
+        clearMeme();
+        if (!"meme.run".equals(job.toolId())) {
+            return;
+        }
+        String path = null;
+        for (JsonNode artifact : root.path("artifacts")) {
+            String title = artifact.path("title").asText("");
+            if (title.toLowerCase(Locale.ROOT).contains("meme xml")) {
+                path = artifact.path("path").asText("");
+                break;
+            }
+        }
+        if (path == null || !Files.isRegularFile(Path.of(path))) {
+            return;
+        }
+        try {
+            memeViewer = new MemeViewerPanel(language, Path.of(path));
+            views.addTab(language.text("results.tab.meme", "MEME"), memeViewer);
+            memeTabIndex = views.indexOfComponent(memeViewer);
+        } catch (Exception ex) {
+            memeViewer = null;
+            memeTabIndex = -1;
+        }
+    }
+
+    private void clearMeme() {
+        if (memeViewer != null) {
+            views.remove(memeViewer);
+            memeViewer = null;
+            memeTabIndex = -1;
         }
     }
 
