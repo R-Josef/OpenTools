@@ -306,8 +306,8 @@ public final class BlastLocalTool extends AbstractOpenTool {
         return new ToolResult(
                 summary.totalHits() + " hits across " + inputQueries + " queries",
                 List.of(summary.totalHits(), inputQueries),
-                program.name() + " using " + blastStatus.version(),
-                List.of(program.name(), blastStatus.version()),
+                program.name() + " using " + (blastStatus.version() == null ? "unknown" : blastStatus.version()),
+                List.of(program.name(), blastStatus.version() == null ? "unknown" : blastStatus.version()),
                 summary.resultTable(),
                 artifacts,
                 summary.metrics()

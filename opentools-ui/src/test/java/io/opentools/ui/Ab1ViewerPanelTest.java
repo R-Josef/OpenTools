@@ -31,6 +31,11 @@ final class Ab1ViewerPanelTest {
         assertEquals(1, panel.readCount());
         assertEquals(0, panel.selectedRead());
         assertEquals(8, panel.baseCount());
+        double initialZoom = panel.zoomLevel();
+        panel.zoomIn();
+        assertEquals(initialZoom * 1.5, panel.zoomLevel(), 0.001);
+        panel.zoomOut();
+        assertEquals(initialZoom, panel.zoomLevel(), 0.001);
     }
 
     private static byte[] ab1(String sequence) {

@@ -55,7 +55,11 @@
   distinguishes read-supported, heterozygous, deleted, low-confidence, and
   reference-filled positions.
 - The Results panel adds an AB1 tab for `sanger.assemble` jobs, showing trace
-  channels, basecalls, quality shading, and per-read selection.
+  channels, basecalls, quality shading, per-read selection, and zoom/fit
+  controls.
+- `sanger.assemble` trims common sequencing primers and optional user-supplied
+  primer/vector FASTA sequences from both read ends and records the evidence in
+  `trimming.tsv`.
 - `bed.blocks`: parse BED12 blockCount/blockSizes/blockStarts, validate block
   coordinates, and export block and intron intervals.
 - `gxf.edit`: edit GFF3/GTF source, type, strand, and attributes while preserving

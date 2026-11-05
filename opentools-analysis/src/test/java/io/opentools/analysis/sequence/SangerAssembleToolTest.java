@@ -122,8 +122,16 @@ final class SangerAssembleToolTest {
     }
 
     private ToolResult execute(Path reference, Path reads, Path output) throws Exception {
+        return execute(reference, reads, output, null);
+    }
+
+    private ToolResult execute(Path reference, Path reads, Path output, Path adapter) throws Exception {
         Map<String, Object> parameters = new LinkedHashMap<>();
         parameters.put("readsDirectory", reads.getParent().toString());
+        if (adapter != null) {
+            parameters.put("adapterFile", adapter.toString());
+            parameters.put("minAdapterMatch", 8);
+        }
         parameters.put("reference", reference.toString());
         parameters.put("minOverlap", 30);
         parameters.put("minIdentity", 0.85);
@@ -133,6 +141,8 @@ final class SangerAssembleToolTest {
         parameters.put("consensusThreshold", 0.6);
         parameters.put("heterozygousThreshold", 0.25);
         parameters.put("minHeterozygousCoverage", 2);
+        parameters.put("trimAdapters", true);
+        parameters.put("minAdapterMatch", 12);
         parameters.put("outputDirectory", output.toString());
         parameters.put("overwrite", true);
         ToolExecutionContext context = new ToolExecutionContext(
@@ -140,6 +150,46 @@ final class SangerAssembleToolTest {
                 ignored -> { }, ignored -> { }, new CancellationToken());
         return new SangerAssembleTool().execute(
                 new ToolRequest("sanger.assemble", parameters), context);
+    }
+
+    @Test
+    void trimsCommonPrimersFromReadEnds() throws Exception {
+        String reference = randomSequence(160);
+        Path referencePath = tempDir.resolve("primer-reference.fa");
+        Files.writeString(referencePath, ">ref\n" + reference + "\n");
+        String read = "GTAAAACGACGGCCAGT" + reference.substring(0, 120)
+                + "CAGGAAACAGCTATGAC";
+        Path reads = tempDir.resolve("primer.fastq");
+        Files.writeString(reads, fastq("primer-read", read));
+        Path output = Files.createDirectories(tempDir.resolve("primer-out"));
+
+        execute(referencePath, reads, output);
+
+        String trimming = Files.readString(output.resolve("trimming.tsv"));
+        assertTrue(trimming.contains("M13-F"));
+        assertTrue(trimming.contains("M13-R"));
+        String assembly = Files.readString(output.resolve("assembly.fa"));
+        assertTrue(!assembly.contains("GTAAAACGACGGCCAGT"));
+        assertTrue(!assembly.contains("CAGGAAACAGCTATGAC"));
+    }
+
+    @Test
+    void trimsCustomVectorFromFasta() throws Exception {
+        String reference = randomSequence(140);
+        Path referencePath = tempDir.resolve("vector-reference.fa");
+        Files.writeString(referencePath, ">ref\n" + reference + "\n");
+        Path adapter = tempDir.resolve("vector.fa");
+        Files.writeString(adapter, ">pUC-vector\nGGGGGGGGGGGG\n");
+        String read = "GGGGGGGGGGGG" + reference.substring(0, 110);
+        Path reads = tempDir.resolve("vector.fastq");
+        Files.writeString(reads, fastq("vector-read", read));
+        Path output = Files.createDirectories(tempDir.resolve("vector-out"));
+
+        execute(referencePath, reads, output, adapter);
+
+        String trimming = Files.readString(output.resolve("trimming.tsv"));
+        assertTrue(trimming.contains("pUC-vector"));
+        assertTrue(!Files.readString(output.resolve("assembly.fa")).contains("GGGGGGGGGGGG"));
     }
 
     private static String fastaSequence(Path path) throws Exception {

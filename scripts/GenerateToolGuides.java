@@ -1008,7 +1008,7 @@ public final class GenerateToolGuides {
         values.put("plot.violin", "小提琴图展示分组数值分布；检查每组样本量，不能把形状差异直接解释为统计显著。");
         values.put("plot.volcano", "每个点是一个基因；横轴为 log2 fold change，纵轴为显著性，阈值分类必须在图中和导出表中一致。");
         values.put("fastq.split", "输出目录包含按记录数切分的 FASTQ；检查记录总数、header、序列和质量值的完整性。");
-        values.put("sanger.assemble", "先看 overlap 与 reads 表，再看 assembly.fa 的完整组装；corrected.fa 是参考坐标结果，consensus_with_indels.fa 把支持度达标的插入/缺失展开为最终序列；indels.tsv 与 variants.tsv 记录插入/缺失和杂合位点，provenance.bed 标记 READ_CONSENSUS、HETEROZYGOUS、DELETION、LOW_CONFIDENCE 和 REFERENCE_FILL。不能把参考填充区当作测序证据。");
+        values.put("sanger.assemble", "先看 trimming.tsv 和 reads 表，再看 assembly.fa 的完整组装；corrected.fa 是参考坐标结果，consensus_with_indels.fa 把支持度达标的插入/缺失展开为最终序列；indels.tsv 与 variants.tsv 记录插入/缺失和杂合位点，provenance.bed 标记 READ_CONSENSUS、HETEROZYGOUS、DELETION、LOW_CONFIDENCE 和 REFERENCE_FILL。不能把参考填充区当作测序证据。");
         values.put("bed.blocks", "输出逐 block 和 intron 的区间；检查 blockStarts 是否相对 chromStart、blockSizes 是否与 blockCount 一致。");
         values.put("gxf.edit", "编辑会保留注释头并改写数据行；检查 source/type/strand、属性增删和 GTF 引号格式。");
         values.put("expression.differential", "输出每个基因的组均值、log2 fold change、检验统计量、原始 P 值和校正 P 值；两组至少各需两个重复。");
@@ -1109,7 +1109,7 @@ public final class GenerateToolGuides {
         values.put("plot.violin", "Violin plots show grouped numeric distributions; inspect group sample sizes and avoid interpreting shape alone as statistical significance.");
         values.put("plot.volcano", "Each point is a gene; horizontal position is log2 fold change and vertical position is significance, and thresholds must agree with exported classifications.");
         values.put("fastq.split", "The output directory contains FASTQ parts split by record count; verify total records, headers, sequences, and qualities.");
-        values.put("sanger.assemble", "Review the read/overlap table first, then assembly.fa for the full de novo contig; corrected.fa uses reference coordinates, consensus_with_indels.fa expands supported insertions/deletions into the final sequence; indels.tsv and variants.tsv record indels and heterozygous sites, and provenance.bed marks READ_CONSENSUS, HETEROZYGOUS, DELETION, LOW_CONFIDENCE, and REFERENCE_FILL. Never treat reference-filled positions as sequencing evidence.");
+        values.put("sanger.assemble", "Review trimming.tsv and the read/overlap table first, then assembly.fa for the full de novo contig; corrected.fa uses reference coordinates, consensus_with_indels.fa expands supported insertions/deletions into the final sequence; indels.tsv and variants.tsv record indels and heterozygous sites, and provenance.bed marks READ_CONSENSUS, HETEROZYGOUS, DELETION, LOW_CONFIDENCE, and REFERENCE_FILL. Never treat reference-filled positions as sequencing evidence.");
         values.put("bed.blocks", "The output lists block and intron intervals; verify that blockStarts are relative to chromStart and blockSizes match blockCount.");
         values.put("gxf.edit", "Editing preserves annotation headers while rewriting data rows; verify source/type/strand, attribute changes, and GTF quoting.");
         values.put("expression.differential", "Each gene reports group means, log2 fold change, test statistic, raw p-value, and adjusted p-value; each group needs at least two replicates.");

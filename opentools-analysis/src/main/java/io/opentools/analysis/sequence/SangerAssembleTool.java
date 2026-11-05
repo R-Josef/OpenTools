@@ -40,7 +40,7 @@ public final class SangerAssembleTool extends AbstractOpenTool {
             List.of("Sanger", "AB1", "assembly", "consensus", "测序拼接"),
             List.of("AB1", "FASTQ", "FASTA"),
             List.of("FASTA", "TSV", "BED"),
-            "1.1.0",
+            "1.2.0",
             List.of(
                     new ToolParameter("readsDirectory", "Reads directory",
                             "Directory containing AB1, FASTQ, or FASTA reads. AB1 is preferred when present.",
@@ -57,6 +57,12 @@ public final class SangerAssembleTool extends AbstractOpenTool {
                             "Sliding window used to trim low-quality read ends.", 8, 1, 100),
                     ToolParameter.integer("minReadLength", "Minimum read length",
                             "Reads shorter than this after trimming are rejected.", 50, 1, 100_000),
+                    ToolParameter.bool("trimAdapters", "Trim primers/vectors",
+                            "Trim common sequencing primers and optional custom vector sequences from read ends.", true),
+                    ToolParameter.optionalFile("adapterFile", "Primer/vector FASTA",
+                            "Optional FASTA of primer or vector sequences to trim from either read end."),
+                    ToolParameter.integer("minAdapterMatch", "Minimum primer match",
+                            "Minimum matching bases required for primer/vector trimming.", 12, 6, 100),
                     ToolParameter.decimal("consensusThreshold", "Consensus threshold",
                             "Minimum quality-weighted base fraction for a confident call.", 0.60, 0.5, 1.0),
                     ToolParameter.decimal("heterozygousThreshold", "Heterozygous threshold",
@@ -112,6 +118,10 @@ public final class SangerAssembleTool extends AbstractOpenTool {
             }
         }
 
+        AdapterTrimmer adapterTrimmer = AdapterTrimmer.load(
+                request.bool("trimAdapters"), request.path("adapterFile"));
+        int minimumAdapterMatch = request.integer("minAdapterMatch");
+        if (minimumAdapterMatch <= 0) minimumAdapterMatch = 12;
         List<Path> files = readFiles(readsDirectory, referencePath);
         if (files.isEmpty()) {
             throw new OpenToolException(
@@ -126,7 +136,8 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         List<ReadRecord> reads = new ArrayList<>();
         for (Path file : files) {
             context.cancellationToken().throwIfCancelled();
-            reads.addAll(loadReads(file, trimQuality, trimWindow, minReadLength));
+            reads.addAll(loadReads(file, trimQuality, trimWindow, minReadLength,
+                    adapterTrimmer, minimumAdapterMatch));
         }
         if (reads.isEmpty()) {
             throw new OpenToolException(
@@ -161,6 +172,7 @@ public final class SangerAssembleTool extends AbstractOpenTool {
 
         writeFasta(outputs.get("assembly"), assembly.contigs());
         writeReadTable(outputs.get("reads"), reads, anchor);
+        writeTrimming(outputs.get("trimming"), reads);
         if (reference != null && anchor != null) {
             Consensus consensus = anchor.consensus(
                     consensusThreshold, heterozygousThreshold, minHeterozygousCoverage);
@@ -175,6 +187,8 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         List<OutputArtifact> artifacts = new ArrayList<>();
         artifacts.add(new OutputArtifact(outputs.get("assembly"), "Assembled contigs", "text/x-fasta"));
         artifacts.add(new OutputArtifact(outputs.get("reads"), "Read and placement summary",
+                "text/tab-separated-values"));
+        artifacts.add(new OutputArtifact(outputs.get("trimming"), "Primer and vector trimming",
                 "text/tab-separated-values"));
         if (reference != null && anchor != null) {
             artifacts.add(new OutputArtifact(outputs.get("corrected"), "Reference-anchored consensus",
@@ -224,6 +238,7 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         Map<String, Path> names = new LinkedHashMap<>();
         names.put("assembly", directory.resolve("assembly.fa"));
         names.put("reads", directory.resolve("reads.tsv"));
+        names.put("trimming", directory.resolve("trimming.tsv"));
         names.put("corrected", directory.resolve("corrected.fa"));
         names.put("variants", directory.resolve("variants.tsv"));
         names.put("provenance", directory.resolve("provenance.bed"));
@@ -266,7 +281,9 @@ public final class SangerAssembleTool extends AbstractOpenTool {
             Path file,
             int trimQuality,
             int trimWindow,
-            int minReadLength
+            int minReadLength,
+            AdapterTrimmer adapterTrimmer,
+            int minimumAdapterMatch
     ) throws Exception {
         String name = file.getFileName().toString().toLowerCase(Locale.ROOT);
         List<ReadRecord> result = new ArrayList<>();
@@ -274,6 +291,7 @@ public final class SangerAssembleTool extends AbstractOpenTool {
             Ab1Reader.Trace trace = Ab1Reader.read(file);
             ReadRecord read = trim(trace.name(), trace.sequence(), trace.qualities(),
                     trimQuality, trimWindow, minReadLength);
+            read = applyAdapter(read, adapterTrimmer, minimumAdapterMatch, minReadLength);
             if (read != null) result.add(read);
         } else if (name.endsWith(".fastq") || name.endsWith(".fq")) {
             try (FastqReader reader = new FastqReader(file)) {
@@ -281,6 +299,7 @@ public final class SangerAssembleTool extends AbstractOpenTool {
                 while ((record = reader.next()) != null) {
                     ReadRecord read = trim(record.id(), record.sequence(), phred(record.quality()),
                             trimQuality, trimWindow, minReadLength);
+                    read = applyAdapter(read, adapterTrimmer, minimumAdapterMatch, minReadLength);
                     if (read != null) result.add(read);
                 }
             }
@@ -289,6 +308,7 @@ public final class SangerAssembleTool extends AbstractOpenTool {
                     .replaceAll("\\s+", "");
             ReadRecord read = trim(name.substring(0, name.length() - 4), sequence, null,
                     trimQuality, trimWindow, minReadLength);
+            read = applyAdapter(read, adapterTrimmer, minimumAdapterMatch, minReadLength);
             if (read != null) result.add(read);
         } else {
             try (FastaReader reader = new FastaReader(file)) {
@@ -296,6 +316,7 @@ public final class SangerAssembleTool extends AbstractOpenTool {
                 while ((record = reader.next()) != null) {
                     ReadRecord read = trim(record.id(), record.sequence(), null,
                             trimQuality, trimWindow, minReadLength);
+                    read = applyAdapter(read, adapterTrimmer, minimumAdapterMatch, minReadLength);
                     if (read != null) result.add(read);
                 }
             }
@@ -326,7 +347,28 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         if (end - start < minReadLength) return null;
         String trimmed = upper.substring(start, end);
         int[] trimmedQualities = scores == null ? null : java.util.Arrays.copyOfRange(scores, start, end);
-        return new ReadRecord(name, trimmed, trimmedQualities, start, end, upper.length());
+        return new ReadRecord(name, trimmed, trimmedQualities, start, end, upper.length(),
+                null, null, 0, 0);
+    }
+
+    private static ReadRecord applyAdapter(
+            ReadRecord read,
+            AdapterTrimmer trimmer,
+            int minimumMatch,
+            int minimumReadLength
+    ) {
+        if (read == null) return null;
+        AdapterTrimmer.TrimResult result = trimmer.trim(
+                read.sequence(), read.qualities(), minimumMatch);
+        if (result.sequence().length() < minimumReadLength) return null;
+        return new ReadRecord(
+                read.name(), result.sequence(), result.qualities(),
+                read.trimStart() + result.leftBases(),
+                read.trimEnd() - result.rightBases(),
+                read.originalLength(),
+                result.leftAdapter(), result.rightAdapter(),
+                result.leftBases(), result.rightBases()
+        );
     }
 
     private static int[] phred(String quality) {
@@ -519,6 +561,23 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         Files.writeString(path, text.toString(), StandardCharsets.UTF_8);
     }
 
+    private static void writeTrimming(Path path, List<ReadRecord> reads) throws Exception {
+        StringBuilder text = new StringBuilder();
+        text.append("read\tquality_trim_start\tquality_trim_end\tadapter_left"
+                + "\tleft_bases\tadapter_right\tright_bases\tfinal_length\n");
+        for (ReadRecord read : reads) {
+            text.append(read.name()).append('\t')
+                    .append(read.trimStart()).append('\t')
+                    .append(read.trimEnd()).append('\t')
+                    .append(read.leftAdapter() == null ? "" : read.leftAdapter()).append('\t')
+                    .append(read.leftAdapterBases()).append('\t')
+                    .append(read.rightAdapter() == null ? "" : read.rightAdapter()).append('\t')
+                    .append(read.rightAdapterBases()).append('\t')
+                    .append(read.sequence().length()).append('\n');
+        }
+        Files.writeString(path, text.toString(), StandardCharsets.UTF_8);
+    }
+
     private static void writeReadTable(Path path, List<ReadRecord> reads, ReferenceAnchor anchor) throws Exception {
         StringBuilder text = new StringBuilder();
         text.append("read\toriginal_length\ttrim_start\ttrim_end\ttrimmed_length"
@@ -651,7 +710,11 @@ public final class SangerAssembleTool extends AbstractOpenTool {
             int[] qualities,
             int trimStart,
             int trimEnd,
-            int originalLength
+            int originalLength,
+            String leftAdapter,
+            String rightAdapter,
+            int leftAdapterBases,
+            int rightAdapterBases
     ) {
     }
 

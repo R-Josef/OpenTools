@@ -1,6 +1,6 @@
 # Sanger Assembly
 
-`sanger.assemble` · Sequence · v1.1.0
+`sanger.assemble` · Sequence · v1.2.0
 
 ## What this tool does
 
@@ -37,6 +37,9 @@ It performs one explicit, reproducible analysis step. The run record preserves n
 | `trimQuality` End-trim quality | no | 20 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Mean Phred quality required in the end-trimming window. |
 | `trimWindow` End-trim window | no | 8 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Sliding window used to trim low-quality read ends. |
 | `minReadLength` Minimum read length | no | 50 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Reads shorter than this after trimming are rejected. |
+| `trimAdapters` Trim primers/vectors | no | true | Start with the default and change it only after understanding the explanation. Trim common sequencing primers and optional custom vector sequences from read ends. |
+| `adapterFile` Primer/vector FASTA | no | empty | Select a complete real input file; do not submit the placeholder example path. Optional FASTA of primer or vector sequences to trim from either read end. |
+| `minAdapterMatch` Minimum primer match | no | 12 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Minimum matching bases required for primer/vector trimming. |
 | `consensusThreshold` Consensus threshold | no | 0.6 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Minimum quality-weighted base fraction for a confident call. |
 | `heterozygousThreshold` Heterozygous threshold | no | 0.25 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Minimum second-base fraction for an IUPAC heterozygous call. |
 | `minHeterozygousCoverage` Heterozygous coverage | no | 4 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Minimum coverage before a heterozygous call is considered. |
@@ -47,7 +50,7 @@ It performs one explicit, reproducible analysis step. The run record preserves n
 ## Read the result
 
 - Output formats: `FASTA`, `TSV`, `BED`
-- Review the read/overlap table first, then assembly.fa for the full de novo contig; corrected.fa uses reference coordinates, consensus_with_indels.fa expands supported insertions/deletions into the final sequence; indels.tsv and variants.tsv record indels and heterozygous sites, and provenance.bed marks READ_CONSENSUS, HETEROZYGOUS, DELETION, LOW_CONFIDENCE, and REFERENCE_FILL. Never treat reference-filled positions as sequencing evidence.
+- Review trimming.tsv and the read/overlap table first, then assembly.fa for the full de novo contig; corrected.fa uses reference coordinates, consensus_with_indels.fa expands supported insertions/deletions into the final sequence; indels.tsv and variants.tsv record indels and heterozygous sites, and provenance.bed marks READ_CONSENSUS, HETEROZYGOUS, DELETION, LOW_CONFIDENCE, and REFERENCE_FILL. Never treat reference-filled positions as sequencing evidence.
 - The result panel is the quick-review surface; complete data, manifests, and logs live in the run directory.
 
 ## Minimal command example

@@ -5,6 +5,7 @@ import io.opentools.formats.sanger.Ab1Reader;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -13,9 +14,11 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -29,12 +32,16 @@ final class Ab1ViewerPanel extends JPanel {
     private static final Color G = new Color(196, 116, 26);
     private static final Color T = new Color(178, 48, 48);
 
+    private final LanguageManager language;
     private final DefaultListModel<ReadItem> model = new DefaultListModel<>();
     private final JList<ReadItem> list = new JList<>(model);
     private final Chromatogram chromatogram = new Chromatogram();
     private final JLabel summary = new JLabel(" ", SwingConstants.LEFT);
+    private final JLabel zoomLabel = new JLabel();
+    private JScrollPane scroll;
 
     Ab1ViewerPanel(LanguageManager language, List<Path> files) {
+        this.language = language;
         setLayout(new BorderLayout(10, 6));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         for (Path file : files) {
@@ -63,13 +70,33 @@ final class Ab1ViewerPanel extends JPanel {
         left.add(new JLabel(language.text("ab1.viewer.reads", "AB1 reads")), BorderLayout.NORTH);
         left.add(new JScrollPane(list), BorderLayout.CENTER);
         left.setPreferredSize(new Dimension(250, 360));
-        JScrollPane scroll = new JScrollPane(chromatogram);
+        scroll = new JScrollPane(chromatogram);
         scroll.getHorizontalScrollBar().setUnitIncrement(18);
-        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, left, scroll);
+        JPanel controls = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+        JButton zoomIn = new JButton("+");
+        JButton zoomOut = new JButton("−");
+        JButton fit = new JButton(language.text("ab1.viewer.fit", "Fit"));
+        zoomIn.addActionListener(event -> zoomBy(1.5));
+        zoomOut.addActionListener(event -> zoomBy(1.0 / 1.5));
+        fit.addActionListener(event -> fitWidthInternal());
+        controls.add(zoomOut);
+        controls.add(zoomIn);
+        controls.add(fit);
+        controls.add(zoomLabel);
+        JPanel right = new JPanel(new BorderLayout(0, 4));
+        right.add(controls, BorderLayout.NORTH);
+        right.add(scroll, BorderLayout.CENTER);
+        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, left, right);
         split.setResizeWeight(0);
         split.setDividerSize(7);
         add(split, BorderLayout.CENTER);
         add(summary, BorderLayout.SOUTH);
+        chromatogram.addMouseWheelListener(event -> {
+            if (!event.isControlDown()) return;
+            zoomBy(event.getWheelRotation() < 0 ? 1.5 : 1.0 / 1.5);
+            event.consume();
+        });
+        updateZoomLabel();
         if (!model.isEmpty()) {
             list.setSelectedIndex(0);
         } else {
@@ -80,6 +107,11 @@ final class Ab1ViewerPanel extends JPanel {
     int readCount() { return model.size(); }
     int selectedRead() { return list.getSelectedIndex(); }
     int baseCount() { return chromatogram.trace == null ? 0 : chromatogram.trace.sequence().length(); }
+    double zoomLevel() { return chromatogram.zoom(); }
+
+    void zoomIn() { zoomBy(1.5); }
+    void zoomOut() { zoomBy(1.0 / 1.5); }
+    void fitWidth() { fitWidthInternal(); }
 
     void selectRead(int index) {
         if (index >= 0 && index < model.size()) list.setSelectedIndex(index);
@@ -90,6 +122,34 @@ final class Ab1ViewerPanel extends JPanel {
         chromatogram.setTrace(item.trace());
         summary.setText(item.name() + " · " + item.trace().sequence().length() + " bases · "
                 + item.trace().qualities().length + " quality values");
+        updateZoomLabel();
+    }
+
+    private void zoomBy(double factor) {
+        double center = scroll == null || scroll.getHorizontalScrollBar().getMaximum() <= 0
+                ? 0 : (scroll.getHorizontalScrollBar().getValue()
+                        + scroll.getViewport().getWidth() / 2.0)
+                        / scroll.getHorizontalScrollBar().getMaximum();
+        chromatogram.setZoom(chromatogram.zoom() * factor);
+        if (scroll != null) {
+            SwingUtilities.invokeLater(() -> {
+                var bar = scroll.getHorizontalScrollBar();
+                bar.setValue((int) Math.max(0, Math.min(bar.getMaximum() - bar.getVisibleAmount(),
+                        center * bar.getMaximum() - scroll.getViewport().getWidth() / 2.0)));
+            });
+        }
+        updateZoomLabel();
+    }
+
+    private void fitWidthInternal() {
+        int width = scroll == null ? 900 : Math.max(200, scroll.getViewport().getWidth() - 24);
+        chromatogram.fit(width);
+        updateZoomLabel();
+    }
+
+    private void updateZoomLabel() {
+        zoomLabel.setText(language.text("ab1.viewer.zoom", "Zoom {0}%",
+                Integer.toString((int) Math.round(chromatogram.zoom() * 100))));
     }
 
     private record ReadItem(String name, Ab1Reader.Trace trace) {
@@ -98,6 +158,7 @@ final class Ab1ViewerPanel extends JPanel {
     private static final class Chromatogram extends JComponent {
         private Ab1Reader.Trace trace;
         private int baseWidth = 8;
+        private double zoom = 1.0;
 
         Chromatogram() {
             setBackground(Color.WHITE);
@@ -107,7 +168,28 @@ final class Ab1ViewerPanel extends JPanel {
         void setTrace(Ab1Reader.Trace trace) {
             this.trace = trace;
             baseWidth = trace.sequence().length() > 900 ? 6 : 8;
-            setPreferredSize(new Dimension(Math.max(900, trace.sequence().length() * baseWidth + 40), 300));
+            zoom = 1.0;
+            resizeForZoom();
+        }
+
+        double zoom() { return zoom; }
+
+        void setZoom(double value) {
+            zoom = Math.max(0.2, Math.min(12.0, value));
+            resizeForZoom();
+        }
+
+        void fit(int availableWidth) {
+            if (trace == null) return;
+            zoom = Math.max(0.2, Math.min(12.0,
+                    availableWidth / (double) Math.max(1, trace.sequence().length() * baseWidth)));
+            resizeForZoom();
+        }
+
+        private void resizeForZoom() {
+            if (trace == null) return;
+            int width = (int) Math.round(trace.sequence().length() * baseWidth * zoom) + 40;
+            setPreferredSize(new Dimension(Math.max(400, width), 300));
             revalidate();
             repaint();
         }
