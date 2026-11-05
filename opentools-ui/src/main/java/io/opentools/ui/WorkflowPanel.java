@@ -110,9 +110,8 @@ final class WorkflowPanel extends JPanel {
         heading.add(status, BorderLayout.EAST);
         add(heading, BorderLayout.NORTH);
 
-        JPanel toolbar = new JPanel(new GridLayout(2, 1, 0, 4));
-        JPanel workflowActions = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        JPanel stepActions = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        JPanel workflowActions = new JPanel(new GridLayout(0, 2, 4, 4));
+        JPanel stepActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         stepActions.setBorder(BorderFactory.createTitledBorder(
                 session.language().text("workflows.step_tools", "Step editing")));
         JButton create = new JButton(session.language().text("workflows.new", "New"));
@@ -134,8 +133,6 @@ final class WorkflowPanel extends JPanel {
         stepActions.add(editStep);
         stepActions.add(deleteStep);
         stepActions.add(selectedStep);
-        toolbar.add(workflowActions);
-        toolbar.add(stepActions);
 
         saved.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         saved.setBorder(BorderFactory.createTitledBorder(session.language().text("workflows.saved", "Saved workflows")));
@@ -146,6 +143,10 @@ final class WorkflowPanel extends JPanel {
         });
         JScrollPane savedScroll = new JScrollPane(saved);
         savedScroll.setPreferredSize(new Dimension(210, 100));
+        JPanel leftPanel = new JPanel(new BorderLayout(0, 6));
+        leftPanel.add(workflowActions, BorderLayout.NORTH);
+        leftPanel.add(savedScroll, BorderLayout.CENTER);
+        leftPanel.setPreferredSize(new Dimension(230, 100));
 
         editor.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 13));
         editor.setText(TEMPLATE);
@@ -160,7 +161,10 @@ final class WorkflowPanel extends JPanel {
         canvasScroll.setBorder(BorderFactory.createTitledBorder(session.language().text("workflows.preview", "DAG preview")));
         JSplitPane editAndCanvas = new JSplitPane(JSplitPane.VERTICAL_SPLIT, editorScroll, canvasScroll);
         editAndCanvas.setResizeWeight(0.55);
-        JSplitPane main = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, savedScroll, editAndCanvas);
+        JPanel rightPanel = new JPanel(new BorderLayout(0, 6));
+        rightPanel.add(stepActions, BorderLayout.NORTH);
+        rightPanel.add(editAndCanvas, BorderLayout.CENTER);
+        JSplitPane main = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
         main.setResizeWeight(0.18);
         add(main, BorderLayout.CENTER);
 
@@ -169,7 +173,6 @@ final class WorkflowPanel extends JPanel {
         JScrollPane logScroll = new JScrollPane(log);
         logScroll.setBorder(BorderFactory.createTitledBorder(session.language().text("workflows.log", "Run log")));
         JPanel bottom = new JPanel(new BorderLayout(0, 8));
-        bottom.add(toolbar, BorderLayout.NORTH);
         bottom.add(logScroll, BorderLayout.CENTER);
         add(bottom, BorderLayout.SOUTH);
 
