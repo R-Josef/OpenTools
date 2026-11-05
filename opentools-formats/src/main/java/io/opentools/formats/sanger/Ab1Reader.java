@@ -157,7 +157,7 @@ public final class Ab1Reader {
         for (int index = 0; index < count; index++) {
             values[index] = elementSize >= 4
                     ? buffer.getInt(offset + index * elementSize)
-                    : Short.toUnsignedInt(buffer.getShort(offset + index * elementSize));
+                    : buffer.getShort(offset + index * elementSize);
         }
         return values;
     }

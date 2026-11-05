@@ -65,8 +65,9 @@
   distinguishes read-supported, heterozygous, deleted, low-confidence, and
   reference-filled positions.
 - The Results panel adds an AB1 tab for `sanger.assemble` jobs, showing trace
-  channels, basecalls, quality shading, per-read selection, and zoom/fit
-  controls.
+  channels, basecalls, quality shading, per-read selection, horizontal zoom/fit,
+  and vertical Y zoom/fit controls. The default Y range fits the highest peak,
+  and signed trace values are interpreted correctly.
 - `sanger.assemble` trims common sequencing primers and optional user-supplied
   primer/vector FASTA sequences from both read ends, records the evidence in
   `trimming.tsv`, and can use the reference alignment to write a vector-trimmed

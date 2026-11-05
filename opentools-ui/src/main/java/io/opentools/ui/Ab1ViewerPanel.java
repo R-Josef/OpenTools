@@ -40,6 +40,7 @@ final class Ab1ViewerPanel extends JPanel {
     private final Chromatogram chromatogram = new Chromatogram();
     private final JLabel summary = new JLabel(" ", SwingConstants.LEFT);
     private final JLabel zoomLabel = new JLabel();
+    private final JLabel yZoomLabel = new JLabel();
     private JScrollPane scroll;
 
     Ab1ViewerPanel(LanguageManager language, List<Path> files) {
@@ -78,13 +79,23 @@ final class Ab1ViewerPanel extends JPanel {
         JButton zoomIn = new JButton("+");
         JButton zoomOut = new JButton("−");
         JButton fit = new JButton(language.text("ab1.viewer.fit", "Fit"));
+        JButton yIn = new JButton("Y+");
+        JButton yOut = new JButton("Y−");
+        JButton yFit = new JButton(language.text("ab1.viewer.y_fit", "Y fit"));
         zoomIn.addActionListener(event -> zoomBy(1.5));
         zoomOut.addActionListener(event -> zoomBy(1.0 / 1.5));
         fit.addActionListener(event -> fitWidthInternal());
+        yIn.addActionListener(event -> zoomYBy(1.25));
+        yOut.addActionListener(event -> zoomYBy(1.0 / 1.25));
+        yFit.addActionListener(event -> fitY());
         controls.add(zoomOut);
         controls.add(zoomIn);
         controls.add(fit);
         controls.add(zoomLabel);
+        controls.add(yOut);
+        controls.add(yIn);
+        controls.add(yFit);
+        controls.add(yZoomLabel);
         JPanel right = new JPanel(new BorderLayout(0, 4));
         right.add(controls, BorderLayout.NORTH);
         right.add(scroll, BorderLayout.CENTER);
@@ -99,6 +110,7 @@ final class Ab1ViewerPanel extends JPanel {
             event.consume();
         });
         updateZoomLabel();
+        updateYZoomLabel();
         if (!model.isEmpty()) {
             list.setSelectedIndex(0);
         } else {
@@ -117,6 +129,10 @@ final class Ab1ViewerPanel extends JPanel {
     void zoomIn() { zoomBy(1.5); }
     void zoomOut() { zoomBy(1.0 / 1.5); }
     void fitWidth() { fitWidthInternal(); }
+    void zoomYIn() { zoomYBy(1.25); }
+    void zoomYOut() { zoomYBy(1.0 / 1.25); }
+    void fitY() { chromatogram.setYZoom(1.0); updateYZoomLabel(); }
+    double yZoomLevel() { return chromatogram.yZoom(); }
 
     void selectRead(int index) {
         if (index >= 0 && index < model.size()) list.setSelectedIndex(index);
@@ -161,9 +177,19 @@ final class Ab1ViewerPanel extends JPanel {
         updateZoomLabel();
     }
 
+    private void zoomYBy(double factor) {
+        chromatogram.setYZoom(chromatogram.yZoom() * factor);
+        updateYZoomLabel();
+    }
+
     private void updateZoomLabel() {
         zoomLabel.setText(language.text("ab1.viewer.zoom", "Zoom {0}%",
                 Integer.toString((int) Math.round(chromatogram.zoom() * 100))));
+    }
+
+    private void updateYZoomLabel() {
+        yZoomLabel.setText(language.text("ab1.viewer.y_zoom", "Y {0}%",
+                Integer.toString((int) Math.round(chromatogram.yZoom() * 100))));
     }
 
     private record ReadItem(String name, Ab1Reader.Trace trace) {
@@ -173,6 +199,7 @@ final class Ab1ViewerPanel extends JPanel {
         private Ab1Reader.Trace trace;
         private int baseWidth = 8;
         private double zoom = 1.0;
+        private double yZoom = 1.0;
         private int selectedBase = -1;
         private java.util.function.IntConsumer selectionListener = ignored -> { };
 
@@ -225,11 +252,18 @@ final class Ab1ViewerPanel extends JPanel {
             this.trace = trace;
             baseWidth = trace.sequence().length() > 900 ? 6 : 8;
             zoom = 1.0;
+            yZoom = 1.0;
             selectedBase = -1;
             resizeForZoom();
         }
 
         double zoom() { return zoom; }
+        double yZoom() { return yZoom; }
+
+        void setYZoom(double value) {
+            yZoom = Math.max(0.25, Math.min(8.0, value));
+            repaint();
+        }
 
         void setZoom(double value) {
             zoom = Math.max(0.2, Math.min(12.0, value));
@@ -271,8 +305,13 @@ final class Ab1ViewerPanel extends JPanel {
                     g.drawString("No trace channels in this AB1 file.", 12, 24);
                     return;
                 }
+                int yMaximum = Math.max(1, (int) Math.round(maximum / yZoom));
                 g.setColor(new Color(232, 234, 236));
                 g.drawLine(12, height + 10, 12 + width, height + 10);
+                g.setColor(new Color(120, 126, 130));
+                g.setFont(getFont().deriveFont(10f));
+                g.drawString(Integer.toString(yMaximum), 2, 13);
+                g.drawString("0", 2, height + 10);
                 if (selectedBase >= 0 && selectedBase < trace.sequence().length()) {
                     int position = trace.peakPositions().length > selectedBase
                             ? trace.peakPositions()[selectedBase]
@@ -291,7 +330,8 @@ final class Ab1ViewerPanel extends JPanel {
                     for (int sample = 0; sample < samples; sample++) {
                         int x = 12 + (int) Math.round(width * sample / (double) Math.max(1, samples - 1));
                         int value = values[Math.min(sample, values.length - 1)];
-                        int y = height + 10 - (int) Math.round(height * value / (double) maximum);
+                        int y = height + 10 - (int) Math.round(height * value / (double) yMaximum);
+                        y = Math.max(0, y);
                         if (sample > 0) g.drawLine(previousX, previousY, x, y);
                         previousX = x;
                         previousY = y;
