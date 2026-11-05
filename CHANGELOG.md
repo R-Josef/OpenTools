@@ -4,6 +4,13 @@
 
 ### Added
 
+- The Workflows page now supports visual DAG editing: select and drag nodes,
+  add/edit/delete steps, and edit step IDs, tools, dependencies, and parameters
+  with two-way JSON synchronization.
+- Ordinary tool forms add a **View job** button that selects the latest job for
+  that tool on the Jobs page, or reports when no job exists.
+- The Jobs page adds **View result** next to Refresh, opening the selected job
+  on the Results page.
 - `workflow watch` and `workflow schedule` provide opt-in directory
   triggers and fixed-interval runs; watched files substitute `${watch.file}`
   and `${watch.name}` in the workflow JSON.

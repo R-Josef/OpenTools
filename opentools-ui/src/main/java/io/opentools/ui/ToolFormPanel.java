@@ -70,6 +70,7 @@ final class ToolFormPanel extends JPanel {
     private final JTextArea validationArea = new JTextArea(4, 20);
     private final JButton validateButton = new JButton();
     private final JButton runButton = new JButton();
+    private final JButton viewJobButton = new JButton();
     private final JLabel fileHint = new JLabel(" ");
     private ToolDescriptor tool;
     private int row;
@@ -86,6 +87,7 @@ final class ToolFormPanel extends JPanel {
         this.afterSubmit = afterSubmit;
         validateButton.setText(language.text("form.validate", "Validate"));
         runButton.setText(language.text("form.run", "Run"));
+        viewJobButton.setText(language.text("form.view_job", "View job"));
         setLayout(new BorderLayout(0, 12));
         setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
 
@@ -111,6 +113,7 @@ final class ToolFormPanel extends JPanel {
         );
         UiAccessibility.name(validateButton, language.text("form.validate", "Validate"));
         UiAccessibility.name(runButton, language.text("form.run", "Run"));
+        UiAccessibility.name(viewJobButton, language.text("form.view_job", "View job"));
         validationArea.setBackground(new Color(248, 249, 249));
         validationArea.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
@@ -124,12 +127,14 @@ final class ToolFormPanel extends JPanel {
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         buttons.add(validateButton);
         buttons.add(runButton);
+        buttons.add(viewJobButton);
         actions.add(buttons, BorderLayout.EAST);
         footer.add(actions, BorderLayout.SOUTH);
         add(footer, BorderLayout.SOUTH);
 
         validateButton.addActionListener(ignored -> validateOnly());
         runButton.addActionListener(ignored -> submit());
+        viewJobButton.addActionListener(ignored -> viewLatestJob());
         getInputMap(WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
                 .put(KeyStroke.getKeyStroke("ctrl ENTER"), "run-tool");
         getActionMap().put("run-tool", new AbstractAction() {
@@ -155,6 +160,7 @@ final class ToolFormPanel extends JPanel {
         row = 0;
         validateButton.setEnabled(tool != null);
         runButton.setEnabled(tool != null);
+        viewJobButton.setEnabled(tool != null);
         if (tool == null) {
             title.setText(language.text("tools.select_tool", "Select a tool"));
             description.setText(language.text(
@@ -455,6 +461,37 @@ final class ToolFormPanel extends JPanel {
         ToolRequest request = request();
         ValidationResult result = executionService.validate(request);
         showValidation(result);
+    }
+
+    private void viewLatestJob() {
+        if (tool == null) return;
+        ToolDescriptor requestedTool = tool;
+        ToolExecutionService requestedService = executionService;
+        viewJobButton.setEnabled(false);
+        Thread.ofVirtual().start(() -> {
+            JobRecord latest = null;
+            try {
+                latest = requestedService.recentJobs(50).stream()
+                        .filter(job -> requestedTool.id().equals(job.toolId()))
+                        .findFirst().orElse(null);
+            } catch (Exception ignored) {
+                // The output area reports the same no-job outcome.
+            }
+            JobRecord selected = latest;
+            SwingUtilities.invokeLater(() -> {
+                viewJobButton.setEnabled(true);
+                if (selected == null) {
+                    validationArea.setText(language.text(
+                            "form.no_job_for_tool",
+                            "No job was found for this tool."));
+                    return;
+                }
+                MainFrame frame = (MainFrame) SwingUtilities.getWindowAncestor(this);
+                if (frame != null) {
+                    frame.openJob(selected.runId());
+                }
+            });
+        });
     }
 
     private void submit() {

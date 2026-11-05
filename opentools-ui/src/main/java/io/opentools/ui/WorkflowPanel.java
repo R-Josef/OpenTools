@@ -17,10 +17,12 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
@@ -29,9 +31,13 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.GridLayout;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.geom.QuadCurve2D;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -42,6 +48,7 @@ import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -80,7 +87,12 @@ final class WorkflowPanel extends JPanel {
     private final JList<String> saved = new JList<>();
     private final JLabel status = new JLabel();
     private final JButton run = new JButton("Run");
+    private final JButton addStep = new JButton();
+    private final JButton editStep = new JButton();
+    private final JButton deleteStep = new JButton();
+    private final JLabel selectedStep = new JLabel(" ");
     private WorkflowSpec current;
+    private String selectedId;
 
     WorkflowPanel(OpenToolsGui.UiSession session) {
         this.session = session;
@@ -101,11 +113,20 @@ final class WorkflowPanel extends JPanel {
         JButton delete = new JButton(session.language().text("workflows.delete", "Delete"));
         JButton validate = new JButton(session.language().text("workflows.validate", "Validate"));
         run.setText(session.language().text("workflows.run", "Run"));
+        addStep.setText(session.language().text("workflows.add_step", "Add step"));
+        editStep.setText(session.language().text("workflows.edit_step", "Edit step"));
+        deleteStep.setText(session.language().text("workflows.delete_step", "Delete step"));
+        editStep.setEnabled(false);
+        deleteStep.setEnabled(false);
         toolbar.add(create);
         toolbar.add(save);
         toolbar.add(delete);
         toolbar.add(validate);
         toolbar.add(run);
+        toolbar.add(addStep);
+        toolbar.add(editStep);
+        toolbar.add(deleteStep);
+        toolbar.add(selectedStep);
 
         saved.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         saved.setBorder(BorderFactory.createTitledBorder(session.language().text("workflows.saved", "Saved workflows")));
@@ -152,6 +173,16 @@ final class WorkflowPanel extends JPanel {
         delete.addActionListener(ignored -> deleteWorkflow());
         validate.addActionListener(ignored -> validateWorkflow(true));
         run.addActionListener(ignored -> runWorkflow());
+        addStep.addActionListener(ignored -> addStep());
+        editStep.addActionListener(ignored -> editStep());
+        deleteStep.addActionListener(ignored -> deleteStep());
+        canvas.setSelectionListener(id -> {
+            selectedId = id;
+            selectedStep.setText(id == null ? " " : session.language().text(
+                    "workflows.selected", "Selected: {0}", id));
+            editStep.setEnabled(id != null);
+            deleteStep.setEnabled(id != null);
+        });
         refreshSaved();
         preview();
     }
@@ -250,6 +281,114 @@ final class WorkflowPanel extends JPanel {
             canvas.setSpec(spec);
         } catch (Exception ex) {
             canvas.setError(ex.getMessage());
+        }
+    }
+
+    private void addStep() {
+        try {
+            WorkflowSpec spec = parse(editor.getText());
+            topologicalOrder(spec);
+            Step step = stepDialog(new Step(uniqueId(spec), "fasta.stats", Map.of(), List.of()));
+            if (step == null) return;
+            List<Step> steps = new ArrayList<>(spec.steps());
+            steps.add(step);
+            applySpec(new WorkflowSpec(spec.name(), spec.continueOnError(), steps));
+        } catch (Exception ex) {
+            status.setText(session.language().text("workflows.status.invalid", "Invalid workflow: {0}", ex.getMessage()));
+        }
+    }
+
+    private void editStep() {
+        try {
+            WorkflowSpec spec = parse(editor.getText());
+            Step existing = spec.steps().stream()
+                    .filter(step -> step.id().equals(selectedId)).findFirst().orElse(null);
+            if (existing == null) return;
+            Step changed = stepDialog(existing);
+            if (changed == null) return;
+            List<Step> steps = spec.steps().stream()
+                    .map(step -> step.id().equals(existing.id()) ? changed : step)
+                    .toList();
+            applySpec(new WorkflowSpec(spec.name(), spec.continueOnError(), steps));
+            canvas.select(changed.id());
+        } catch (Exception ex) {
+            status.setText(session.language().text("workflows.status.invalid", "Invalid workflow: {0}", ex.getMessage()));
+        }
+    }
+
+    private void deleteStep() {
+        try {
+            WorkflowSpec spec = parse(editor.getText());
+            Step existing = spec.steps().stream()
+                    .filter(step -> step.id().equals(selectedId)).findFirst().orElse(null);
+            if (existing == null) return;
+            List<Step> steps = spec.steps().stream()
+                    .filter(step -> !step.id().equals(existing.id()))
+                    .map(step -> new Step(step.id(), step.toolId(), step.parameters(),
+                            step.dependsOn().stream().filter(id -> !id.equals(existing.id())).toList()))
+                    .toList();
+            selectedId = null;
+            applySpec(new WorkflowSpec(spec.name(), spec.continueOnError(), steps));
+        } catch (Exception ex) {
+            status.setText(session.language().text("workflows.status.invalid", "Invalid workflow: {0}", ex.getMessage()));
+        }
+    }
+
+    private Step stepDialog(Step initial) throws Exception {
+        JTextField id = new JTextField(initial.id());
+        JTextField toolId = new JTextField(initial.toolId());
+        JTextField depends = new JTextField(String.join(",", initial.dependsOn()));
+        JTextArea parameters = new JTextArea(JSON.writerWithDefaultPrettyPrinter()
+                .writeValueAsString(initial.parameters()), 7, 34);
+        parameters.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        JPanel form = new JPanel(new GridLayout(0, 2, 8, 6));
+        form.add(new JLabel(session.language().text("workflows.step.id", "Step ID")));
+        form.add(id);
+        form.add(new JLabel(session.language().text("workflows.step.tool", "Tool ID")));
+        form.add(toolId);
+        form.add(new JLabel(session.language().text("workflows.step.depends", "Depends on")));
+        form.add(depends);
+        form.add(new JLabel(session.language().text("workflows.step.parameters", "Parameters JSON")));
+        form.add(new JScrollPane(parameters));
+        int choice = JOptionPane.showConfirmDialog(this, form,
+                session.language().text("workflows.step.dialog", "Workflow step"),
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (choice != JOptionPane.OK_OPTION) return null;
+        String stepId = id.getText().trim();
+        String stepTool = toolId.getText().trim();
+        if (stepId.isBlank() || stepTool.isBlank()) {
+            throw new IllegalArgumentException("Step ID and tool ID are required.");
+        }
+        Map<String, Object> values = JSON.readValue(parameters.getText(),
+                new TypeReference<Map<String, Object>>() { });
+        List<String> dependencies = new ArrayList<>();
+        for (String dependency : depends.getText().split(",")) {
+            if (!dependency.isBlank()) dependencies.add(dependency.trim());
+        }
+        if (dependencies.contains(stepId)) {
+            throw new IllegalArgumentException("A step cannot depend on itself.");
+        }
+        return new Step(stepId, stepTool, values, dependencies);
+    }
+
+    private void applySpec(WorkflowSpec spec) throws Exception {
+        topologicalOrder(spec);
+        current = spec;
+        editor.setText(JSON.writerWithDefaultPrettyPrinter().writeValueAsString(spec));
+        canvas.setSpec(spec);
+        selectedId = spec.steps().stream().anyMatch(step -> step.id().equals(selectedId))
+                ? selectedId : null;
+        canvas.select(selectedId);
+        status.setText(session.language().text("workflows.status.visual",
+                "Visual edit applied: {0} steps.", spec.steps().size()));
+    }
+
+    private static String uniqueId(WorkflowSpec spec) {
+        int index = spec.steps().size() + 1;
+        while (true) {
+            String candidate = "step" + index;
+            if (spec.steps().stream().noneMatch(step -> step.id().equals(candidate))) return candidate;
+            index++;
         }
     }
 
@@ -526,18 +665,96 @@ final class WorkflowPanel extends JPanel {
         private WorkflowSpec spec;
         private String error;
         private Map<String, String> statuses = Map.of();
+        private final Map<String, Point> positions = new LinkedHashMap<>();
+        private String selectedId;
+        private Consumer<String> selectionListener = ignored -> { };
+        private String dragging;
+        private Point dragOffset;
+
+        WorkflowCanvas() {
+            addMouseListener(new MouseAdapter() {
+                @Override public void mousePressed(MouseEvent event) {
+                    String id = nodeAt(event.getPoint());
+                    select(id);
+                    dragging = id;
+                    if (id != null) {
+                        Point point = positions.get(id);
+                        dragOffset = new Point(event.getX() - point.x, event.getY() - point.y);
+                    }
+                }
+
+                @Override public void mouseReleased(MouseEvent event) {
+                    dragging = null;
+                    dragOffset = null;
+                }
+            });
+            addMouseMotionListener(new MouseAdapter() {
+                @Override public void mouseDragged(MouseEvent event) {
+                    if (dragging == null || dragOffset == null) return;
+                    positions.put(dragging, new Point(
+                            Math.max(0, event.getX() - dragOffset.x),
+                            Math.max(0, event.getY() - dragOffset.y)));
+                    repaint();
+                }
+            });
+        }
+
+        void setSelectionListener(Consumer<String> listener) {
+            selectionListener = listener == null ? ignored -> { } : listener;
+        }
+
+        void select(String id) {
+            selectedId = id;
+            selectionListener.accept(id);
+            repaint();
+        }
+
+        String selectedId() { return selectedId; }
 
         void setSpec(WorkflowSpec spec) {
             this.spec = spec;
             this.error = null;
             this.statuses = Map.of();
+            positions.keySet().removeIf(id -> spec.steps().stream().noneMatch(step -> step.id().equals(id)));
+            if (selectedId != null && spec.steps().stream().noneMatch(step -> step.id().equals(selectedId))) {
+                selectedId = null;
+                selectionListener.accept(null);
+            }
+            layoutNodes();
             revalidate();
             repaint();
+        }
+
+        private void layoutNodes() {
+            if (spec == null) return;
+            Map<String, Integer> depth = depths(spec);
+            Map<Integer, Integer> row = new LinkedHashMap<>();
+            for (Step step : spec.steps()) {
+                if (positions.containsKey(step.id())) continue;
+                int d = depth.getOrDefault(step.id(), 0);
+                int r = row.merge(d, 1, Integer::sum) - 1;
+                positions.put(step.id(), new Point(30 + d * 220, 30 + r * 90));
+            }
+        }
+
+        private String nodeAt(Point point) {
+            if (spec == null) return null;
+            for (Step step : spec.steps()) {
+                Point position = positions.get(step.id());
+                if (position != null && point.x >= position.x && point.x <= position.x + 160
+                        && point.y >= position.y && point.y <= position.y + 56) {
+                    return step.id();
+                }
+            }
+            return null;
         }
 
         void setError(String error) {
             this.spec = null;
             this.error = error;
+            this.selectedId = null;
+            this.positions.clear();
+            selectionListener.accept(null);
             repaint();
         }
 
@@ -549,10 +766,13 @@ final class WorkflowPanel extends JPanel {
         @Override
         public Dimension getPreferredSize() {
             if (spec == null) return new Dimension(600, 260);
-            Map<String, Integer> depth = depths(spec);
-            int maxDepth = depth.values().stream().mapToInt(Integer::intValue).max().orElse(0);
-            long roots = spec.steps().stream().filter(step -> depth.get(step.id()) == 0).count();
-            return new Dimension(Math.max(600, 260 + maxDepth * 220), Math.max(260, 90 * (int) Math.max(1, roots) + 60));
+            int width = 600;
+            int height = 260;
+            for (Point point : positions.values()) {
+                width = Math.max(width, point.x + 200);
+                height = Math.max(height, point.y + 100);
+            }
+            return new Dimension(width, height);
         }
 
         @Override
@@ -569,14 +789,7 @@ final class WorkflowPanel extends JPanel {
                     return;
                 }
                 if (spec == null) return;
-                Map<String, Integer> depth = depths(spec);
-                Map<Integer, Integer> row = new LinkedHashMap<>();
-                Map<String, java.awt.Point> points = new LinkedHashMap<>();
-                for (Step step : spec.steps()) {
-                    int d = depth.getOrDefault(step.id(), 0);
-                    int r = row.merge(d, 1, Integer::sum) - 1;
-                    points.put(step.id(), new java.awt.Point(30 + d * 220, 30 + r * 90));
-                }
+                Map<String, java.awt.Point> points = positions;
                 g.setStroke(new java.awt.BasicStroke(1.4f));
                 for (Step step : spec.steps()) {
                     java.awt.Point target = points.get(step.id());
@@ -601,8 +814,13 @@ final class WorkflowPanel extends JPanel {
                         default -> new java.awt.Color(232, 241, 247);
                     });
                     g.fillRoundRect(point.x, point.y, 160, 56, 12, 12);
-                    g.setColor(new java.awt.Color(70, 110, 130));
+                    boolean selected = step.id().equals(selectedId);
+                    g.setColor(selected
+                            ? new java.awt.Color(35, 110, 190)
+                            : new java.awt.Color(70, 110, 130));
+                    g.setStroke(new java.awt.BasicStroke(selected ? 2.6f : 1.2f));
                     g.drawRoundRect(point.x, point.y, 160, 56, 12, 12);
+                    g.setStroke(new java.awt.BasicStroke(1.4f));
                     g.setColor(new java.awt.Color(38, 58, 70));
                     g.setFont(getFont().deriveFont(Font.BOLD, 13f));
                     g.drawString(step.id(), point.x + 12, point.y + 22);

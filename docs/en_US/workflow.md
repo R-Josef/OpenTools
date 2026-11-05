@@ -72,8 +72,13 @@ Open **Workflows** in the main navigation to edit the same JSON format with a
 live DAG preview:
 
 - **New** loads a two-step template.
+- The DAG canvas is editable: click a node to select it, drag it to change its
+  position, and use **Add step**, **Edit step**, and **Delete step** to change
+  the workflow. Step dialogs edit the ID, tool ID, dependencies, and parameters.
 - **Validate** parses the JSON, checks duplicate IDs, missing dependencies, and
   cycles, then redraws the node graph.
+- Visual edits and direct JSON edits stay in sync; the JSON remains the source
+  of truth.
 - **Save** writes the workflow under `workflows/<name>.json` in the current
   project; saved files appear in the left list.
 - **Run** executes steps sequentially with the same placeholders, failure

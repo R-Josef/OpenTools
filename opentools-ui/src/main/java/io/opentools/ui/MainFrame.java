@@ -81,6 +81,7 @@ final class MainFrame extends JFrame {
     private ResultInspectorPanel resultPanel;
     private WorkflowPanel workflowPanel;
     private PluginPanel pluginPanel;
+    private String pendingJobRunId;
 
     MainFrame(OpenToolsGui.UiSession session) {
         super("OpenTools " + AppVersion.current());
@@ -314,12 +315,14 @@ final class MainFrame extends JFrame {
         toolbar.add(title, BorderLayout.WEST);
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         JButton refresh = new JButton(t("jobs.refresh", "Refresh"));
+        JButton viewResult = new JButton(t("jobs.view_result", "View result"));
         JButton openLog = new JButton(t("jobs.open_log", "Open log"));
         JButton openRun = new JButton(t("jobs.open_run", "Open run directory"));
         JButton cancel = new JButton(t("jobs.cancel", "Cancel"));
         JButton retry = new JButton(t("jobs.retry", "Retry"));
         JButton copyCommand = new JButton(t("jobs.copy_command", "Copy command"));
         actions.add(refresh);
+        actions.add(viewResult);
         actions.add(openLog);
         actions.add(openRun);
         actions.add(retry);
@@ -337,6 +340,15 @@ final class MainFrame extends JFrame {
         panel.add(new JScrollPane(jobsTable), BorderLayout.CENTER);
 
         refresh.addActionListener(ignored -> refreshJobs());
+        viewResult.addActionListener(ignored -> {
+            JobRecord job = selectedJob();
+            if (job == null) {
+                status.setText(t("jobs.select_for_result", "Select a job first."));
+                return;
+            }
+            showView(RESULTS);
+            resultPanel.selectJob(job.runId());
+        });
         openLog.addActionListener(ignored -> openSelectedJobFile("run.log"));
         openRun.addActionListener(ignored -> {
             JobRecord job = selectedJob();
@@ -569,6 +581,10 @@ final class MainFrame extends JFrame {
                     jobsModel.setJobs(jobs);
                     restoreJobSelection(jobsTable, selectedRunId);
                     restoreJobSelection(homeJobsTable, homeSelectedRunId);
+                    if (pendingJobRunId != null) {
+                        restoreJobSelection(jobsTable, pendingJobRunId);
+                        pendingJobRunId = null;
+                    }
                     long running = jobs.stream().filter(job -> job.status().name().equals("RUNNING")).count();
                     String last = jobs.isEmpty()
                             ? t("home.no_jobs", "No jobs yet")
@@ -830,6 +846,11 @@ final class MainFrame extends JFrame {
                 return;
             }
         }
+    }
+
+    void openJob(String runId) {
+        pendingJobRunId = runId;
+        showView(JOBS);
     }
 
     private void openSelectedJobFile(String fileName) {

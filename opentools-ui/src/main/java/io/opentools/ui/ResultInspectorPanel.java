@@ -55,6 +55,7 @@ final class ResultInspectorPanel extends JPanel {
     private JobRecord current;
     private JsonNode currentResult;
     private boolean plotLoaded;
+    private String pendingRunId;
 
     ResultInspectorPanel(ToolExecutionService executionService, LanguageManager language) {
         this(executionService, language, ToolTextResolver.hostOnly(language));
@@ -144,6 +145,11 @@ final class ResultInspectorPanel extends JPanel {
         summary.setText(language.text("results.empty", "Run a tool to see its result here."));
     }
 
+    void selectJob(String runId) {
+        pendingRunId = runId;
+        refresh();
+    }
+
     void refresh() {
         ToolExecutionService requestedService = executionService;
         Thread.ofVirtual().start(() -> {
@@ -173,6 +179,15 @@ final class ResultInspectorPanel extends JPanel {
                             }
                         }
                     }
+                    if (pendingRunId != null) {
+                        for (int i = 0; i < jobs.getItemCount(); i++) {
+                            if (jobs.getItemAt(i).job.runId().equals(pendingRunId)) {
+                                jobs.setSelectedIndex(i);
+                                break;
+                            }
+                        }
+                        pendingRunId = null;
+                    }
                     if (jobs.getItemCount() == 0) {
                         summary.setText(language.text("results.none", "This project has no run results yet."));
                         tableModel.setDataVector(new Object[0][0], new Object[0]);
@@ -190,6 +205,7 @@ final class ResultInspectorPanel extends JPanel {
     void rebind(ToolExecutionService executionService) {
         this.executionService = executionService;
         current = null;
+        pendingRunId = null;
         jobs.removeAllItems();
         summary.setText(language.text("results.none", "This project has no run results yet."));
         tableModel.setDataVector(new Object[0][0], new Object[0]);

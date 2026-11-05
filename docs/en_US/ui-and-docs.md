@@ -46,6 +46,14 @@ Checks cover the normal workbench, a wide layout, a long tool directory, resizin
 embedded images, and 150% application scaling. The tree scrolls independently and
 the article wraps without overlapping controls.
 
+## Job and result navigation
+
+- Ordinary tool forms put **View job** beside **Run**. It opens the latest job
+  for that tool and reports "No job was found for this tool" in the form output
+  when none exists.
+- The Jobs page puts **View result** beside **Refresh**. With a selected job it
+  opens the Results page and selects that run.
+
 ## Test expectations
 
 - both language roots contain every public guide and local asset;
