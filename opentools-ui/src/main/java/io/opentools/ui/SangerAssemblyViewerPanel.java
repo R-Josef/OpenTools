@@ -40,9 +40,11 @@ final class SangerAssemblyViewerPanel extends JPanel {
     private static final ObjectMapper JSON = new ObjectMapper();
     private final LanguageManager language;
     private final AssemblyCanvas canvas;
+    private final Ab1ReferenceCanvas ab1Canvas;
     private final JLabel selection = new JLabel(" ");
     private final Map<String, Ab1Reader.Trace> traces = new LinkedHashMap<>();
     private final Map<String, String> readPaths = new LinkedHashMap<>();
+    private double sharedZoom = 1.0;
 
     SangerAssemblyViewerPanel(LanguageManager language, JsonNode root, JobRecord job) throws Exception {
         this.language = language;
@@ -64,11 +66,12 @@ final class SangerAssemblyViewerPanel extends JPanel {
         loadTraces(job);
 
         canvas = new AssemblyCanvas(reference, consensus, assemblySequence, reads);
+        ab1Canvas = new Ab1ReferenceCanvas(reference.length(), reads);
         canvas.setSelectionListener((read, coordinate) -> {
             if (read != null) {
                 Ab1Reader.Trace trace = traces.get(read);
                 ReadAlignment alignment = canvas.alignment(read);
-                canvas.setTrace(trace, alignment);
+                ab1Canvas.setTrace(trace, alignment);
                 if (trace != null) {
                     selection.setText(language.text("assembly.selected_read",
                             "Read: {0} · reference position {1} · AB1 trace", read, coordinate + 1));
@@ -89,33 +92,71 @@ final class SangerAssemblyViewerPanel extends JPanel {
         JButton yOut = new JButton("Y−");
         JButton yIn = new JButton("Y+");
         JButton yFit = new JButton(language.text("assembly.y_fit", "Y fit"));
-        zoomOut.addActionListener(event -> canvas.zoomBy(1 / 1.3));
-        zoomIn.addActionListener(event -> canvas.zoomBy(1.3));
-        fit.addActionListener(event -> canvas.fit());
-        yOut.addActionListener(event -> canvas.yZoomBy(1 / 1.25));
-        yIn.addActionListener(event -> canvas.yZoomBy(1.25));
-        yFit.addActionListener(event -> canvas.yFit());
+        zoomOut.addActionListener(event -> zoomShared(1 / 1.3));
+        zoomIn.addActionListener(event -> zoomShared(1.3));
+        fit.addActionListener(event -> fitShared());
+        yOut.addActionListener(event -> ab1Canvas.yZoomBy(1 / 1.25));
+        yIn.addActionListener(event -> ab1Canvas.yZoomBy(1.25));
+        yFit.addActionListener(event -> ab1Canvas.yFit());
         controls.add(zoomOut);
         controls.add(zoomIn);
         controls.add(fit);
-        controls.add(yOut);
-        controls.add(yIn);
-        controls.add(yFit);
         JPanel top = new JPanel(new BorderLayout(0, 4));
         top.add(new JLabel(language.text("assembly.title",
                 "Reference, reads, assembly and AB1")), BorderLayout.WEST);
         top.add(controls, BorderLayout.EAST);
-        add(top, BorderLayout.NORTH);
 
-        JScrollPane scroll = new JScrollPane(canvas);
-        scroll.getHorizontalScrollBar().setUnitIncrement(20);
-        scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        add(scroll, BorderLayout.CENTER);
-        add(selection, BorderLayout.SOUTH);
+        JPanel ab1Controls = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+        ab1Controls.add(new JLabel(language.text("assembly.ab1", "AB1")));
+        JButton ab1Out = new JButton("−");
+        JButton ab1In = new JButton("+");
+        JButton ab1Fit = new JButton(language.text("assembly.fit", "Fit"));
+        ab1Out.addActionListener(event -> zoomShared(1 / 1.3));
+        ab1In.addActionListener(event -> zoomShared(1.3));
+        ab1Fit.addActionListener(event -> fitShared());
+        ab1Controls.add(ab1Out);
+        ab1Controls.add(ab1In);
+        ab1Controls.add(ab1Fit);
+        ab1Controls.add(yOut);
+        ab1Controls.add(yIn);
+        ab1Controls.add(yFit);
+
+        JScrollPane topScroll = new JScrollPane(canvas);
+        topScroll.getHorizontalScrollBar().setUnitIncrement(20);
+        JScrollPane ab1Scroll = new JScrollPane(ab1Canvas);
+        ab1Scroll.getHorizontalScrollBar().setUnitIncrement(20);
+        ab1Scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        ab1Scroll.getHorizontalScrollBar().setModel(topScroll.getHorizontalScrollBar().getModel());
+        JPanel topSection = new JPanel(new BorderLayout(0, 4));
+        topSection.add(top, BorderLayout.NORTH);
+        topSection.add(topScroll, BorderLayout.CENTER);
+        JPanel ab1Section = new JPanel(new BorderLayout(0, 4));
+        ab1Section.add(ab1Controls, BorderLayout.NORTH);
+        ab1Section.add(ab1Scroll, BorderLayout.CENTER);
+        ab1Section.setPreferredSize(new Dimension(0, 250));
+        JPanel bottom = new JPanel(new BorderLayout(0, 2));
+        bottom.add(ab1Section, BorderLayout.CENTER);
+        bottom.add(selection, BorderLayout.SOUTH);
+        add(topSection, BorderLayout.CENTER);
+        add(bottom, BorderLayout.SOUTH);
         if (!reads.isEmpty()) {
             canvas.selectRead(0);
             SwingUtilities.invokeLater(() -> canvas.selectRead(0));
         }
+    }
+
+    private void zoomShared(double factor) {
+        sharedZoom = Math.max(0.2, Math.min(12.0, sharedZoom * factor));
+        canvas.setZoom(sharedZoom);
+        ab1Canvas.setZoom(sharedZoom);
+    }
+
+    private void fitShared() {
+        int available = Math.max(200, getWidth() - 140);
+        double fit = available / (double) Math.max(1, Math.max(1, canvas.referenceLength()) * 7);
+        sharedZoom = Math.max(0.2, Math.min(12.0, fit));
+        canvas.setZoom(sharedZoom);
+        ab1Canvas.setZoom(sharedZoom);
     }
 
     int readCount() { return canvas.readCount(); }
@@ -262,7 +303,13 @@ final class SangerAssemblyViewerPanel extends JPanel {
         }
 
         int readCount() { return reads.size(); }
+        int referenceLength() { return reference.length(); }
         int selectedRead() { return selected; }
+
+        void setZoom(double value) {
+            zoom = Math.max(0.2, Math.min(12.0, value));
+            resize();
+        }
         String selectedReadName() {
             return selected >= 0 && selected < reads.size() ? reads.get(selected).name() : null;
         }
@@ -345,7 +392,7 @@ final class SangerAssemblyViewerPanel extends JPanel {
         private void resize() {
             int width = Math.max(600, (int) Math.round(Math.max(1, reference.length()) * 7 * zoom) + 100);
             setPreferredSize(new Dimension(width,
-                    top + Math.max(3, reads.size()) * rowHeight + 250));
+                    top + Math.max(3, reads.size()) * rowHeight + 20));
             revalidate();
             repaint();
         }
@@ -381,7 +428,6 @@ final class SangerAssemblyViewerPanel extends JPanel {
                     g.setColor(new Color(255, 190, 80, 150));
                     g.fillRect(x - 1, 8, 3, getHeight() - 16);
                 }
-                drawTrace(g, left, width, length);
             } finally {
                 g.dispose();
             }
@@ -392,16 +438,17 @@ final class SangerAssemblyViewerPanel extends JPanel {
             g.setColor(new Color(55, 65, 72));
             g.drawString(label, 4, y + 10);
             if (sequence == null || sequence.isEmpty()) return;
-            int length = Math.max(1, sequence.length());
+            int sequenceLength = Math.max(1, sequence.length());
+            int referenceLength = Math.max(1, reference.length());
             g.setColor(color);
-            for (int index = 0; index < length; index++) {
-                int x = left + (int) Math.round(width * index / (double) length);
+            for (int index = 0; index < sequenceLength; index++) {
+                int x = left + (int) Math.round(width * index / (double) referenceLength);
                 if (index % 10 == 0) g.drawLine(x, y, x, y + 18);
             }
-            if (width / (double) length >= 4.5) {
+            if (width / (double) referenceLength >= 4.5) {
                 g.setFont(getFont().deriveFont(Font.BOLD, 9f));
-                for (int index = 0; index < length; index++) {
-                    int x = left + (int) Math.round(width * index / (double) length);
+                for (int index = 0; index < sequenceLength; index++) {
+                    int x = left + (int) Math.round(width * index / (double) referenceLength);
                     char base = sequence.charAt(index);
                     g.setColor(switch (base) {
                         case 'A' -> new Color(37, 132, 74);
@@ -526,6 +573,149 @@ final class SangerAssemblyViewerPanel extends JPanel {
                 }
             }
             return result;
+        }
+    }
+
+    private static final class Ab1ReferenceCanvas extends JPanel {
+        private final int referenceLength;
+        private final List<ReadAlignment> reads;
+        private Ab1Reader.Trace trace;
+        private ReadAlignment traceRead;
+        private double zoom = 1.0;
+        private double yZoom = 1.0;
+
+        Ab1ReferenceCanvas(int referenceLength, List<ReadAlignment> reads) {
+            this.referenceLength = Math.max(1, referenceLength);
+            this.reads = reads;
+            setBackground(Color.WHITE);
+            resize();
+        }
+
+        void setTrace(Ab1Reader.Trace trace, ReadAlignment read) {
+            this.trace = trace;
+            this.traceRead = read;
+            repaint();
+        }
+
+        void setZoom(double value) {
+            zoom = Math.max(0.2, Math.min(12.0, value));
+            resize();
+        }
+
+        void yZoomBy(double factor) {
+            yZoom = Math.max(1.0, Math.min(8.0, yZoom * factor));
+            resize();
+        }
+
+        void yFit() {
+            yZoom = 1.0;
+            resize();
+        }
+
+        private void resize() {
+            int width = Math.max(600, (int) Math.round(referenceLength * 7 * zoom) + 100);
+            int height = (int) Math.round(210 * yZoom);
+            setPreferredSize(new Dimension(width, height));
+            revalidate();
+            repaint();
+        }
+
+        @Override protected void paintComponent(Graphics graphics) {
+            super.paintComponent(graphics);
+            Graphics2D g = (Graphics2D) graphics.create();
+            try {
+                g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                int left = 84;
+                int width = Math.max(120, getWidth() - left - 16);
+                int height = Math.max(80, getHeight() - 40);
+                g.setColor(new Color(55, 65, 72));
+                g.drawString("AB1", 4, 24);
+                if (trace == null || traceRead == null) {
+                    g.setColor(new Color(120, 126, 130));
+                    g.drawString("No AB1 trace for the selected read.", left, 30);
+                    return;
+                }
+                int samples = 0;
+                int maximum = 1;
+                for (int[] channel : trace.channels()) {
+                    samples = Math.max(samples, channel.length);
+                    for (int value : channel) maximum = Math.max(maximum, value);
+                }
+                if (samples == 0) {
+                    g.drawString("No trace channels.", left, 30);
+                    return;
+                }
+                g.setColor(new Color(230, 233, 235));
+                g.drawLine(left, height, left + width, height);
+                Color[] colors = {
+                        new Color(37, 132, 74), new Color(49, 98, 180),
+                        new Color(196, 116, 26), new Color(178, 48, 48)
+                };
+                int readLength = Math.max(1, trace.sequence().length());
+                for (int channel = 0; channel < trace.channels().length; channel++) {
+                    int[] values = trace.channels()[channel];
+                    if (values.length == 0) continue;
+                    g.setColor(colors[Math.min(channel, colors.length - 1)]);
+                    int previousX = -1;
+                    int previousY = -1;
+                    for (int sample = 0; sample < samples; sample++) {
+                        int baseIndex = (int) Math.round(sample * (readLength - 1.0)
+                                / Math.max(1, samples - 1));
+                        int alignedIndex = traceRead.orientation().startsWith("reverse")
+                                ? readLength - 1 - baseIndex : baseIndex;
+                        int reference = referencePosition(alignedIndex);
+                        if (reference < 0) continue;
+                        int x = left + (int) Math.round(width * reference
+                                / (double) Math.max(1, referenceLength - 1));
+                        int y = Math.max(0, height - (int) Math.round(
+                                height * values[Math.min(sample, values.length - 1)]
+                                        / (double) maximum));
+                        if (previousX >= 0) g.drawLine(previousX, previousY, x, y);
+                        previousX = x;
+                        previousY = y;
+                    }
+                }
+                g.setFont(getFont().deriveFont(10f));
+                for (int index = 0; index < trace.sequence().length(); index++) {
+                    int alignedIndex = traceRead.orientation().startsWith("reverse")
+                            ? readLength - 1 - index : index;
+                    int reference = referencePosition(alignedIndex);
+                    if (reference < 0) continue;
+                    int x = left + (int) Math.round(width * reference
+                            / (double) Math.max(1, referenceLength - 1));
+                    char base = trace.sequence().charAt(index);
+                    g.setColor(colors[Math.max(0, Math.min(3, "ACGT".indexOf(base)))]);
+                    g.drawString(String.valueOf(base), x - 3, height + 14);
+                }
+            } finally {
+                g.dispose();
+            }
+        }
+
+        private int referencePosition(int readBase) {
+            if (traceRead == null) return -1;
+            int position = traceRead.start();
+            int consumed = 0;
+            for (String part : traceRead.cigar().split("(?<=\\D)|(?=\\d)")) {
+                if (part.isEmpty()) continue;
+                char operation = part.charAt(part.length() - 1);
+                int count;
+                try {
+                    count = Integer.parseInt(part.substring(0, part.length() - 1));
+                } catch (NumberFormatException ex) {
+                    continue;
+                }
+                if (operation == 'M' || operation == 'I') {
+                    if (readBase < consumed + count) {
+                        return position + (readBase - consumed);
+                    }
+                    consumed += count;
+                    if (operation == 'M') position += count;
+                } else if (operation == 'D') {
+                    position += count;
+                }
+            }
+            return position;
         }
     }
 
