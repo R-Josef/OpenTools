@@ -40,7 +40,7 @@ public final class SangerAssembleTool extends AbstractOpenTool {
             List.of("Sanger", "AB1", "assembly", "consensus", "测序拼接"),
             List.of("AB1", "FASTQ", "FASTA"),
             List.of("FASTA", "TSV", "BED"),
-            "1.0.0",
+            "1.1.0",
             List.of(
                     new ToolParameter("readsDirectory", "Reads directory",
                             "Directory containing AB1, FASTQ, or FASTA reads. AB1 is preferred when present.",
@@ -59,6 +59,10 @@ public final class SangerAssembleTool extends AbstractOpenTool {
                             "Reads shorter than this after trimming are rejected.", 50, 1, 100_000),
                     ToolParameter.decimal("consensusThreshold", "Consensus threshold",
                             "Minimum quality-weighted base fraction for a confident call.", 0.60, 0.5, 1.0),
+                    ToolParameter.decimal("heterozygousThreshold", "Heterozygous threshold",
+                            "Minimum second-base fraction for an IUPAC heterozygous call.", 0.25, 0.05, 0.5),
+                    ToolParameter.integer("minHeterozygousCoverage", "Heterozygous coverage",
+                            "Minimum coverage before a heterozygous call is considered.", 4, 2, 10_000),
                     ToolParameter.optionalDirectory("outputDirectory", "Output directory",
                             "Leave blank to save in the run directory."),
                     ToolParameter.bool("overwrite", "Overwrite outputs",
@@ -131,8 +135,13 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         }
         int minOverlap = request.integer("minOverlap");
         double minIdentity = decimalValue(request, "minIdentity");
-        Assembly assembly = assemble(reads, minOverlap, minIdentity,
-                decimalValue(request, "consensusThreshold"));
+        double consensusThreshold = decimalValue(request, "consensusThreshold");
+        if (consensusThreshold <= 0) consensusThreshold = 0.60;
+        double heterozygousThreshold = decimalValue(request, "heterozygousThreshold");
+        if (heterozygousThreshold <= 0) heterozygousThreshold = 0.25;
+        int minHeterozygousCoverage = request.integer("minHeterozygousCoverage");
+        if (minHeterozygousCoverage <= 0) minHeterozygousCoverage = 4;
+        Assembly assembly = assemble(reads, minOverlap, minIdentity, consensusThreshold);
         if (assembly.contigs().isEmpty()) {
             throw new OpenToolException(
                     "SANGER_ASSEMBLY_EMPTY",
@@ -151,10 +160,12 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         writeFasta(outputs.get("assembly"), assembly.contigs());
         writeReadTable(outputs.get("reads"), reads, anchor);
         if (reference != null && anchor != null) {
-            Consensus consensus = anchor.consensus(decimalValue(request, "consensusThreshold"));
+            Consensus consensus = anchor.consensus(
+                    consensusThreshold, heterozygousThreshold, minHeterozygousCoverage);
             writeConsensus(outputs.get("corrected"), reference, consensus);
             writeVariants(outputs.get("variants"), reference, consensus);
             writeProvenance(outputs.get("provenance"), reference, consensus);
+            writeIndels(outputs.get("indels"), consensus);
         }
 
         List<OutputArtifact> artifacts = new ArrayList<>();
@@ -168,6 +179,8 @@ public final class SangerAssembleTool extends AbstractOpenTool {
                     "text/tab-separated-values"));
             artifacts.add(new OutputArtifact(outputs.get("provenance"), "Consensus provenance",
                     "text/plain"));
+            artifacts.add(new OutputArtifact(outputs.get("indels"), "Consensus indels",
+                    "text/tab-separated-values"));
         }
         long totalLength = assembly.contigs().stream().mapToLong(contig -> contig.sequence().length()).sum();
         Map<String, Object> metrics = new LinkedHashMap<>();
@@ -179,6 +192,9 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         if (reference != null && anchor != null) {
             metrics.put("referenceLength", reference.sequence().length());
             metrics.put("coveredReferenceBases", anchor.coveredBases());
+            metrics.put("heterozygousBases", anchor.consensus(
+                    consensusThreshold, heterozygousThreshold, minHeterozygousCoverage)
+                    .heterozygousCount());
         }
         context.progress(1.0, "Sanger assembly completed");
         return new ToolResult(
@@ -205,6 +221,7 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         names.put("corrected", directory.resolve("corrected.fa"));
         names.put("variants", directory.resolve("variants.tsv"));
         names.put("provenance", directory.resolve("provenance.bed"));
+        names.put("indels", directory.resolve("indels.tsv"));
         return names;
     }
 
@@ -531,11 +548,12 @@ public final class SangerAssembleTool extends AbstractOpenTool {
             if (!consensus.covered()[index]) continue;
             char base = consensus.sequence().charAt(index);
             char referenceBase = reference.sequence().toUpperCase(Locale.ROOT).charAt(index);
-            if (base == referenceBase) continue;
+            String state = consensus.state(index);
+            if (base == referenceBase && "READ_CONSENSUS".equals(state)) continue;
             text.append(index + 1).append('\t').append(referenceBase).append('\t').append(base)
                     .append('\t').append(consensus.coverage()[index]).append('\t')
                     .append(format(consensus.quality()[index])).append('\t')
-                    .append(consensus.low()[index] ? "LOW_CONFIDENCE" : "READ_CONSENSUS")
+                    .append(state)
                     .append('\n');
         }
         Files.writeString(path, text.toString(), StandardCharsets.UTF_8);
@@ -545,9 +563,9 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         StringBuilder text = new StringBuilder();
         String name = reference.id();
         int start = 0;
-        String state = state(consensus, 0);
+        String state = consensus.state(0);
         for (int index = 1; index <= consensus.sequence().length(); index++) {
-            String next = index == consensus.sequence().length() ? null : state(consensus, index);
+            String next = index == consensus.sequence().length() ? null : consensus.state(index);
             if (next == null || !next.equals(state)) {
                 text.append(name).append('\t').append(start).append('\t').append(index)
                         .append('\t').append(state).append('\n');
@@ -558,9 +576,17 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         Files.writeString(path, text.toString(), StandardCharsets.UTF_8);
     }
 
-    private static String state(Consensus consensus, int index) {
-        if (!consensus.covered()[index]) return "REFERENCE_FILL";
-        return consensus.low()[index] ? "LOW_CONFIDENCE" : "READ_CONSENSUS";
+    private static void writeIndels(Path path, Consensus consensus) throws Exception {
+        StringBuilder text = new StringBuilder();
+        text.append("position\ttype\tsequence\tsupport\treads\n");
+        for (IndelCall indel : consensus.indels()) {
+            text.append(indel.position() + 1).append('\t')
+                    .append(indel.type()).append('\t')
+                    .append(indel.sequence()).append('\t')
+                    .append(indel.support()).append('\t')
+                    .append(String.join(",", indel.reads())).append('\n');
+        }
+        Files.writeString(path, text.toString(), StandardCharsets.UTF_8);
     }
 
     private static String format(double value) {
@@ -642,7 +668,10 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         }
     }
 
-    private record Placement(String name, int start, boolean reverse, double identity) {
+    private record Placement(String name, SangerAligner.Alignment alignment) {
+        int start() { return alignment.referenceStart(); }
+        boolean reverse() { return alignment.reverse(); }
+        double identity() { return alignment.identity(); }
     }
 
     private static final class ReferenceAnchor {
@@ -664,117 +693,174 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         }
 
         static ReferenceAnchor place(String reference, List<ReadRecord> reads, int minOverlap) {
-            Map<String, List<Integer>> index = new LinkedHashMap<>();
-            int k = 15;
-            for (int position = 0; position + k <= reference.length(); position++) {
-                String kmer = reference.substring(position, position + k);
-                if (kmer.indexOf('N') >= 0) continue;
-                index.computeIfAbsent(kmer, ignored -> new ArrayList<>()).add(position);
-            }
             List<Placement> placements = new ArrayList<>();
             Map<String, ReadRecord> byName = new LinkedHashMap<>();
             for (ReadRecord read : reads) {
-                Placement best = bestPlacement(reference, index, read, minOverlap);
-                if (best != null) {
-                    placements.add(best);
-                    byName.put(read.name(), read);
+                SangerAligner.Alignment alignment = SangerAligner.best(reference, read.sequence());
+                if (alignment == null) continue;
+                int aligned = 0;
+                for (char operation : alignment.operations()) {
+                    if (operation == 'M') aligned++;
                 }
+                if (aligned < minOverlap || alignment.identity() < 0.70) continue;
+                placements.add(new Placement(read.name(), alignment));
+                byName.put(read.name(), read);
             }
             return new ReferenceAnchor(reference, placements, byName);
-        }
-
-        private static Placement bestPlacement(
-                String reference,
-                Map<String, List<Integer>> index,
-                ReadRecord read,
-                int minOverlap
-        ) {
-            Placement best = null;
-            for (int orientation = 0; orientation < 2; orientation++) {
-                String sequence = orientation == 0 ? read.sequence() : reverseComplement(read.sequence());
-                for (int position = 0; position + 15 <= sequence.length(); position += 5) {
-                    List<Integer> hits = index.get(sequence.substring(position, position + 15));
-                    if (hits == null) continue;
-                    for (int hit : hits) {
-                        int start = hit - position;
-                        int overlapStart = Math.max(0, start);
-                        int overlapEnd = Math.min(reference.length(), start + sequence.length());
-                        int length = overlapEnd - overlapStart;
-                        if (length < minOverlap) continue;
-                        int matches = 0;
-                        for (int ref = overlapStart; ref < overlapEnd; ref++) {
-                            if (reference.charAt(ref) == sequence.charAt(ref - start)) matches++;
-                        }
-                        double identity = matches / (double) length;
-                        if (identity < 0.7) continue;
-                        Placement candidate = new Placement(read.name(), start,
-                                orientation == 1, identity);
-                        if (best == null || candidate.identity() > best.identity()) best = candidate;
-                    }
-                }
-            }
-            return best;
         }
 
         List<Placement> placements() { return placements; }
         Map<String, Placement> byName() { return byName; }
 
         int coveredBases() {
-            return consensus(reference, 0.6).coveredCount();
+            return consensus(0.6, 0.25, 4).coveredCount();
         }
 
-        Consensus consensus(double threshold) {
-            return consensus(reference, threshold);
-        }
-
-        private Consensus consensus(String reference, double threshold) {
+        Consensus consensus(double threshold, double heteroThreshold, int minimumHeteroCoverage) {
             int length = reference.length();
             double[][] counts = new double[length][5];
             int[] coverage = new int[length];
+            int[] deletions = new int[length];
             double[] quality = new double[length];
+            Map<String, IndelCall> indels = new LinkedHashMap<>();
             for (Placement placement : placements) {
                 ReadRecord read = reads.get(placement.name());
                 if (read == null) continue;
-                String sequence = placement.reverse()
-                        ? reverseComplement(read.sequence()) : read.sequence();
-                int[] baseQuality = placement.reverse()
+                SangerAligner.Alignment alignment = placement.alignment();
+                String sequence = alignment.orientedRead();
+                int[] baseQuality = alignment.reverse()
                         ? reversed(read.qualities()) : read.qualities();
-                for (int index = 0; index < sequence.length(); index++) {
-                    int target = placement.start() + index;
-                    if (target < 0 || target >= length) continue;
-                    int base = "ACGTN".indexOf(sequence.charAt(index));
-                    if (base < 0) base = 4;
-                    int q = baseQuality == null ? 20 : baseQuality[index];
-                    counts[target][base] += Math.max(1, q);
-                    coverage[target]++;
-                    quality[target] += q;
+                int readIndex = alignment.readStart();
+                int referenceIndex = alignment.referenceStart();
+                List<Character> operations = alignment.operations();
+                for (int operationIndex = 0; operationIndex < operations.size(); ) {
+                    char operation = operations.get(operationIndex);
+                    if (operation == 'M') {
+                        int base = "ACGTN".indexOf(sequence.charAt(readIndex));
+                        if (base < 0) base = 4;
+                        int q = baseQuality == null ? 20 : baseQuality[readIndex];
+                        counts[referenceIndex][base] += Math.max(1, q);
+                        coverage[referenceIndex]++;
+                        quality[referenceIndex] += q;
+                        readIndex++;
+                        referenceIndex++;
+                        operationIndex++;
+                    } else if (operation == 'I') {
+                        int start = readIndex;
+                        while (operationIndex < operations.size()
+                                && operations.get(operationIndex) == 'I') {
+                            readIndex++;
+                            operationIndex++;
+                        }
+                        addIndel(indels, new IndelCall("INSERTION", referenceIndex,
+                                sequence.substring(start, readIndex), 0, new LinkedHashSet<>()), read.name());
+                    } else {
+                        int start = referenceIndex;
+                        while (operationIndex < operations.size()
+                                && operations.get(operationIndex) == 'D') {
+                            referenceIndex++;
+                            operationIndex++;
+                        }
+                        for (int deleted = start; deleted < referenceIndex; deleted++) {
+                            deletions[deleted]++;
+                        }
+                        addIndel(indels, new IndelCall("DELETION", start,
+                                "-", 0, new LinkedHashSet<>()), read.name());
+                    }
                 }
             }
             StringBuilder sequence = new StringBuilder(length);
             boolean[] covered = new boolean[length];
             boolean[] low = new boolean[length];
+            boolean[] heterozygous = new boolean[length];
             for (int index = 0; index < length; index++) {
                 int best = 0;
+                int second = -1;
                 double total = 0;
                 for (int base = 0; base < 5; base++) {
                     total += counts[index][base];
-                    if (counts[index][base] > counts[index][best]) best = base;
+                    if (counts[index][base] > counts[index][best]) {
+                        second = best;
+                        best = base;
+                    } else if (base != best && (second < 0
+                            || counts[index][base] > counts[index][second])) {
+                        second = base;
+                    }
                 }
-                covered[index] = coverage[index] > 0;
-                if (covered[index]) {
-                    char base = "ACGTN".charAt(best);
-                    sequence.append(base);
-                    low[index] = counts[index][best] / Math.max(1, total) < threshold
-                            || quality[index] / Math.max(1, coverage[index]) < 20;
-                } else {
+                covered[index] = coverage[index] > 0 || deletions[index] > 0;
+                if (coverage[index] == 0) {
                     sequence.append(reference.charAt(index));
+                    continue;
                 }
-                if (covered[index] && coverage[index] > 1) {
+                double bestFraction = counts[index][best] / Math.max(1, total);
+                double secondFraction = second < 0 ? 0
+                        : counts[index][second] / Math.max(1, total);
+                boolean hetero = coverage[index] >= minimumHeteroCoverage
+                        && second >= 0 && secondFraction >= heteroThreshold;
+                heterozygous[index] = hetero;
+                char base = "ACGTN".charAt(best);
+                if (hetero) base = iupac(best, second);
+                sequence.append(base);
+                low[index] = !hetero && (bestFraction < threshold
+                        || quality[index] / Math.max(1, coverage[index]) < 20);
+                if (coverage[index] > 1) {
                     quality[index] /= coverage[index];
                 }
             }
-            return new Consensus(sequence.toString(), covered, coverage, quality, low);
+            return new Consensus(sequence.toString(), covered, coverage, quality, low,
+                    heterozygous, deletions, new ArrayList<>(indels.values()));
         }
+
+        private static void addIndel(
+                Map<String, IndelCall> indels,
+                IndelCall event,
+                String read
+        ) {
+            String key = event.type() + ":" + event.position() + ":" + event.sequence();
+            IndelCall existing = indels.get(key);
+            if (existing == null) {
+                event.reads().add(read);
+                event.support = 1;
+                indels.put(key, event);
+            } else {
+                existing.support++;
+                existing.reads().add(read);
+            }
+        }
+    }
+
+    private static char iupac(int first, int second) {
+        int a = Math.min(first, second);
+        int b = Math.max(first, second);
+        if (a == 0 && b == 2) return 'R';
+        if (a == 1 && b == 3) return 'Y';
+        if (a == 1 && b == 2) return 'S';
+        if (a == 0 && b == 3) return 'W';
+        if (a == 2 && b == 3) return 'K';
+        if (a == 0 && b == 1) return 'M';
+        return 'N';
+    }
+
+    private static final class IndelCall {
+        private final String type;
+        private final int position;
+        private final String sequence;
+        private int support;
+        private final Set<String> reads;
+
+        private IndelCall(String type, int position, String sequence, int support, Set<String> reads) {
+            this.type = type;
+            this.position = position;
+            this.sequence = sequence;
+            this.support = support;
+            this.reads = reads;
+        }
+
+        String type() { return type; }
+        int position() { return position; }
+        String sequence() { return sequence; }
+        int support() { return support; }
+        Set<String> reads() { return reads; }
     }
 
     private record Consensus(
@@ -782,12 +868,31 @@ public final class SangerAssembleTool extends AbstractOpenTool {
             boolean[] covered,
             int[] coverage,
             double[] quality,
-            boolean[] low
+            boolean[] low,
+            boolean[] heterozygous,
+            int[] deletions,
+            List<IndelCall> indels
     ) {
         int coveredCount() {
             int count = 0;
             for (boolean value : covered) if (value) count++;
             return count;
+        }
+
+        int heterozygousCount() {
+            int count = 0;
+            for (boolean value : heterozygous) if (value) count++;
+            return count;
+        }
+
+        String state(int index) {
+            if (!covered[index]) return "REFERENCE_FILL";
+            if (deletions[index] > 0 && deletions[index] >= Math.max(1, coverage[index])) {
+                return "DELETION";
+            }
+            if (low[index]) return "LOW_CONFIDENCE";
+            if (heterozygous[index]) return "HETEROZYGOUS";
+            return "READ_CONSENSUS";
         }
     }
 }

@@ -48,10 +48,11 @@
 - `fastq.split`: split FASTQ by record count while preserving headers, sequences,
   and qualities.
 - `sanger.assemble`: read AB1/FASTQ/FASTA Sanger reads, trim low-quality ends,
-  assemble overlapping reads, optionally anchor them to a reference, and emit a
-  full contig, reference-anchored consensus, variant table, and provenance BED
-  that distinguishes read-supported, low-confidence, and reference-filled
-  positions.
+  assemble overlapping reads, optionally anchor them to a reference with
+  indel-aware local alignment, call IUPAC heterozygous bases, and emit a full
+  contig, reference-anchored consensus, variant/indel tables, and provenance BED
+  that distinguishes read-supported, heterozygous, deleted, low-confidence, and
+  reference-filled positions.
 - `bed.blocks`: parse BED12 blockCount/blockSizes/blockStarts, validate block
   coordinates, and export block and intron intervals.
 - `gxf.edit`: edit GFF3/GTF source, type, strand, and attributes while preserving

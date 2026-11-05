@@ -64,6 +64,59 @@ final class SangerAssembleToolTest {
         assertTrue(corrected.replace("\n", "").contains(reference));
     }
 
+    @Test
+    void callsHeterozygousBasesAsIupac() throws Exception {
+        String reference = randomSequence(160);
+        Path referencePath = tempDir.resolve("hetero-reference.fa");
+        Files.writeString(referencePath, ">ref\n" + reference + "\n");
+        String read = reference.substring(0, 120);
+        char replacement = read.charAt(60) == 'A' ? 'C' : 'A';
+        String alternate = read.substring(0, 60) + replacement + read.substring(61);
+        Path reads = tempDir.resolve("hetero.fastq");
+        Files.writeString(reads, fastq("read1", read) + fastq("read2", alternate));
+        Path output = Files.createDirectories(tempDir.resolve("hetero-out"));
+
+        execute(referencePath, reads, output);
+
+        String variants = Files.readString(output.resolve("variants.tsv"));
+        assertTrue(variants.contains("HETEROZYGOUS"));
+        String corrected = Files.readString(output.resolve("corrected.fa"));
+        assertTrue(corrected.replace("\n", "").matches(".*[RYSWKM].*"));
+    }
+
+    @Test
+    void reportsInsertionsFromReferenceAlignment() throws Exception {
+        String reference = randomSequence(160);
+        Path referencePath = tempDir.resolve("indel-reference.fa");
+        Files.writeString(referencePath, ">ref\n" + reference + "\n");
+        String read = reference.substring(0, 80) + "AAA" + reference.substring(80);
+        Path reads = tempDir.resolve("indel.fastq");
+        Files.writeString(reads, fastq("read", read));
+        Path output = Files.createDirectories(tempDir.resolve("indel-out"));
+
+        execute(referencePath, reads, output);
+
+        String indels = Files.readString(output.resolve("indels.tsv"));
+        assertTrue(indels.contains("INSERTION"));
+        assertTrue(indels.contains("AAA"));
+    }
+
+    @Test
+    void reportsDeletionsAndMarksDeletionProvenance() throws Exception {
+        String reference = randomSequence(160);
+        Path referencePath = tempDir.resolve("deletion-reference.fa");
+        Files.writeString(referencePath, ">ref\n" + reference + "\n");
+        String read = reference.substring(0, 80) + reference.substring(83);
+        Path reads = tempDir.resolve("deletion.fastq");
+        Files.writeString(reads, fastq("read", read));
+        Path output = Files.createDirectories(tempDir.resolve("deletion-out"));
+
+        execute(referencePath, reads, output);
+
+        assertTrue(Files.readString(output.resolve("indels.tsv")).contains("DELETION"));
+        assertTrue(Files.readString(output.resolve("provenance.bed")).contains("DELETION"));
+    }
+
     private ToolResult execute(Path reference, Path reads, Path output) throws Exception {
         Map<String, Object> parameters = new LinkedHashMap<>();
         parameters.put("readsDirectory", reads.getParent().toString());
@@ -74,6 +127,8 @@ final class SangerAssembleToolTest {
         parameters.put("trimWindow", 8);
         parameters.put("minReadLength", 50);
         parameters.put("consensusThreshold", 0.6);
+        parameters.put("heterozygousThreshold", 0.25);
+        parameters.put("minHeterozygousCoverage", 2);
         parameters.put("outputDirectory", output.toString());
         parameters.put("overwrite", true);
         ToolExecutionContext context = new ToolExecutionContext(
@@ -90,10 +145,9 @@ final class SangerAssembleToolTest {
     private static String randomSequence(int length) {
         String bases = "ACGT";
         StringBuilder text = new StringBuilder(length);
-        int seed = 17;
+        java.util.Random random = new java.util.Random(17);
         for (int index = 0; index < length; index++) {
-            seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-            text.append(bases.charAt(seed % 4));
+            text.append(bases.charAt(random.nextInt(4)));
         }
         return text.toString();
     }
