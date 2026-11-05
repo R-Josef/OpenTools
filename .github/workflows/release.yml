@@ -133,7 +133,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: 'D:\cygwin-packages'
-          key: cygwin-packages-v1-${{ runner.os }}-${{ hashFiles('.github/workflows/release.yml') }}
+          key: cygwin-packages-v1-${{ runner.os }}-${{ hashFiles('scripts/meme-cache-inputs.txt') }}-${{ vars.MEME_CACHE_SALT || 'v1' }}
       - uses: cygwin/cygwin-install-action@v7
         id: cygwin
         if: steps.meme-cache.outputs.cache-hit != 'true'
