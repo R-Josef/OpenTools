@@ -158,7 +158,10 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         if (heterozygousThreshold <= 0) heterozygousThreshold = 0.25;
         int minHeterozygousCoverage = request.integer("minHeterozygousCoverage");
         if (minHeterozygousCoverage <= 0) minHeterozygousCoverage = 4;
-        Assembly assembly = assemble(reads, minOverlap, minIdentity, consensusThreshold);
+        FastaRecord reference = referencePath == null ? null : readReference(referencePath);
+        List<ReadRecord> assemblyReads = reference == null
+                ? reads : orientReadsToReference(reads, reference);
+        Assembly assembly = assemble(assemblyReads, minOverlap, minIdentity, consensusThreshold);
         if (assembly.contigs().isEmpty()) {
             throw new OpenToolException(
                     "SANGER_ASSEMBLY_EMPTY",
@@ -167,13 +170,8 @@ public final class SangerAssembleTool extends AbstractOpenTool {
             );
         }
 
-        ReferenceAnchor anchor = null;
-        FastaRecord reference = null;
-        if (referencePath != null) {
-            reference = readReference(referencePath);
-            anchor = ReferenceAnchor.place(reference.sequence(), reads, minOverlap);
-            assembly = orientToReference(assembly, reference);
-        }
+        ReferenceAnchor anchor = reference == null
+                ? null : ReferenceAnchor.place(reference.sequence(), reads, minOverlap);
 
         writeFasta(outputs.get("assembly"), assembly.contigs());
         writeAssemblyQuality(outputs.get("quality"), assembly);
@@ -544,16 +542,25 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         return result;
     }
 
-    private static Assembly orientToReference(Assembly assembly, FastaRecord reference) {
-        List<Contig> oriented = new ArrayList<>();
-        for (Contig contig : assembly.contigs()) {
+    private static List<ReadRecord> orientReadsToReference(
+            List<ReadRecord> reads, FastaRecord reference) {
+        List<ReadRecord> oriented = new ArrayList<>();
+        for (ReadRecord read : reads) {
             SangerAligner.Alignment alignment = SangerAligner.best(
-                    reference.sequence(), contig.sequence());
-            oriented.add(alignment != null && alignment.reverse()
-                    ? contig.withSequence(reverseComplement(contig.sequence()))
-                    : contig);
+                    reference.sequence(), read.sequence());
+            if (alignment == null || !alignment.reverse()) {
+                oriented.add(read);
+                continue;
+            }
+            oriented.add(new ReadRecord(
+                    read.name(), reverseComplement(read.sequence()),
+                    reversed(read.qualities()),
+                    read.trimStart(), read.trimEnd(), read.originalLength(),
+                    read.leftAdapter(), read.rightAdapter(),
+                    read.leftAdapterBases(), read.rightAdapterBases()
+            ));
         }
-        return new Assembly(List.copyOf(oriented), assembly.warnings());
+        return oriented;
     }
 
     static String reverseComplement(String sequence) {
