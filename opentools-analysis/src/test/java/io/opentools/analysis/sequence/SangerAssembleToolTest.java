@@ -45,6 +45,8 @@ final class SangerAssembleToolTest {
         String variants = Files.readString(output.resolve("variants.tsv"));
         assertEquals(1, variants.lines().count());
         assertTrue(Files.readString(output.resolve("provenance.bed")).contains("READ_CONSENSUS"));
+        assertTrue(Files.readString(output.resolve("assembly-quality.tsv")).contains("mean_coverage"));
+        assertTrue(Files.isRegularFile(output.resolve("warnings.tsv")));
     }
 
     @Test
@@ -193,6 +195,23 @@ final class SangerAssembleToolTest {
         String trimming = Files.readString(output.resolve("trimming.tsv"));
         assertTrue(trimming.contains("pUC-vector"));
         assertTrue(!Files.readString(output.resolve("assembly.fa")).contains("GGGGGGGGGGGG"));
+    }
+
+    @Test
+    void reportsMultipleContigsAndSingleCoverageQuality() throws Exception {
+        String reference = randomSequence(300);
+        Path referencePath = tempDir.resolve("multi-reference.fa");
+        Files.writeString(referencePath, ">ref\n" + reference + "\n");
+        Path reads = tempDir.resolve("multi.fastq");
+        Files.writeString(reads, fastq("left", reference.substring(0, 100))
+                + fastq("right", reference.substring(200)));
+        Path output = Files.createDirectories(tempDir.resolve("multi-out"));
+
+        execute(referencePath, reads, output);
+
+        String warnings = Files.readString(output.resolve("warnings.tsv"));
+        assertTrue(warnings.contains("MULTIPLE_CONTIGS"));
+        assertTrue(Files.readString(output.resolve("assembly-quality.tsv")).lines().count() >= 3);
     }
 
     private static String fastaSequence(Path path) throws Exception {

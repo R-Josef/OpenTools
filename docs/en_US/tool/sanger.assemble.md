@@ -52,7 +52,7 @@ It performs one explicit, reproducible analysis step. The run record preserves n
 ## Read the result
 
 - Output formats: `FASTA`, `TSV`, `BED`
-- Review trimming.tsv and the read/overlap table first, then assembly.fa for the full de novo contig; insert.fa uses the reference alignment to remove unaligned vector ends; corrected.fa uses reference coordinates, consensus_with_indels.fa expands supported insertions/deletions into the final sequence; indels.tsv and variants.tsv record indels and heterozygous sites, and provenance.bed marks READ_CONSENSUS, HETEROZYGOUS, DELETION, LOW_CONFIDENCE, and REFERENCE_FILL. Never treat reference-filled positions as sequencing evidence.
+- Review assembly-quality.tsv and warnings.tsv first, then trimming.tsv and the read/overlap table; assembly.fa is the full de novo contig and insert.fa uses the reference alignment to remove unaligned vector ends; corrected.fa uses reference coordinates, consensus_with_indels.fa expands supported insertions/deletions into the final sequence; indels.tsv and variants.tsv record indels and heterozygous sites, and provenance.bed marks READ_CONSENSUS, HETEROZYGOUS, DELETION, LOW_CONFIDENCE, and REFERENCE_FILL. Never treat reference-filled positions as sequencing evidence.
 - The result panel is the quick-review surface; complete data, manifests, and logs live in the run directory.
 
 ## Minimal command example

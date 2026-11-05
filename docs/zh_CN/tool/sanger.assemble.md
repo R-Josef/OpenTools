@@ -52,7 +52,7 @@
 ## 结果怎么读
 
 - 输出格式：`FASTA`、`TSV`、`BED`
-- 先看 trimming.tsv 和 reads 表，再看 assembly.fa 的完整组装；insert.fa 用参考比对裁掉未对齐的 vector 末端；corrected.fa 是参考坐标结果，consensus_with_indels.fa 把支持度达标的插入/缺失展开为最终序列；indels.tsv 与 variants.tsv 记录插入/缺失和杂合位点，provenance.bed 标记 READ_CONSENSUS、HETEROZYGOUS、DELETION、LOW_CONFIDENCE 和 REFERENCE_FILL。不能把参考填充区当作测序证据。
+- 先看 assembly-quality.tsv 和 warnings.tsv，再看 trimming.tsv、reads 表和 assembly.fa 的完整组装；insert.fa 用参考比对裁掉未对齐的 vector 末端；corrected.fa 是参考坐标结果，consensus_with_indels.fa 把支持度达标的插入/缺失展开为最终序列；indels.tsv 与 variants.tsv 记录插入/缺失和杂合位点，provenance.bed 标记 READ_CONSENSUS、HETEROZYGOUS、DELETION、LOW_CONFIDENCE 和 REFERENCE_FILL。不能把参考填充区当作测序证据。
 - 结果面板是快速检查入口；完整数据、运行清单和日志位于本次运行目录。
 
 ## 最小运行示例

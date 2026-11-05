@@ -175,6 +175,7 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         }
 
         writeFasta(outputs.get("assembly"), assembly.contigs());
+        writeAssemblyQuality(outputs.get("quality"), assembly);
         List<Contig> insertContigs = trimVectorEnds(
                 assembly.contigs(), reference, request.bool("trimVectorEnds"),
                 request.integer("minVectorOverhang"));
@@ -190,6 +191,9 @@ public final class SangerAssembleTool extends AbstractOpenTool {
             writeIndels(outputs.get("indels"), consensus);
             writeExpandedConsensus(outputs.get("expanded"), reference, consensus,
                     Math.max(1, request.integer("minIndelSupport")));
+            writeWarnings(outputs.get("warnings"), assembly, reads, reference, consensus);
+        } else {
+            writeWarnings(outputs.get("warnings"), assembly, reads, null, null);
         }
 
         List<OutputArtifact> artifacts = new ArrayList<>();
@@ -198,6 +202,10 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         artifacts.add(new OutputArtifact(outputs.get("reads"), "Read and placement summary",
                 "text/tab-separated-values"));
         artifacts.add(new OutputArtifact(outputs.get("trimming"), "Primer and vector trimming",
+                "text/tab-separated-values"));
+        artifacts.add(new OutputArtifact(outputs.get("quality"), "Assembly quality",
+                "text/tab-separated-values"));
+        artifacts.add(new OutputArtifact(outputs.get("warnings"), "Assembly warnings",
                 "text/tab-separated-values"));
         if (reference != null && anchor != null) {
             artifacts.add(new OutputArtifact(outputs.get("corrected"), "Reference-anchored consensus",
@@ -216,6 +224,7 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         metrics.put("reads", reads.size());
         metrics.put("contigs", assembly.contigs().size());
         metrics.put("assembledBases", totalLength);
+        metrics.put("assemblyWarnings", assembly.warnings().size());
         metrics.put("referenceUsed", reference != null);
         metrics.put("placements", anchor == null ? 0 : anchor.placements().size());
         if (reference != null && anchor != null) {
@@ -249,6 +258,8 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         names.put("insert", directory.resolve("insert.fa"));
         names.put("reads", directory.resolve("reads.tsv"));
         names.put("trimming", directory.resolve("trimming.tsv"));
+        names.put("quality", directory.resolve("assembly-quality.tsv"));
+        names.put("warnings", directory.resolve("warnings.tsv"));
         names.put("corrected", directory.resolve("corrected.fa"));
         names.put("variants", directory.resolve("variants.tsv"));
         names.put("provenance", directory.resolve("provenance.bed"));
@@ -431,15 +442,25 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         List<ReadRecord> ordered = new ArrayList<>(reads);
         ordered.sort(Comparator.comparingInt((ReadRecord read) -> read.sequence().length()).reversed());
         List<Contig> contigs = new ArrayList<>();
+        List<Warning> warnings = new ArrayList<>();
         for (ReadRecord read : ordered) {
             Contig bestContig = null;
             Overlap best = null;
+            Overlap second = null;
             for (Contig contig : contigs) {
                 Overlap overlap = bestOverlap(contig.sequence(), read.sequence(), minOverlap, minIdentity);
-                if (overlap != null && (best == null || overlap.betterThan(best))) {
+                if (overlap == null) continue;
+                if (best == null || overlap.betterThan(best)) {
+                    if (best != null) second = best;
                     best = overlap;
                     bestContig = contig;
+                } else if (second == null || overlap.betterThan(second)) {
+                    second = overlap;
                 }
+            }
+            if (best != null && second != null && best.ambiguous(second)) {
+                warnings.add(new Warning("WARNING", "REPEAT_AMBIGUOUS", read.name(),
+                        "Two overlaps are nearly equally good; the read was placed on the first."));
             }
             if (bestContig == null) {
                 contigs.add(Contig.from(read, threshold));
@@ -447,7 +468,17 @@ public final class SangerAssembleTool extends AbstractOpenTool {
                 merge(bestContig, read, best, threshold);
             }
         }
-        return new Assembly(contigs);
+        if (contigs.size() > 1) {
+            warnings.add(new Warning("WARNING", "MULTIPLE_CONTIGS", "assembly",
+                    "Reads formed " + contigs.size() + " contigs; inspect whether the construct is complete."));
+        }
+        for (int index = 0; index < contigs.size(); index++) {
+            if (contigs.get(index).reads() < 2) {
+                warnings.add(new Warning("WARNING", "SINGLE_READ_CONTIG", "contig_" + (index + 1),
+                        "This contig is supported by one read and has no overlap evidence."));
+            }
+        }
+        return new Assembly(contigs, warnings);
     }
 
     private static Overlap bestOverlap(
@@ -554,6 +585,86 @@ public final class SangerAssembleTool extends AbstractOpenTool {
             });
         }
         return result.toString();
+    }
+
+    private static void writeAssemblyQuality(Path path, Assembly assembly) throws Exception {
+        StringBuilder text = new StringBuilder();
+        text.append("contig\tlength\treads\tmean_coverage\tmin_coverage\tmax_coverage"
+                + "\tlow_confidence_bases\tsingle_coverage_bases\n");
+        for (int index = 0; index < assembly.contigs().size(); index++) {
+            Contig contig = assembly.contigs().get(index);
+            text.append("contig_").append(index + 1).append('\t')
+                    .append(contig.sequence().length()).append('\t')
+                    .append(contig.reads()).append('\t')
+                    .append(format(contig.meanCoverage())).append('\t')
+                    .append(contig.minCoverage()).append('\t')
+                    .append(contig.maxCoverage()).append('\t')
+                    .append(contig.lowCount()).append('\t')
+                    .append(contig.singleCoverageCount()).append('\n');
+        }
+        Files.writeString(path, text.toString(), StandardCharsets.UTF_8);
+    }
+
+    private static void writeWarnings(
+            Path path,
+            Assembly assembly,
+            List<ReadRecord> reads,
+            FastaRecord reference,
+            Consensus consensus
+    ) throws Exception {
+        List<Warning> warnings = new ArrayList<>(assembly.warnings());
+        if (reference == null) {
+            warnings.add(new Warning("INFO", "NO_REFERENCE", "assembly",
+                    "No reference was supplied; vector ends and reference coverage could not be checked."));
+            boolean trimmed = reads.stream().anyMatch(read ->
+                    read.leftAdapter() != null || read.rightAdapter() != null);
+            if (!trimmed) {
+                warnings.add(new Warning("INFO", "VECTOR_UNRESOLVED", "reads",
+                        "No primer/vector was trimmed and no reference was supplied; terminal vector sequence may remain."));
+            }
+        } else if (consensus != null) {
+            int filled = consensus.sequence().length() - consensus.coveredCount();
+            if (filled > 0) {
+                warnings.add(new Warning("WARNING", "REFERENCE_FILL", "consensus",
+                        filled + " reference bases have no read coverage and are marked REFERENCE_FILL."));
+            }
+            if (consensus.lowCount() > 0) {
+                warnings.add(new Warning("WARNING", "LOW_CONFIDENCE", "consensus",
+                        consensus.lowCount() + " consensus bases are low-confidence."));
+            }
+            if (consensus.heterozygousCount() > 0) {
+                warnings.add(new Warning("INFO", "HETEROZYGOUS", "consensus",
+                        consensus.heterozygousCount() + " heterozygous IUPAC bases were called."));
+            }
+            if (!consensus.indels().isEmpty()) {
+                warnings.add(new Warning("INFO", "INDELS", "consensus",
+                        consensus.indels().size() + " indel events were recorded; review indels.tsv."));
+            }
+        }
+        long trimmedCount = reads.stream()
+                .filter(read -> read.leftAdapter() != null || read.rightAdapter() != null)
+                .count();
+        if (trimmedCount > 0) {
+            warnings.add(new Warning("INFO", "ADAPTER_TRIMMED", "reads",
+                    trimmedCount + " reads had primer/vector bases removed; review trimming.tsv."));
+        }
+        int totalBases = assembly.contigs().stream().mapToInt(contig -> contig.sequence().length()).sum();
+        int singleBases = assembly.contigs().stream().mapToInt(Contig::singleCoverageCount).sum();
+        if (singleBases > 0) {
+            String severity = totalBases > 0 && singleBases > totalBases * 0.25
+                    ? "WARNING" : "INFO";
+            warnings.add(new Warning(severity, "SINGLE_COVERAGE", "assembly",
+                    singleBases + " assembled bases have coverage 1; terminal regions may be vector, primer, or low-confidence."));
+        }
+        StringBuilder text = new StringBuilder();
+        text.append("severity\tcode\tscope\tmessage\n");
+        for (Warning warning : warnings) {
+            text.append(warning.severity()).append('\t')
+                    .append(warning.code()).append('\t')
+                    .append(warning.scope()).append('\t')
+                    .append(warning.message()).append('\n');
+        }
+        Files.writeString(path, text.toString(), StandardCharsets.UTF_8);
     }
 
     private static List<Contig> trimVectorEnds(
@@ -734,7 +845,10 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         return sum / quality.length;
     }
 
-    private record Assembly(List<Contig> contigs) {
+    private record Assembly(List<Contig> contigs, List<Warning> warnings) {
+    }
+
+    private record Warning(String severity, String code, String scope, String message) {
     }
 
     private record ReadRecord(
@@ -755,6 +869,12 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         boolean betterThan(Overlap other) {
             if (Double.compare(identity, other.identity) != 0) return identity > other.identity;
             return length > other.length;
+        }
+
+        boolean ambiguous(Overlap other) {
+            return Math.abs(identity - other.identity) < 0.005
+                    && Math.abs(length - other.length) <= 2
+                    && (reverse != other.reverse || Math.abs(offset - other.offset) > 1);
         }
     }
 
@@ -793,6 +913,37 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         int[] coverage() { return coverage; }
         double[] qualities() { return qualities; }
         int reads() { return reads; }
+
+        double meanCoverage() {
+            if (coverage.length == 0) return 0;
+            long sum = 0;
+            for (int value : coverage) sum += value;
+            return sum / (double) coverage.length;
+        }
+
+        int minCoverage() {
+            int minimum = Integer.MAX_VALUE;
+            for (int value : coverage) minimum = Math.min(minimum, value);
+            return coverage.length == 0 ? 0 : minimum;
+        }
+
+        int maxCoverage() {
+            int maximum = 0;
+            for (int value : coverage) maximum = Math.max(maximum, value);
+            return maximum;
+        }
+
+        int lowCount() {
+            int count = 0;
+            for (boolean value : low) if (value) count++;
+            return count;
+        }
+
+        int singleCoverageCount() {
+            int count = 0;
+            for (int value : coverage) if (value == 1) count++;
+            return count;
+        }
 
         Contig withSequence(String value) {
             Contig trimmed = new Contig();
@@ -1043,6 +1194,12 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         int heterozygousCount() {
             int count = 0;
             for (boolean value : heterozygous) if (value) count++;
+            return count;
+        }
+
+        int lowCount() {
+            int count = 0;
+            for (boolean value : low) if (value) count++;
             return count;
         }
 
