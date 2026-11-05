@@ -53,12 +53,14 @@
   annotation headers and gzip input.
 - `table.pivot` adds `LIST` and `COUNT_DISTINCT` aggregations for text and
   multi-value cells, with a configurable list separator.
-- `expression.differential`: two-group Welch t-test or Mann-Whitney U with
-  log2 transformation, BH correction, fold change, and adjusted p-values.
-- `go.gsea`: preranked GSEA with weighted running-sum enrichment scores,
-  deterministic gene-score permutations, NES, and adjusted p-values.
-- `go.enrich` and `kegg.enrich` can prune redundant terms by hit-set Jaccard
-  overlap.
+- `expression.differential`: two-group Welch t-test, Mann-Whitney U, or
+  multi-group one-way ANOVA with log2 transformation, BH correction, fold
+  change, and adjusted p-values.
+- `go.gsea`: preranked GSEA with classic, weighted, or weighted p=2
+  running-sum weights, duplicate-gene collapsing, deterministic
+  gene-score permutations, NES, and adjusted p-values.
+- `go.enrich` can propagate GO ancestors before enrichment and prune redundant
+  terms by hit-set Jaccard overlap; `kegg.enrich` supports the same pruning.
 - `tree.newick.metadata`: export branch lengths, support labels, depth, and
   descendant-leaf counts for every Newick node.
 - `alignment.blast.alignments`: extract HSP coordinates, E-values, bit scores,

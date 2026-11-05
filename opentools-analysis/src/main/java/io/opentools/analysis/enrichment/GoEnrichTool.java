@@ -33,6 +33,10 @@ public final class GoEnrichTool extends AbstractOpenTool {
                             "Two columns: gene and semicolon/comma-separated GO terms. Optional when resourceId selects a GO pack."),
                     ToolParameter.string("resourceId", "GO resource pack",
                             "Optional pack id from resource.manage; its annotation table replaces the file input.", ""),
+                    ToolParameter.optionalFile("hierarchy", "GO hierarchy",
+                            "Optional OBO or term/parent table; required for hierarchy propagation without a resource pack."),
+                    ToolParameter.bool("propagate", "Propagate GO ancestors",
+                            "Add all GO ancestors to each gene annotation before enrichment.", false),
                     ToolParameter.requiredFile("genes", "Target genes", "One gene ID per line."),
                     ToolParameter.optionalFile("background", "Background genes", "Optional one-gene-per-line background list."),
                     ToolParameter.decimal("pruneOverlap", "Prune redundant terms",
@@ -104,6 +108,21 @@ public final class GoEnrichTool extends AbstractOpenTool {
             );
         }
         Map<String, java.util.Set<String>> annotations = EnrichmentSupport.readAnnotations(annotationsPath);
+        if (request.bool("propagate")) {
+            Path hierarchyPath = request.path("hierarchy");
+            if (hierarchyPath == null && pack != null) {
+                hierarchyPath = pack.primary();
+            }
+            if (hierarchyPath == null) {
+                throw new OpenToolException(
+                        "GO_HIERARCHY_REQUIRED",
+                        "GO ancestor propagation requires a hierarchy file or GO resource pack.",
+                        "Provide hierarchy or select a GO pack."
+                );
+            }
+            annotations = EnrichmentSupport.propagate(
+                    annotations, EnrichmentSupport.readParents(hierarchyPath));
+        }
         java.util.Set<String> targets = EnrichmentSupport.readGeneList(request.path("genes"));
         java.util.Set<String> background = request.path("background") == null
                 ? java.util.Set.of() : EnrichmentSupport.readGeneList(request.path("background"));

@@ -148,6 +148,36 @@ final class ExpressionToolsTest {
         assertTrue(mannText.contains("MANN_WHITNEY"));
     }
 
+    @Test
+    void runsOneWayAnovaAcrossMoreThanTwoGroups() throws Exception {
+        Path input = tempDir.resolve("anova-matrix.tsv");
+        Files.writeString(input, """
+                gene	S1	S2	S3	S4	S5	S6	S7	S8	S9
+                A	10	11	12	20	21	22	40	41	42
+                B	8	9	10	9	10	11	12	13	14
+                C	30	31	32	10	11	12	50	51	52
+                """);
+        Path groups = tempDir.resolve("anova-groups.tsv");
+        Files.writeString(groups, "sample\tgroup\nS1\tA\nS2\tA\nS3\tA\nS4\tB\nS5\tB\nS6\tB\nS7\tC\nS8\tC\nS9\tC\n");
+        Path output = tempDir.resolve("anova.tsv");
+        ToolResult result = run("expression.differential", Map.of(
+                "input", input,
+                "groups", groups,
+                "test", "ANOVA",
+                "output", output
+        ));
+        assertEquals(3, result.metrics().get("groupCount"));
+        List<String> rows = Files.readAllLines(output);
+        assertEquals(4, rows.size());
+        String geneA = rows.stream().filter(row -> row.startsWith("A\t")).findFirst().orElseThrow();
+        String[] fields = geneA.split("\t");
+        assertEquals("ANOVA", fields[11]);
+        assertTrue(fields[12].contains("A="));
+        assertTrue(fields[12].contains("B="));
+        assertTrue(fields[12].contains("C="));
+        assertTrue(Double.parseDouble(fields[9]) <= 1.0);
+    }
+
     private Path writeCounts() throws Exception {
         Path input = tempDir.resolve("counts.tsv");
         Files.writeString(input, """

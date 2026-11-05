@@ -32,6 +32,8 @@ It performs one explicit, reproducible analysis step. The run record preserves n
 | --- | --- | --- | --- |
 | `ranking` Ranked genes | yes | empty | Select a complete real input file; do not submit the placeholder example path. Two columns: gene and numeric score, optionally with a header. |
 | `geneSets` GMT gene sets | yes | empty | Select a complete real input file; do not submit the placeholder example path. GMT file: set ID, description, then one or more genes. |
+| `weight` Ranking weight | no | WEIGHTED | Prefer the default mode and switch only when the input type or analysis goal requires it. GSEA running-sum weight: classic, weighted, or weighted p=2. |
+| `duplicatePolicy` Duplicate genes | no | MAX | Prefer the default mode and switch only when the input type or analysis goal requires it. Collapse duplicate ranking genes by maximum, mean, or last score. |
 | `minSetSize` Minimum set size | no | 15 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Skip sets with fewer ranked genes. |
 | `maxSetSize` Maximum set size | no | 500 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Skip sets with more ranked genes. |
 | `permutations` Permutations | no | 1000 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Deterministic gene-score permutations for p-values. |

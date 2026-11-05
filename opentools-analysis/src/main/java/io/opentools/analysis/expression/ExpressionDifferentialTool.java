@@ -39,7 +39,7 @@ public final class ExpressionDifferentialTool extends AbstractOpenTool {
                             "Two-column sample/group file with exactly two groups."),
                     new ToolParameter("test", "Statistical test",
                             "Two-group test to run.", ParameterType.ENUM,
-                            false, "WELCH_T", List.of("WELCH_T", "MANN_WHITNEY"),
+                            false, "WELCH_T", List.of("WELCH_T", "MANN_WHITNEY", "ANOVA"),
                             null, null, false, null),
                     new ToolParameter("delimiter", "Delimiter", "Matrix delimiter.", ParameterType.ENUM,
                             false, "AUTO", List.of("AUTO", "TAB", "COMMA", "SEMICOLON"), null, null, false, null),
@@ -72,11 +72,17 @@ public final class ExpressionDifferentialTool extends AbstractOpenTool {
                 request.path("input"), request.string("delimiter"), "ERROR", false);
         Map<String, String> groups = readGroups(request.path("groups"));
         List<String> groupNames = groups.values().stream().distinct().toList();
-        if (groupNames.size() != 2) {
+        String test = request.string("test");
+        boolean anova = test.equals("ANOVA");
+        if (groupNames.size() < 2 || (!anova && groupNames.size() != 2)) {
             throw new OpenToolException(
                     "DIFFERENTIAL_GROUPS",
-                    "Exactly two sample groups are required, found " + groupNames.size() + ".",
-                    "Provide a two-column sample/group file with two groups."
+                    anova
+                            ? "ANOVA requires at least two sample groups."
+                            : "Exactly two sample groups are required, found " + groupNames.size() + ".",
+                    anova
+                            ? "Provide at least two groups in the sample/group file."
+                            : "Provide a two-column sample/group file with two groups."
             );
         }
         String groupA = groupNames.get(0);
@@ -90,17 +96,45 @@ public final class ExpressionDifferentialTool extends AbstractOpenTool {
                     "Add biological replicates or use a descriptive summary instead."
             );
         }
-        String test = request.string("test");
+        List<List<Integer>> anovaSamples = new ArrayList<>();
+        if (anova) {
+            for (String group : groupNames) {
+                List<Integer> samples = sampleIndexes(matrix, groups, group);
+                if (samples.size() < 2) {
+                    throw new OpenToolException(
+                            "DIFFERENTIAL_REPLICATES",
+                            "Each ANOVA group needs at least two samples.",
+                            "Add biological replicates or use a descriptive summary instead."
+                    );
+                }
+                anovaSamples.add(samples);
+            }
+        }
         boolean log2 = request.bool("log2");
         List<GeneResult> results = new ArrayList<>();
+        Map<String, String> groupMeans = new LinkedHashMap<>();
         for (int row = 0; row < matrix.rowNames().size(); row++) {
             context.cancellationToken().throwIfCancelled();
-            double[] a = values(matrix, row, samplesA, log2);
-            double[] b = values(matrix, row, samplesB, log2);
-            GeneResult result = test.equals("MANN_WHITNEY")
-                    ? mannWhitney(matrix.rowNames().get(row), a, b)
-                    : welchT(matrix.rowNames().get(row), a, b);
-            results.add(result);
+            if (anova) {
+                List<double[]> groupsData = new ArrayList<>();
+                StringBuilder means = new StringBuilder();
+                for (int index = 0; index < anovaSamples.size(); index++) {
+                    double[] values = values(matrix, row, anovaSamples.get(index), log2);
+                    groupsData.add(values);
+                    if (index > 0) means.append(';');
+                    means.append(groupNames.get(index)).append('=').append(format(mean(values)));
+                }
+                groupMeans.put(matrix.rowNames().get(row), means.toString());
+                results.add(anova(matrix.rowNames().get(row), groupsData));
+            } else {
+                double[] a = values(matrix, row, samplesA, log2);
+                double[] b = values(matrix, row, samplesB, log2);
+                GeneResult result = test.equals("MANN_WHITNEY")
+                        ? mannWhitney(matrix.rowNames().get(row), a, b)
+                        : welchT(matrix.rowNames().get(row), a, b);
+                results.add(result);
+                groupMeans.put(matrix.rowNames().get(row), "");
+            }
         }
         boolean bh = request.string("adjustment").equals("BH");
         if (bh) {
@@ -109,14 +143,18 @@ public final class ExpressionDifferentialTool extends AbstractOpenTool {
         Path output = FormatToolSupport.outputPath(request, context, "differential-expression.tsv");
         FormatToolSupport.writeAtomically(output, writer -> {
             writer.write("gene\tgroup_a\tgroup_b\tn_a\tn_b\tmean_a\tmean_b"
-                    + "\tlog2_fold_change\tstatistic\tp_value\tadjusted_p_value\ttest\n");
+                    + "\tlog2_fold_change\tstatistic\tp_value\tadjusted_p_value\ttest\tgroup_means\n");
             for (GeneResult result : results) {
-                writer.write(result.gene() + "\t" + groupA + "\t" + groupB + "\t"
-                        + result.nA() + "\t" + result.nB() + "\t"
-                        + format(result.meanA()) + "\t" + format(result.meanB()) + "\t"
+                writer.write(result.gene() + "\t"
+                        + (anova ? "" : groupA) + "\t"
+                        + (anova ? "" : groupB) + "\t"
+                        + (anova ? "" : Integer.toString(result.nA())) + "\t"
+                        + (anova ? "" : Integer.toString(result.nB())) + "\t"
+                        + (anova ? "" : format(result.meanA())) + "\t"
+                        + (anova ? "" : format(result.meanB())) + "\t"
                         + format(result.log2FoldChange()) + "\t" + format(result.statistic()) + "\t"
                         + format(result.pValue()) + "\t" + format(result.adjustedPValue()) + "\t"
-                        + test + "\n");
+                        + test + "\t" + groupMeans.getOrDefault(result.gene(), "") + "\n");
             }
         });
         long significant = results.stream().filter(result -> result.adjustedPValue() < 0.05).count();
@@ -125,10 +163,13 @@ public final class ExpressionDifferentialTool extends AbstractOpenTool {
         metrics.put("genes", results.size());
         metrics.put("groupA", groupA);
         metrics.put("groupB", groupB);
+        metrics.put("groupCount", groupNames.size());
         metrics.put("test", test);
         metrics.put("significant", significant);
         return new ToolResult(
-                "Tested " + results.size() + " genes between " + groupA + " and " + groupB,
+                anova
+                        ? "Tested " + results.size() + " genes across " + groupNames.size() + " groups"
+                        : "Tested " + results.size() + " genes between " + groupA + " and " + groupB,
                 List.of(results.size()),
                 significant + " genes with adjusted p < 0.05.",
                 List.of(significant),
@@ -166,6 +207,36 @@ public final class ExpressionDifferentialTool extends AbstractOpenTool {
             values[index] = log2 ? Math.log(value + 1) / Math.log(2) : value;
         }
         return values;
+    }
+
+    private static GeneResult anova(String gene, List<double[]> groups) {
+        int total = groups.stream().mapToInt(values -> values.length).sum();
+        double grandMean = 0;
+        for (double[] values : groups) grandMean += sum(values);
+        grandMean /= total;
+        double between = 0;
+        double within = 0;
+        double minimum = Double.POSITIVE_INFINITY;
+        double maximum = Double.NEGATIVE_INFINITY;
+        for (double[] values : groups) {
+            double mean = mean(values);
+            between += values.length * (mean - grandMean) * (mean - grandMean);
+            within += variance(values, mean) * (values.length - 1);
+            minimum = Math.min(minimum, mean);
+            maximum = Math.max(maximum, mean);
+        }
+        int dfBetween = groups.size() - 1;
+        int dfWithin = total - groups.size();
+        double statistic = within == 0 ? 0 : (between / dfBetween) / (within / dfWithin);
+        double p = within == 0 ? 1 : regularizedIncompleteBeta(
+                dfWithin / 2.0, dfBetween / 2.0, dfWithin / (dfWithin + dfBetween * statistic));
+        return new GeneResult(gene, total, 0, grandMean, 0, maximum - minimum, statistic, p, p);
+    }
+
+    private static double sum(double[] values) {
+        double sum = 0;
+        for (double value : values) sum += value;
+        return sum;
     }
 
     private static GeneResult welchT(String gene, double[] a, double[] b) {

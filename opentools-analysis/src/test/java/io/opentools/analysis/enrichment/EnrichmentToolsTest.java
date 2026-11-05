@@ -162,6 +162,40 @@ final class EnrichmentToolsTest {
         assertTrue(text.contains("GO:B\t\t\t1\tGO:A"));
     }
 
+    @Test
+    void propagatesGoAncestorsBeforeEnrichment() throws Exception {
+        Path hierarchy = tempDir.resolve("go-hierarchy.tsv");
+        Files.writeString(hierarchy, """
+                term	parent
+                GO:1	.
+                GO:2	GO:1
+                GO:3	GO:2
+                """);
+        Path annotations = tempDir.resolve("ancestor-annotations.tsv");
+        Files.writeString(annotations, """
+                gene	terms
+                g1	GO:3
+                g2	GO:3
+                g3	GO:1
+                """);
+        Path genes = tempDir.resolve("ancestor-genes.txt");
+        Files.writeString(genes, "g1\ng2\n");
+        Path output = tempDir.resolve("propagated.tsv");
+        ToolResult result = run("go.enrich", Map.of(
+                "annotations", annotations,
+                "hierarchy", hierarchy,
+                "propagate", true,
+                "pruneOverlap", 0.0,
+                "genes", genes,
+                "output", output
+        ));
+        assertTrue((Integer) result.metrics().get("terms") >= 3);
+        String text = Files.readString(output);
+        assertTrue(text.contains("GO:1"));
+        assertTrue(text.contains("GO:2"));
+        assertTrue(text.contains("GO:3"));
+    }
+
     private ToolResult run(String id, Map<String, Object> supplied) throws Exception {
         ToolRegistry registry = new ToolRegistry();
         BuiltInAnalysis.register(registry);

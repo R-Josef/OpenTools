@@ -43,6 +43,14 @@ public final class GseaTool extends AbstractOpenTool {
                             "Two columns: gene and numeric score, optionally with a header."),
                     ToolParameter.requiredFile("geneSets", "GMT gene sets",
                             "GMT file: set ID, description, then one or more genes."),
+                    new ToolParameter("weight", "Ranking weight",
+                            "GSEA running-sum weight: classic, weighted, or weighted p=2.",
+                            io.opentools.api.tool.ParameterType.ENUM, false, "WEIGHTED",
+                            List.of("CLASSIC", "WEIGHTED", "WEIGHTED_P2"), null, null, false, null),
+                    new ToolParameter("duplicatePolicy", "Duplicate genes",
+                            "Collapse duplicate ranking genes by maximum, mean, or last score.",
+                            io.opentools.api.tool.ParameterType.ENUM, false, "MAX",
+                            List.of("MAX", "MEAN", "LAST"), null, null, false, null),
                     ToolParameter.integer("minSetSize", "Minimum set size",
                             "Skip sets with fewer ranked genes.", 15, 1, 100_000),
                     ToolParameter.integer("maxSetSize", "Maximum set size",
@@ -78,13 +86,13 @@ public final class GseaTool extends AbstractOpenTool {
 
     @Override
     public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
-        List<RankedGene> ranking = readRanking(request.path("ranking"));
+        List<RankedGene> ranking = readRanking(
+                request.path("ranking"), request.string("duplicatePolicy"));
         if (ranking.isEmpty()) {
             throw new OpenToolException("EMPTY_RANKING", "No ranked genes were found.", "Check the ranking file.");
         }
         Map<String, Set<String>> geneSets = readGeneSets(request.path("geneSets"));
         Map<String, int[]> hitPositions = new LinkedHashMap<>();
-        Map<String, double[]> setWeights = new LinkedHashMap<>();
         for (var entry : geneSets.entrySet()) {
             List<Integer> positions = new ArrayList<>();
             for (int index = 0; index < ranking.size(); index++) {
@@ -94,12 +102,8 @@ public final class GseaTool extends AbstractOpenTool {
             }
             if (positions.size() >= request.integer("minSetSize")
                     && positions.size() <= request.integer("maxSetSize")) {
-                int[] indexes = positions.stream().mapToInt(Integer::intValue).toArray();
-                hitPositions.put(entry.getKey(), indexes);
-                double[] weights = Arrays.stream(indexes)
-                        .mapToDouble(index -> Math.abs(ranking.get(index).score()))
-                        .toArray();
-                setWeights.put(entry.getKey(), weights);
+                hitPositions.put(entry.getKey(),
+                        positions.stream().mapToInt(Integer::intValue).toArray());
             }
         }
         if (hitPositions.isEmpty()) {
@@ -110,12 +114,13 @@ public final class GseaTool extends AbstractOpenTool {
             );
         }
         double[] scores = ranking.stream().mapToDouble(RankedGene::score).toArray();
+        String weightMode = request.string("weight");
         int permutations = request.integer("permutations");
         Random random = new Random(request.integer("seed"));
         Map<String, Double> observed = new LinkedHashMap<>();
         Map<String, List<Double>> nullScores = new LinkedHashMap<>();
         for (String setId : hitPositions.keySet()) {
-            observed.put(setId, enrichmentScore(hitPositions.get(setId), setWeights.get(setId), scores, ranking.size()));
+            observed.put(setId, enrichmentScore(hitPositions.get(setId), scores, ranking.size(), weightMode));
             nullScores.put(setId, new ArrayList<>(permutations));
         }
         double[] shuffled = new double[scores.length];
@@ -130,7 +135,7 @@ public final class GseaTool extends AbstractOpenTool {
             }
             for (String setId : hitPositions.keySet()) {
                 nullScores.get(setId).add(enrichmentScore(
-                        hitPositions.get(setId), setWeights.get(setId), shuffled, ranking.size()));
+                        hitPositions.get(setId), shuffled, ranking.size(), weightMode));
             }
         }
         List<Result> results = new ArrayList<>();
@@ -169,8 +174,8 @@ public final class GseaTool extends AbstractOpenTool {
         );
     }
 
-    private static List<RankedGene> readRanking(Path path) throws Exception {
-        List<RankedGene> ranking = new ArrayList<>();
+    private static List<RankedGene> readRanking(Path path, String duplicatePolicy) throws Exception {
+        Map<String, List<Double>> collected = new LinkedHashMap<>();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(
                 Compression.open(path), StandardCharsets.UTF_8))) {
             String line;
@@ -189,7 +194,7 @@ public final class GseaTool extends AbstractOpenTool {
                         continue;
                     }
                     first = false;
-                    ranking.add(new RankedGene(fields[0], score));
+                    collected.computeIfAbsent(fields[0], ignored -> new ArrayList<>()).add(score);
                 } catch (NumberFormatException ex) {
                     if (first) {
                         first = false;
@@ -199,6 +204,16 @@ public final class GseaTool extends AbstractOpenTool {
                             "Non-numeric ranking score: " + fields[1], "Use numeric scores.");
                 }
             }
+        }
+        List<RankedGene> ranking = new ArrayList<>();
+        for (var entry : collected.entrySet()) {
+            List<Double> values = entry.getValue();
+            double score = switch (duplicatePolicy) {
+                case "MEAN" -> values.stream().mapToDouble(Double::doubleValue).average().orElse(0);
+                case "LAST" -> values.getLast();
+                default -> values.stream().mapToDouble(Double::doubleValue).max().orElse(0);
+            };
+            ranking.add(new RankedGene(entry.getKey(), score));
         }
         ranking.sort(Comparator.comparingDouble(RankedGene::score).reversed());
         return ranking;
@@ -227,18 +242,24 @@ public final class GseaTool extends AbstractOpenTool {
         return sets;
     }
 
-    private static double enrichmentScore(int[] positions, double[] weights, double[] scores, int total) {
+    private static double enrichmentScore(
+            int[] positions,
+            double[] scores,
+            int total,
+            String weightMode
+    ) {
         int hits = positions.length;
         if (hits == 0 || hits == total) return 0;
         double hitWeight = 0;
-        for (int index : positions) hitWeight += Math.abs(scores[index]);
-        if (hitWeight == 0) hitWeight = hits;
+        for (int index : positions) hitWeight += weightFor(scores[index], weightMode);
+        boolean zeroWeight = hitWeight == 0;
+        if (zeroWeight) hitWeight = hits;
         double running = 0;
         double maximum = Double.NEGATIVE_INFINITY;
         double minimum = Double.POSITIVE_INFINITY;
         for (int index = 0; index < hits; index++) {
             int position = positions[index];
-            running += (hitWeight == hits ? 1.0 : Math.abs(scores[position])) / hitWeight;
+            running += (zeroWeight ? 1.0 : weightFor(scores[position], weightMode)) / hitWeight;
             running -= (double) (position - index) / (total - hits);
             maximum = Math.max(maximum, running);
             minimum = Math.min(minimum, running);
@@ -247,6 +268,14 @@ public final class GseaTool extends AbstractOpenTool {
             minimum = Math.min(minimum, afterGap);
         }
         return Math.abs(maximum) >= Math.abs(minimum) ? maximum : minimum;
+    }
+
+    private static double weightFor(double score, String mode) {
+        return switch (mode) {
+            case "CLASSIC" -> 1;
+            case "WEIGHTED_P2" -> score * score;
+            default -> Math.abs(score);
+        };
     }
 
     private static void applyBh(List<Result> results) {

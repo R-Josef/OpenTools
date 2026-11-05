@@ -32,6 +32,8 @@ It performs one explicit, reproducible analysis step. The run record preserves n
 | --- | --- | --- | --- |
 | `annotations` Gene-GO annotation | no | empty | Select a complete real input file; do not submit the placeholder example path. Two columns: gene and semicolon/comma-separated GO terms. |
 | `resourceId` GO resource pack | no | empty string | Leave optional values blank first; when provided, keep IDs, column names, or syntax consistent with the input. Optional pack id from resource.manage; its annotation table replaces the file input. |
+| `hierarchy` GO hierarchy | no | empty | Select a complete real input file; do not submit the placeholder example path. Optional OBO or term/parent table; required for hierarchy propagation without a resource pack. |
+| `propagate` Propagate GO ancestors | no | false | Start with the default and change it only after understanding the explanation. Add all GO ancestors to each gene annotation before enrichment. |
 | `genes` Target genes | yes | empty | Select a complete real input file; do not submit the placeholder example path. One gene ID per line. |
 | `background` Background genes | no | empty | Select a complete real input file; do not submit the placeholder example path. Optional one-gene-per-line background list. |
 | `pruneOverlap` Prune redundant terms | no | 0.0 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Jaccard threshold for overlapping hit sets; 0 disables pruning. |

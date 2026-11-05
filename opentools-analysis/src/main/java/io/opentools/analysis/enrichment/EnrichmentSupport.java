@@ -93,6 +93,73 @@ final class EnrichmentSupport {
         return kept;
     }
 
+    static Map<String, Set<String>> readParents(Path path) throws Exception {
+        Map<String, Set<String>> parents = new LinkedHashMap<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                Compression.open(path), StandardCharsets.UTF_8))) {
+            String line;
+            String current = null;
+            boolean obo = false;
+            while ((line = reader.readLine()) != null) {
+                String trimmed = line.trim();
+                if (trimmed.equals("[Term]")) {
+                    obo = true;
+                    current = null;
+                } else if (trimmed.startsWith("[")) {
+                    current = null;
+                } else if (obo && trimmed.startsWith("id:") && current == null) {
+                    current = trimmed.substring(3).trim();
+                    parents.computeIfAbsent(current, ignored -> new LinkedHashSet<>());
+                } else if (obo && current != null && trimmed.startsWith("is_a:")) {
+                    String parent = trimmed.substring(5).trim().split("\\s+", 2)[0];
+                    if (!parent.isBlank() && !parent.equals(current)) {
+                        parents.get(current).add(parent);
+                        parents.computeIfAbsent(parent, ignored -> new LinkedHashSet<>());
+                    }
+                } else if (!obo && !trimmed.isEmpty() && !trimmed.startsWith("#")) {
+                    String[] fields = trimmed.split("\\t", -1);
+                    if (fields.length >= 2 && !fields[0].equalsIgnoreCase("term")) {
+                        String child = fields[0].trim();
+                        String parent = fields[1].trim();
+                        if (!child.isEmpty()) {
+                            parents.computeIfAbsent(child, ignored -> new LinkedHashSet<>());
+                            if (!parent.isEmpty() && !parent.equals(".") && !parent.equals(child)) {
+                                parents.get(child).add(parent);
+                                parents.computeIfAbsent(parent, ignored -> new LinkedHashSet<>());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (parents.isEmpty()) {
+            throw new OpenToolException("GO_HIERARCHY_EMPTY",
+                    "No GO parent relationships were found.",
+                    "Provide an OBO file or a two-column term/parent table.");
+        }
+        return parents;
+    }
+
+    static Map<String, Set<String>> propagate(
+            Map<String, Set<String>> annotations,
+            Map<String, Set<String>> parents
+    ) {
+        Map<String, Set<String>> expanded = new LinkedHashMap<>();
+        for (var entry : annotations.entrySet()) {
+            Set<String> terms = new LinkedHashSet<>(entry.getValue());
+            java.util.ArrayDeque<String> queue = new java.util.ArrayDeque<>(entry.getValue());
+            while (!queue.isEmpty()) {
+                for (String parent : parents.getOrDefault(queue.removeFirst(), Set.of())) {
+                    if (terms.add(parent)) {
+                        queue.addLast(parent);
+                    }
+                }
+            }
+            expanded.put(entry.getKey(), terms);
+        }
+        return expanded;
+    }
+
     static void writeResults(
             BufferedWriter writer,
             List<EnrichmentEngine.Result> results,
