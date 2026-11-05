@@ -63,6 +63,10 @@ public final class SangerAssembleTool extends AbstractOpenTool {
                             "Optional FASTA of primer or vector sequences to trim from either read end."),
                     ToolParameter.integer("minAdapterMatch", "Minimum primer match",
                             "Minimum matching bases required for primer/vector trimming.", 12, 6, 100),
+                    ToolParameter.bool("trimVectorEnds", "Trim vector ends with reference",
+                            "Use the reference alignment to remove unaligned contig ends and write insert.fa.", true),
+                    ToolParameter.integer("minVectorOverhang", "Minimum aligned span",
+                            "Minimum aligned span retained in the vector-trimmed insert.", 20, 5, 10_000),
                     ToolParameter.decimal("consensusThreshold", "Consensus threshold",
                             "Minimum quality-weighted base fraction for a confident call.", 0.60, 0.5, 1.0),
                     ToolParameter.decimal("heterozygousThreshold", "Heterozygous threshold",
@@ -171,6 +175,10 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         }
 
         writeFasta(outputs.get("assembly"), assembly.contigs());
+        List<Contig> insertContigs = trimVectorEnds(
+                assembly.contigs(), reference, request.bool("trimVectorEnds"),
+                request.integer("minVectorOverhang"));
+        writeFasta(outputs.get("insert"), insertContigs);
         writeReadTable(outputs.get("reads"), reads, anchor);
         writeTrimming(outputs.get("trimming"), reads);
         if (reference != null && anchor != null) {
@@ -186,6 +194,7 @@ public final class SangerAssembleTool extends AbstractOpenTool {
 
         List<OutputArtifact> artifacts = new ArrayList<>();
         artifacts.add(new OutputArtifact(outputs.get("assembly"), "Assembled contigs", "text/x-fasta"));
+        artifacts.add(new OutputArtifact(outputs.get("insert"), "Vector-trimmed insert", "text/x-fasta"));
         artifacts.add(new OutputArtifact(outputs.get("reads"), "Read and placement summary",
                 "text/tab-separated-values"));
         artifacts.add(new OutputArtifact(outputs.get("trimming"), "Primer and vector trimming",
@@ -237,6 +246,7 @@ public final class SangerAssembleTool extends AbstractOpenTool {
     private static Map<String, Path> outputNames(Path directory) {
         Map<String, Path> names = new LinkedHashMap<>();
         names.put("assembly", directory.resolve("assembly.fa"));
+        names.put("insert", directory.resolve("insert.fa"));
         names.put("reads", directory.resolve("reads.tsv"));
         names.put("trimming", directory.resolve("trimming.tsv"));
         names.put("corrected", directory.resolve("corrected.fa"));
@@ -546,6 +556,29 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         return result.toString();
     }
 
+    private static List<Contig> trimVectorEnds(
+            List<Contig> contigs,
+            FastaRecord reference,
+            boolean enabled,
+            int minimumOverhang
+    ) {
+        if (!enabled || reference == null) return contigs;
+        List<Contig> result = new ArrayList<>();
+        for (Contig contig : contigs) {
+            SangerAligner.Alignment alignment = SangerAligner.best(
+                    reference.sequence(), contig.sequence());
+            if (alignment == null || alignment.readEnd() - alignment.readStart() < minimumOverhang) {
+                result.add(contig);
+                continue;
+            }
+            String oriented = alignment.orientedRead();
+            String insert = oriented.substring(alignment.readStart(), alignment.readEnd());
+            if (alignment.reverse()) insert = reverseComplement(insert);
+            result.add(contig.withSequence(insert));
+        }
+        return result;
+    }
+
     private static void writeFasta(Path path, List<Contig> contigs) throws Exception {
         StringBuilder text = new StringBuilder();
         for (int index = 0; index < contigs.size(); index++) {
@@ -760,6 +793,16 @@ public final class SangerAssembleTool extends AbstractOpenTool {
         int[] coverage() { return coverage; }
         double[] qualities() { return qualities; }
         int reads() { return reads; }
+
+        Contig withSequence(String value) {
+            Contig trimmed = new Contig();
+            trimmed.sequence = value;
+            trimmed.coverage = new int[value.length()];
+            trimmed.qualities = new double[value.length()];
+            trimmed.low = new boolean[value.length()];
+            trimmed.reads = reads;
+            return trimmed;
+        }
 
         void replace(String sequence, int[] coverage, double[] qualities, boolean[] low, int origin) {
             this.sequence = sequence;

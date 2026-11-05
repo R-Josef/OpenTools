@@ -41,6 +41,7 @@ final class SangerAssembleToolTest {
         assertTrue(Files.isRegularFile(output.resolve("corrected.fa")));
         String corrected = Files.readString(output.resolve("corrected.fa"));
         assertTrue(corrected.replace("\n", "").contains(reference));
+        assertEquals(reference, fastaSequence(output.resolve("insert.fa")));
         String variants = Files.readString(output.resolve("variants.tsv"));
         assertEquals(1, variants.lines().count());
         assertTrue(Files.readString(output.resolve("provenance.bed")).contains("READ_CONSENSUS"));
@@ -143,6 +144,8 @@ final class SangerAssembleToolTest {
         parameters.put("minHeterozygousCoverage", 2);
         parameters.put("trimAdapters", true);
         parameters.put("minAdapterMatch", 12);
+        parameters.put("trimVectorEnds", true);
+        parameters.put("minVectorOverhang", 20);
         parameters.put("outputDirectory", output.toString());
         parameters.put("overwrite", true);
         ToolExecutionContext context = new ToolExecutionContext(

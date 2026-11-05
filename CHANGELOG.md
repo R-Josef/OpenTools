@@ -58,8 +58,9 @@
   channels, basecalls, quality shading, per-read selection, and zoom/fit
   controls.
 - `sanger.assemble` trims common sequencing primers and optional user-supplied
-  primer/vector FASTA sequences from both read ends and records the evidence in
-  `trimming.tsv`.
+  primer/vector FASTA sequences from both read ends, records the evidence in
+  `trimming.tsv`, and can use the reference alignment to write a vector-trimmed
+  `insert.fa`.
 - `bed.blocks`: parse BED12 blockCount/blockSizes/blockStarts, validate block
   coordinates, and export block and intron intervals.
 - `gxf.edit`: edit GFF3/GTF source, type, strand, and attributes while preserving

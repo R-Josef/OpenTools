@@ -20,6 +20,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.nio.file.Path;
@@ -107,7 +109,10 @@ final class Ab1ViewerPanel extends JPanel {
     int readCount() { return model.size(); }
     int selectedRead() { return list.getSelectedIndex(); }
     int baseCount() { return chromatogram.trace == null ? 0 : chromatogram.trace.sequence().length(); }
+    int selectedBase() { return chromatogram.selectedBase(); }
     double zoomLevel() { return chromatogram.zoom(); }
+
+    void selectBase(int index) { chromatogram.selectBase(index); }
 
     void zoomIn() { zoomBy(1.5); }
     void zoomOut() { zoomBy(1.0 / 1.5); }
@@ -120,6 +125,15 @@ final class Ab1ViewerPanel extends JPanel {
     private void show(ReadItem item) {
         if (item == null) return;
         chromatogram.setTrace(item.trace());
+        chromatogram.setSelectionListener(index -> {
+            if (index < 0 || index >= item.trace().sequence().length()) return;
+            int quality = index < item.trace().qualities().length ? item.trace().qualities()[index] : 0;
+            int position = index < item.trace().peakPositions().length
+                    ? item.trace().peakPositions()[index] : index + 1;
+            summary.setText(item.name() + " · base " + (index + 1) + " "
+                    + item.trace().sequence().charAt(index) + " · Q" + quality
+                    + " · peak " + position);
+        });
         summary.setText(item.name() + " · " + item.trace().sequence().length() + " bases · "
                 + item.trace().qualities().length + " quality values");
         updateZoomLabel();
@@ -159,16 +173,59 @@ final class Ab1ViewerPanel extends JPanel {
         private Ab1Reader.Trace trace;
         private int baseWidth = 8;
         private double zoom = 1.0;
+        private int selectedBase = -1;
+        private java.util.function.IntConsumer selectionListener = ignored -> { };
 
         Chromatogram() {
             setBackground(Color.WHITE);
             setPreferredSize(new Dimension(900, 300));
+            addMouseListener(new MouseAdapter() {
+                @Override public void mouseClicked(MouseEvent event) {
+                    selectBase(baseAt(event.getX()));
+                }
+            });
+        }
+
+        int selectedBase() { return selectedBase; }
+        void setSelectionListener(java.util.function.IntConsumer listener) {
+            selectionListener = listener == null ? ignored -> { } : listener;
+        }
+
+        void selectBase(int index) {
+            if (trace == null || index < 0 || index >= trace.sequence().length()) return;
+            selectedBase = index;
+            selectionListener.accept(index);
+            repaint();
+        }
+
+        private int baseAt(int x) {
+            if (trace == null || trace.sequence().isEmpty()) return -1;
+            int width = Math.max(120, getWidth() - 24);
+            int samples = 0;
+            for (int[] channel : trace.channels()) samples = Math.max(samples, channel.length);
+            if (samples == 0) samples = Math.max(1, trace.sequence().length());
+            int peaks = trace.peakPositions().length;
+            int best = -1;
+            int bestDistance = Integer.MAX_VALUE;
+            for (int index = 0; index < trace.sequence().length(); index++) {
+                int position = peaks > index ? trace.peakPositions()[index]
+                        : (int) Math.round(index * (samples - 1.0)
+                                / Math.max(1, trace.sequence().length() - 1));
+                int baseX = 12 + (int) Math.round(width * position / (double) Math.max(1, samples - 1));
+                int distance = Math.abs(baseX - x);
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    best = index;
+                }
+            }
+            return best;
         }
 
         void setTrace(Ab1Reader.Trace trace) {
             this.trace = trace;
             baseWidth = trace.sequence().length() > 900 ? 6 : 8;
             zoom = 1.0;
+            selectedBase = -1;
             resizeForZoom();
         }
 
@@ -216,6 +273,15 @@ final class Ab1ViewerPanel extends JPanel {
                 }
                 g.setColor(new Color(232, 234, 236));
                 g.drawLine(12, height + 10, 12 + width, height + 10);
+                if (selectedBase >= 0 && selectedBase < trace.sequence().length()) {
+                    int position = trace.peakPositions().length > selectedBase
+                            ? trace.peakPositions()[selectedBase]
+                            : (int) Math.round(selectedBase * (samples - 1.0)
+                                    / Math.max(1, trace.sequence().length() - 1));
+                    int x = 12 + (int) Math.round(width * position / (double) Math.max(1, samples - 1));
+                    g.setColor(new Color(255, 214, 120, 90));
+                    g.fillRect(Math.max(12, x - 5), 8, 11, getHeight() - 16);
+                }
                 for (int channel = 0; channel < channels; channel++) {
                     int[] values = trace.channels()[channel];
                     if (values.length == 0) continue;
@@ -242,6 +308,12 @@ final class Ab1ViewerPanel extends JPanel {
                     char base = trace.sequence().charAt(index);
                     g.setColor(channelColor("ACGT".indexOf(base)));
                     g.drawString(String.valueOf(base), x - 3, height + 24);
+                    if (index == selectedBase) {
+                        g.setColor(new Color(30, 80, 160));
+                        g.fillRoundRect(x - 5, height + 15, 10, 12, 4, 4);
+                        g.setColor(Color.WHITE);
+                        g.drawString(String.valueOf(base), x - 4, height + 24);
+                    }
                     int quality = index < trace.qualities().length ? trace.qualities()[index] : 0;
                     g.setColor(quality < 20 ? new Color(190, 80, 50) : new Color(150, 160, 165));
                     g.fillRect(x - 1, height + 29, 3, Math.max(1, Math.min(12, quality / 5)));
