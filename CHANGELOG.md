@@ -11,6 +11,9 @@
   that tool on the Jobs page, or reports when no job exists.
 - The Jobs page adds **View result** next to Refresh, opening the selected job
   on the Results page.
+- Workflow-level actions and step-editing actions use separate toolbar groups;
+  step ID, tool ID, and dependency fields stay single-line in the step dialog;
+  the Projects recent-project selector keeps a single-line height.
 - `workflow watch` and `workflow schedule` provide opt-in directory
   triggers and fixed-interval runs; watched files substitute `${watch.file}`
   and `${watch.name}` in the workflow JSON.

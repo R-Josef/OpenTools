@@ -270,12 +270,13 @@ final class MainFrame extends JFrame {
         title.setFont(title.getFont().deriveFont(title.getFont().getSize2D() + 12f));
         content.add(title, BorderLayout.NORTH);
 
-        JPanel projectDetails = new JPanel(new GridLayout(2, 1, 0, 12));
-        projectDetails.add(projectInfo);
+        JPanel projectDetails = new JPanel(new BorderLayout(0, 12));
+        projectDetails.add(projectInfo, BorderLayout.NORTH);
         JPanel recent = new JPanel(new BorderLayout(8, 0));
         recent.add(new JLabel(t("projects.recent", "Recent projects")), BorderLayout.WEST);
         recentProjects.setPreferredSize(new Dimension(520, 30));
         recentProjects.setMinimumSize(new Dimension(240, 30));
+        recentProjects.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         UiAccessibility.name(recentProjects, t("projects.recent", "Recent projects"));
         recent.add(recentProjects, BorderLayout.CENTER);
         JButton openRecent = new JButton(t("projects.open_recent", "Open recent"));
@@ -286,7 +287,7 @@ final class MainFrame extends JFrame {
             }
         });
         recent.add(openRecent, BorderLayout.EAST);
-        projectDetails.add(recent);
+        projectDetails.add(recent, BorderLayout.SOUTH);
         content.add(projectDetails, BorderLayout.CENTER);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));

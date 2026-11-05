@@ -34,6 +34,9 @@ import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
@@ -107,7 +110,11 @@ final class WorkflowPanel extends JPanel {
         heading.add(status, BorderLayout.EAST);
         add(heading, BorderLayout.NORTH);
 
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        JPanel toolbar = new JPanel(new GridLayout(2, 1, 0, 4));
+        JPanel workflowActions = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        JPanel stepActions = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        stepActions.setBorder(BorderFactory.createTitledBorder(
+                session.language().text("workflows.step_tools", "Step editing")));
         JButton create = new JButton(session.language().text("workflows.new", "New"));
         JButton save = new JButton(session.language().text("workflows.save", "Save"));
         JButton delete = new JButton(session.language().text("workflows.delete", "Delete"));
@@ -118,15 +125,17 @@ final class WorkflowPanel extends JPanel {
         deleteStep.setText(session.language().text("workflows.delete_step", "Delete step"));
         editStep.setEnabled(false);
         deleteStep.setEnabled(false);
-        toolbar.add(create);
-        toolbar.add(save);
-        toolbar.add(delete);
-        toolbar.add(validate);
-        toolbar.add(run);
-        toolbar.add(addStep);
-        toolbar.add(editStep);
-        toolbar.add(deleteStep);
-        toolbar.add(selectedStep);
+        workflowActions.add(create);
+        workflowActions.add(save);
+        workflowActions.add(delete);
+        workflowActions.add(validate);
+        workflowActions.add(run);
+        stepActions.add(addStep);
+        stepActions.add(editStep);
+        stepActions.add(deleteStep);
+        stepActions.add(selectedStep);
+        toolbar.add(workflowActions);
+        toolbar.add(stepActions);
 
         saved.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         saved.setBorder(BorderFactory.createTitledBorder(session.language().text("workflows.saved", "Saved workflows")));
@@ -341,15 +350,30 @@ final class WorkflowPanel extends JPanel {
         JTextArea parameters = new JTextArea(JSON.writerWithDefaultPrettyPrinter()
                 .writeValueAsString(initial.parameters()), 7, 34);
         parameters.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-        JPanel form = new JPanel(new GridLayout(0, 2, 8, 6));
-        form.add(new JLabel(session.language().text("workflows.step.id", "Step ID")));
-        form.add(id);
-        form.add(new JLabel(session.language().text("workflows.step.tool", "Tool ID")));
-        form.add(toolId);
-        form.add(new JLabel(session.language().text("workflows.step.depends", "Depends on")));
-        form.add(depends);
-        form.add(new JLabel(session.language().text("workflows.step.parameters", "Parameters JSON")));
-        form.add(new JScrollPane(parameters));
+        JPanel textFields = new JPanel(new GridBagLayout());
+        GridBagConstraints labelConstraints = new GridBagConstraints();
+        labelConstraints.gridx = 0;
+        labelConstraints.anchor = GridBagConstraints.WEST;
+        labelConstraints.insets = new Insets(3, 0, 3, 8);
+        GridBagConstraints fieldConstraints = new GridBagConstraints();
+        fieldConstraints.gridx = 1;
+        fieldConstraints.weightx = 1;
+        fieldConstraints.fill = GridBagConstraints.HORIZONTAL;
+        fieldConstraints.insets = new Insets(3, 0, 3, 0);
+        addDialogRow(textFields, labelConstraints, fieldConstraints,
+                new JLabel(session.language().text("workflows.step.id", "Step ID")), id, 0);
+        addDialogRow(textFields, labelConstraints, fieldConstraints,
+                new JLabel(session.language().text("workflows.step.tool", "Tool ID")), toolId, 1);
+        addDialogRow(textFields, labelConstraints, fieldConstraints,
+                new JLabel(session.language().text("workflows.step.depends", "Depends on")), depends, 2);
+        JPanel parameterPanel = new JPanel(new BorderLayout(0, 4));
+        parameterPanel.add(new JLabel(session.language().text(
+                "workflows.step.parameters", "Parameters JSON")), BorderLayout.NORTH);
+        parameterPanel.add(new JScrollPane(parameters), BorderLayout.CENTER);
+        JPanel form = new JPanel(new BorderLayout(0, 8));
+        form.add(textFields, BorderLayout.NORTH);
+        form.add(parameterPanel, BorderLayout.CENTER);
+        form.setPreferredSize(new Dimension(560, 330));
         int choice = JOptionPane.showConfirmDialog(this, form,
                 session.language().text("workflows.step.dialog", "Workflow step"),
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
@@ -369,6 +393,20 @@ final class WorkflowPanel extends JPanel {
             throw new IllegalArgumentException("A step cannot depend on itself.");
         }
         return new Step(stepId, stepTool, values, dependencies);
+    }
+
+    private static void addDialogRow(
+            JPanel panel,
+            GridBagConstraints labelConstraints,
+            GridBagConstraints fieldConstraints,
+            JLabel label,
+            JTextField field,
+            int row
+    ) {
+        labelConstraints.gridy = row;
+        fieldConstraints.gridy = row;
+        panel.add(label, labelConstraints);
+        panel.add(field, fieldConstraints);
     }
 
     private void applySpec(WorkflowSpec spec) throws Exception {
