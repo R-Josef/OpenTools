@@ -70,7 +70,7 @@ opentools run gxf.merge-split --param inputs=C:\data\input1.txt
 ## 相关下一步
 
 - [检查基因组与注释匹配](tool:gxf.genome.match)
-- [BED 转 GFF3](tool:bed.to-gff)
 - [基因密度滑窗](tool:gxf.gene-density)
+- [BED12 区块分析](tool:bed.blocks)
 
 [返回文档首页](opentools-doc:README.md)

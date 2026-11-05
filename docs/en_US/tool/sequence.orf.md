@@ -76,6 +76,6 @@ Replace placeholder paths with real workspace files. Keep parameter IDs unchange
 
 - [Extract FASTA by ID](tool:fasta.extract)
 - [FASTA Statistics](tool:fasta.stats)
-- [Split FASTA File](tool:fasta.split)
+- [Filter FASTA](tool:fasta.filter)
 
 [Back to documentation home](opentools-doc:README.md)

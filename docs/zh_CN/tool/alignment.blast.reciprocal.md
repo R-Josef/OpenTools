@@ -57,7 +57,7 @@ opentools run alignment.blast.reciprocal --param forward=C:\data\forward.tsv --p
 ## 相关下一步
 
 - [trimAl 比对修剪](tool:alignment.trim)
-- [DIAMOND 蛋白比对](tool:alignment.diamond)
-- [本地 BLAST](tool:alignment.blast.local)
+- [BLAST 对齐查看数据](tool:alignment.blast.alignments)
+- [HMMER hmmsearch](tool:alignment.hmmer.hmmsearch)
 
 [返回文档首页](opentools-doc:README.md)

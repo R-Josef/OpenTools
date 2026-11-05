@@ -70,7 +70,7 @@ opentools run table.select-columns --param input=C:\data\input.tsv --param colum
 ## 相关下一步
 
 - [预览分隔文本表格](tool:table.preview)
-- [表格转置](tool:table.transpose)
-- [表格去重](tool:table.deduplicate)
+- [表格透视](tool:table.pivot)
+- [表格文本替换](tool:table.replace)
 
 [返回文档首页](opentools-doc:README.md)

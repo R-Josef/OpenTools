@@ -79,7 +79,7 @@ opentools run fasta.extract --param input=C:\data\input.fasta --param ids=seq1
 ## 相关下一步
 
 - [FASTA 统计](tool:fasta.stats)
-- [拆分 FASTA 文件](tool:fasta.split)
-- [提取 FASTA 子序列](tool:fasta.subsequence)
+- [ORF 预测](tool:sequence.orf)
+- [过滤 FASTA](tool:fasta.filter)
 
 [返回文档首页](opentools-doc:README.md)

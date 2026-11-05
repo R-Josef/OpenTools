@@ -523,8 +523,10 @@ public final class TableTools {
                         ToolParameter.string("columnColumn", "Column column", "Pivot column key.", ""),
                         ToolParameter.string("valueColumn", "Value column", "Numeric value column.", ""),
                         new ToolParameter("aggregation", "Aggregation", "Duplicate-cell aggregation.", ParameterType.ENUM,
-                                false, "SUM", List.of("SUM", "MEAN", "COUNT", "MIN", "MAX"),
+                                false, "SUM", List.of("SUM", "MEAN", "COUNT", "MIN", "MAX", "LIST", "COUNT_DISTINCT"),
                                 null, null, false, null),
+                        ToolParameter.string("listSeparator", "List separator",
+                                "Separator for LIST aggregation.", "|"),
                         ToolParameter.integer("maxCells", "Maximum output cells",
                                 "Safety bound for distinct pivot cells held in memory.",
                                 2_000_000, 1, 100_000_000)));
@@ -543,21 +545,26 @@ public final class TableTools {
                 int rowCol = columnIndex(headers, request.string("rowColumn"));
                 int colCol = columnIndex(headers, request.string("columnColumn"));
                 int valueCol = columnIndex(headers, request.string("valueColumn"));
+                String aggregation = request.string("aggregation");
+                boolean textAggregation = "LIST".equals(aggregation) || "COUNT_DISTINCT".equals(aggregation);
                 List<String> row;
                 while ((row = reader.nextRow()) != null) {
                     context.cancellationToken().throwIfCancelled();
                     inputRows++;
                     String rowKey = field(row, rowCol);
                     String columnKey = field(row, colCol);
-                    double value;
-                    try {
-                        value = Double.parseDouble(field(row, valueCol));
-                    } catch (NumberFormatException ex) {
-                        throw new OpenToolException(
-                                "PIVOT_VALUE_INVALID",
-                                "Non-numeric pivot value: " + field(row, valueCol),
-                                "Choose a numeric value column."
-                        );
+                    String rawValue = field(row, valueCol);
+                    double value = 0;
+                    if (!textAggregation) {
+                        try {
+                            value = Double.parseDouble(rawValue);
+                        } catch (NumberFormatException ex) {
+                            throw new OpenToolException(
+                                    "PIVOT_VALUE_INVALID",
+                                    "Non-numeric pivot value: " + rawValue,
+                                    "Choose a numeric value column, or use LIST/COUNT_DISTINCT."
+                            );
+                        }
                     }
                     Map<String, Aggregate> rowValues = values.computeIfAbsent(
                             rowKey, ignored -> new LinkedHashMap<>());
@@ -575,7 +582,7 @@ public final class TableTools {
                         pivotColumns.add(columnKey);
                         cells++;
                     }
-                    aggregate.add(value);
+                    aggregate.add(rawValue, value);
                 }
             }
             List<String> outputColumns = new ArrayList<>();
@@ -588,7 +595,7 @@ public final class TableTools {
                 for (String column : pivotColumns) {
                     Aggregate aggregate = rowEntry.getValue().get(column);
                     output.add(aggregate == null ? ""
-                            : aggregate.format(request.string("aggregation")));
+                            : aggregate.format(request.string("aggregation"), request.string("listSeparator")));
                 }
                 outputRows.add(output);
             }
@@ -890,17 +897,27 @@ public final class TableTools {
         private double minimum = Double.POSITIVE_INFINITY;
         private double maximum = Double.NEGATIVE_INFINITY;
         private long count;
+        private final Set<String> distinct = new LinkedHashSet<>();
 
-        void add(double value) {
+        void add(String rawValue, double value) {
             sum += value;
             minimum = Math.min(minimum, value);
             maximum = Math.max(maximum, value);
             count++;
+            if (rawValue != null && !rawValue.isBlank()) {
+                distinct.add(rawValue);
+            }
         }
 
-        String format(String mode) {
+        String format(String mode, String separator) {
             if ("COUNT".equals(mode)) {
                 return Long.toString(count);
+            }
+            if ("COUNT_DISTINCT".equals(mode)) {
+                return Long.toString(distinct.size());
+            }
+            if ("LIST".equals(mode)) {
+                return String.join(separator == null || separator.isEmpty() ? "|" : separator, distinct);
             }
             double value = switch (mode) {
                 case "MEAN" -> sum / count;

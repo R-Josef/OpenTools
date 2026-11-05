@@ -51,7 +51,7 @@ the article wraps without overlapping controls.
 - both language roots contain every public guide and local asset;
 - every local Markdown link resolves;
 - unsafe links and remote images are rejected;
-- all 93 tools have generated pages;
+- all 101 tools have generated pages;
 - custom host and plugin tool guides are discovered without registration;
 - custom Markdown and generated reference sections render together;
 - navigation counts remain complete;

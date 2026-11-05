@@ -70,7 +70,7 @@ Replace placeholder paths with real workspace files. Keep parameter IDs unchange
 ## Related next steps
 
 - [Check Genome and Annotation Match](tool:gxf.genome.match)
-- [Convert BED to GFF3](tool:bed.to-gff)
 - [Gene Density Windows](tool:gxf.gene-density)
+- [BED12 Block Analysis](tool:bed.blocks)
 
 [Back to documentation home](opentools-doc:README.md)

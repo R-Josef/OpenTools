@@ -79,8 +79,8 @@ opentools run hts.bam.subset --param input=C:\data\input.bam --param regions=chr
 
 ## 相关下一步
 
+- [BAM 覆盖度](tool:hts.bam.coverage)
 - [VCF 统计](tool:hts.vcf.stats)
 - [过滤 VCF](tool:hts.vcf.filter)
-- [BAM 覆盖度](tool:hts.bam.coverage)
 
 [返回文档首页](opentools-doc:README.md)

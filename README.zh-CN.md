@@ -29,7 +29,7 @@ OpenTools 是一个本地优先、工具驱动的开源生物信息学工作台�
 
 ## 功能概览
 
-- 93 个内置工具，覆盖 FASTA/FASTQ、GFF3/GTF、BED、表格、本地与远程 BLAST、DIAMOND、
+- 101 个内置工具，覆盖 FASTA/FASTQ、GFF3/GTF、BED、表格、本地与远程 BLAST、DIAMOND、
   HMMER、多序列比对、系统发育、比较基因组、表达与富集、SAM/BAM/CRAM、
   VCF/BCF、统计图和交互式结果查看。
 - 项目、作业、输入哈希、参数、日志和结果清单统一保存，可重试并复制等价 CLI 命令。
@@ -44,7 +44,7 @@ OpenTools 是一个本地优先、工具驱动的开源生物信息学工作台�
   弦/带状概览。
 - GUI、CLI 和 MCP 共用 `ToolDescriptor`、参数校验、工具执行和结果模型。
 - 随包默认插件提供可交互的“金币跑酷”工具，结束后的数据会进入正式作业和结果链路。
-- 内置 Docs 页面离线渲染用户文档，并为全部 93 个工具动态生成参数、范围、
+- 内置 Docs 页面离线渲染用户文档，并为全部 101 个工具动态生成参数、范围、
   示例和失败边界说明。
 - Java 原生工具可直接运行；BLAST+、DIAMOND、HMMER、MEME/MAST、MUSCLE、
   trimAl、IQ-TREE 和 MCScanX 通过外部工具适配器调用。

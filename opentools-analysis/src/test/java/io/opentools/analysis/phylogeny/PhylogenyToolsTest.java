@@ -43,6 +43,23 @@ final class PhylogenyToolsTest {
         assertTrue(!newick.contains("B"));
     }
 
+    @Test
+    void exportsNodeMetadataWithSupportAndDistances() throws Exception {
+        Path tree = tempDir.resolve("metadata.nwk");
+        Files.writeString(tree, "((A:0.1,B:0.2)90:0.3,C:0.4)Root;\n");
+        Path output = tempDir.resolve("metadata.tsv");
+        ToolResult result = run("tree.newick.metadata", Map.of(
+                "input", tree,
+                "output", output
+        ));
+        assertEquals(5, result.metrics().get("nodes"));
+        String text = Files.readString(output);
+        assertTrue(text.contains("node_id\tparent_id"));
+        assertTrue(text.contains("\t90\t"));
+        assertTrue(text.contains("\tA\t"));
+        assertTrue(text.contains("\ttrue\t0\t1\t"));
+    }
+
     private ToolResult run(String id, Map<String, Object> supplied) throws Exception {
         ToolRegistry registry = new ToolRegistry();
         BuiltInAnalysis.register(registry);

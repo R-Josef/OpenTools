@@ -360,6 +360,43 @@ final class TableToolsTest {
         assertFalse(Files.exists(output));
     }
 
+    @Test
+    void pivotsTextValuesWithListAndDistinctCount() throws Exception {
+        Path input = tempDir.resolve("pivot-text.tsv");
+        Files.writeString(input, """
+                gene	sample	value
+                g1	S1	A
+                g1	S1	A
+                g1	S2	B
+                g2	S2	C
+                """);
+        Path list = tempDir.resolve("pivot-list.tsv");
+        run("table.pivot", Map.of(
+                "input", input,
+                "rowColumn", "gene",
+                "columnColumn", "sample",
+                "valueColumn", "value",
+                "aggregation", "LIST",
+                "output", list
+        ));
+        String text = Files.readString(list);
+        assertTrue(text.contains("g1\tA\tB"));
+        assertTrue(text.contains("g2\t\tC"));
+
+        Path distinct = tempDir.resolve("pivot-distinct.tsv");
+        run("table.pivot", Map.of(
+                "input", input,
+                "rowColumn", "gene",
+                "columnColumn", "sample",
+                "valueColumn", "value",
+                "aggregation", "COUNT_DISTINCT",
+                "output", distinct
+        ));
+        String counts = Files.readString(distinct);
+        assertTrue(counts.contains("g1\t1\t1"));
+        assertTrue(counts.contains("g2\t\t1"));
+    }
+
     private ToolResult run(String id, Map<String, Object> supplied) throws Exception {
         return run(id, supplied, new CancellationToken());
     }

@@ -1,6 +1,6 @@
 # KEGG 富集
 
-`kegg.enrich` · 富集 · v1.0.0
+`kegg.enrich` · 富集 · v1.1.0
 
 ## 一句话说明
 
@@ -16,7 +16,7 @@
 ## 输入准备
 
 - 声明格式：`Gene-pathway TSV`、`Gene list`
-- 必须提供：`annotations`, `genes`
+- 必须提供：`genes`
 - 确认输入格式、ID、表头和坐标约定与参数描述一致，并保留原始文件。
 
 ## 推荐运行步骤
@@ -30,10 +30,11 @@
 
 | 参数 | 必填 | 默认值 | 选择建议 |
 | --- | --- | --- | --- |
-| `annotations` 基因-通路注释 | 否 | 空 | 两列：基因和分号/逗号分隔的通路 ID。未选择 `resourceId` 对应 KEGG 资源包时必填。 |
-| `resourceId` KEGG 资源包 | 否 | 空 | 可选的 `resource.manage` 资源包 ID；其映射表替代文件输入。 |
+| `annotations` 基因-通路注释 | 否 | 空 | 选择真实且完整的输入文件，不用示例占位路径替代。 两列：基因和分号/逗号分隔的通路 ID。 |
+| `resourceId` KEGG 资源包 | 否 | 空字符串 | 可选项通常先留空；填写时保持 ID、列名或语法与输入一致。 可选的 resource.manage 资源包 ID；其映射表替代文件输入。 |
 | `genes` 目标基因 | 是 | 空 | 选择真实且完整的输入文件，不用示例占位路径替代。 每行一个基因 ID。 |
 | `background` 背景基因 | 否 | 空 | 选择真实且完整的输入文件，不用示例占位路径替代。 可选的背景基因列表。 |
+| `pruneOverlap` 去除冗余通路 | 否 | 0.0 | 先使用默认值；调整阈值时记录理由，并与输入数据规模或统计目标对应。 重叠命中基因集的 Jaccard 阈值；0 表示不剪枝。 |
 | `output` 输出 TSV | 否 | 空 | 留空时写入运行目录；自定义路径应位于工作区，并按格式填写扩展名。 留空时保存到本次运行目录。 |
 | `overwrite` 覆盖输出 | 否 | false | 默认 `false`；只有确认目标文件可替换时才设为 `true`。 允许替换已有输出。 |
 
@@ -46,7 +47,7 @@
 ## 最小运行示例
 
 ```powershell
-opentools run kegg.enrich --param annotations=C:\data\annotations.tsv --param genes=C:\data\genes.tsv
+opentools run kegg.enrich --param genes=C:\data\genes.tsv
 ```
 
 把占位路径替换为工作区中的真实文件。参数名必须保持原样，布尔值使用 `true` 或 `false`。

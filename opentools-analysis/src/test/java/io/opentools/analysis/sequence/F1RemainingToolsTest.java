@@ -259,6 +259,65 @@ final class F1RemainingToolsTest {
         assertEquals(Files.readString(filterSequential), Files.readString(filterParallel));
     }
 
+    @Test
+    void splitsFastqByRecordCountAndPreservesQuality() throws Exception {
+        Path input = tempDir.resolve("reads.fastq");
+        Files.writeString(input, """
+                @r1
+                ACGT
+                +
+                IIII
+                @r2
+                AC
+                +
+                ##
+                @r3
+                GGTT
+                +
+                JJJJ
+                @r4
+                T
+                +
+                I
+                @r5
+                C
+                +
+                I
+                """);
+        Path parts = tempDir.resolve("parts");
+        Files.createDirectories(parts);
+
+        ToolResult result = run("fastq.split", Map.of(
+                "input", input,
+                "recordsPerFile", 2,
+                "outputDirectory", parts
+        ));
+
+        assertEquals(5L, ((Number) result.metrics().get("records")).longValue());
+        assertEquals(3, ((Number) result.metrics().get("parts")).intValue());
+        assertEquals(java.util.List.of("r1", "r2"), readFastqIds(parts.resolve("part-0001.fastq")));
+        assertEquals(java.util.List.of("r3", "r4"), readFastqIds(parts.resolve("part-0002.fastq")));
+        assertEquals(java.util.List.of("r5"), readFastqIds(parts.resolve("part-0003.fastq")));
+        assertEquals("JJJJ", readFastqQuality(parts.resolve("part-0002.fastq"), 1));
+    }
+
+    private java.util.List<String> readFastqIds(Path path) throws Exception {
+        java.util.List<String> ids = new java.util.ArrayList<>();
+        try (FastqReader reader = new FastqReader(path)) {
+            FastqRecord record;
+            while ((record = reader.next()) != null) ids.add(record.id());
+        }
+        return ids;
+    }
+
+    private String readFastqQuality(Path path, int recordNumber) throws Exception {
+        try (FastqReader reader = new FastqReader(path)) {
+            FastqRecord record = null;
+            for (int index = 0; index < recordNumber; index++) record = reader.next();
+            return record == null ? null : record.quality();
+        }
+    }
+
     private ToolResult run(String id, Map<String, Object> supplied) throws Exception {
         ToolRegistry registry = new ToolRegistry();
         BuiltInAnalysis.register(registry);

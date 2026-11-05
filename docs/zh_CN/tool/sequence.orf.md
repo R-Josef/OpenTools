@@ -76,6 +76,6 @@ opentools run sequence.orf --param input=C:\data\input.fasta
 
 - [按 ID 提取 FASTA](tool:fasta.extract)
 - [FASTA 统计](tool:fasta.stats)
-- [拆分 FASTA 文件](tool:fasta.split)
+- [过滤 FASTA](tool:fasta.filter)
 
 [返回文档首页](opentools-doc:README.md)

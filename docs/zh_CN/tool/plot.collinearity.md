@@ -4,94 +4,82 @@
 
 ## 一句话说明
 
-把 MCScanX 共线性配对画成两个注释基因组之间的基因顺序点图。
+在两个注释基因组之间按基因顺序绘制 MCScanX 共线对。
 
-每个基因组按染色体和基因顺序展开，每个点代表一对共线基因；按配对数量给 block 着色，主要共线区块会自然突出。
+它完成一个明确、可复现的分析步骤。运行记录会保存规范化参数、输入文件哈希和日志；正式发表前仍应检查原始数据、参数和生物学解释。
 
 ## 什么时候使用
 
-- 查看 MCScanX / `mcscan.import` 的结果，或作为发表前的共线性检查图。
-- 判断某次共线性分析是否被单一 block 主导、是否有大量未匹配基因、是否缺少预期的染色体对。
-- 在两个基因组注释和基因 ID 已经核对后做快速比较。
+- 把已经校验的数值表转换为用于检查或发表的图像，同时保留可追踪的数据路径。
+- 需要对单一步骤保留参数、日志和输出，便于重复运行或排查问题时。
 
 ## 输入准备
 
 - 声明格式：`TSV`、`CSV`
-- 配对表需要 `block`、`gene_a`、`gene_b` 列（列名可配置）。
-- `annotationA`、`annotationB` 为 GFF3 或 GTF，需含 `gene` 特征；若只有 `mRNA`/`transcript` 也会使用。
-- 基因 ID 取自 GFF3 `ID`（去掉 `gene:` 前缀）或 GTF `gene_id`，必须与 `gene_a`/`gene_b` 一致。
+- 必须提供：`input`, `annotationA`, `annotationB`
+- 确认表头、数值列和缺失值符合参数要求；先检查输入表，再为图像解释负责。
 
-### 输入示意
-
-```text
-block	block_score	gene_a	gene_b	pair_index
-1	100	gA1	gB1	1
-1	100	gA2	gB2	2
-2	50	gA3	gB3	1
-```
+### 格式示意
 
 ```text
-##gff-version 3
-chr1	test	gene	1	100	.	+	.	ID=gene:gA1
-chr1	test	gene	200	300	.	+	.	ID=gene:gA2
+block	pair_index	query_gene	subject_gene
+block1	1	geneA1	geneB1
+block1	2	geneA2	geneB2
 ```
+
 
 ## 推荐运行步骤
 
-1. 用 `mcscan.import` 导入 MCScanX 结果并确认配对表。
-2. 确认注释中包含配对表用到的全部基因 ID。
-3. 用两个注释和配对表运行 `plot.collinearity`。
-4. 查看 plotted/unmapped 计数；未匹配通常意味着缺少基因特征或 ID 不一致。
-5. 保留配对表、两个注释和运行清单，便于复现。
+1. 先确认文件格式、序列名/列名和坐标约定一致。
+2. 使用默认值或下表中的推荐值运行校验，先排除路径、表头和类型错误。
+3. 提交任务后同时检查摘要、结果表和输出文件；不要只看“成功”状态。
+4. 如需复现，保留原始输入、参数、运行日志和输出哈希。
 
 ## 参数怎么选
 
 | 参数 | 必填 | 默认值 | 选择建议 |
 | --- | --- | --- | --- |
-| `input` 共线性表 | 是 | 空 | `mcscan.import` 的输出；需要 block 和基因列。 |
-| `annotationA` 基因组 A 注释 | 是 | 空 | 基因组 A 的 GFF3/GTF；ID 必须匹配 `gene_a`。 |
-| `annotationB` 基因组 B 注释 | 是 | 空 | 基因组 B 的 GFF3/GTF；ID 必须匹配 `gene_b`。 |
-| `blockColumn` Block 列 | 否 | block | 共线性 block 的列名。 |
-| `geneAColumn` 基因组 A 基因列 | 否 | gene_a | 基因组 A 的基因 ID 列。 |
-| `geneBColumn` 基因组 B 基因列 | 否 | gene_b | 基因组 B 的基因 ID 列。 |
-| `maxBlocks` 着色 block 数 | 否 | 20 | 按配对数量取前 N 个 block 着色，其余归为 “Other blocks”。 |
-| `title` 图标题 | 否 | Collinearity | 图表标题。 |
-| `subtitle` 副标题 | 否 | 空 | 可选副标题。 |
-| `valueLabel` 数值轴标签 | 否 | 空 | 可选的 Y 轴标签覆盖。 |
-| `width` 图像宽度 | 否 | 1200 | 导出宽度（像素）。 |
-| `height` 图像高度 | 否 | 800 | 导出高度（像素）。 |
-| `dpi` PDF DPI | 否 | 144 | PDF 导出分辨率。 |
-| `exportFormats` 导出格式 | 否 | PNG_SVG_PDF | 图形产物格式。 |
-| `output` 输出前缀 | 否 | 空 | 留空时保存到运行目录。 |
-| `overwrite` 覆盖输出 | 否 | false | 允许替换已有输出。 |
+| `input` 共线性表格 | 是 | 空 | 选择真实且完整的输入文件，不用示例占位路径替代。 mcscan.import 的输出。 |
+| `annotationA` 基因组 A 注释 | 是 | 空 | 选择真实且完整的输入文件，不用示例占位路径替代。 基因组 A 的 GFF3/GTF 基因；ID 必须匹配 gene_a。 |
+| `annotationB` 基因组 B 注释 | 是 | 空 | 选择真实且完整的输入文件，不用示例占位路径替代。 基因组 B 的 GFF3/GTF 基因；ID 必须匹配 gene_b。 |
+| `blockColumn` 区块列 | 否 | block | 可选项通常先留空；填写时保持 ID、列名或语法与输入一致。 区块标识列。 |
+| `geneAColumn` 基因组 A 基因列 | 否 | gene_a | 可选项通常先留空；填写时保持 ID、列名或语法与输入一致。 基因组 A 的基因 ID 列。 |
+| `geneBColumn` 基因组 B 基因列 | 否 | gene_b | 可选项通常先留空；填写时保持 ID、列名或语法与输入一致。 基因组 B 的基因 ID 列。 |
+| `maxBlocks` 着色区块数 | 否 | 20 | 先使用默认值；调整阈值时记录理由，并与输入数据规模或统计目标对应。 按配对数量取前 N 个区块着色，其余归为其他。 |
+| `title` 图标题 | 否 | Collinearity | 可选项通常先留空；填写时保持 ID、列名或语法与输入一致。 图形标题。 |
+| `subtitle` 图副标题 | 否 | 空字符串 | 可选项通常先留空；填写时保持 ID、列名或语法与输入一致。 可选副标题。 |
+| `valueLabel` 数值轴标签 | 否 | 空字符串 | 可选项通常先留空；填写时保持 ID、列名或语法与输入一致。 Y 轴数值标签。 |
+| `width` 图像宽度 | 否 | 1200 | 先使用默认值；调整阈值时记录理由，并与输入数据规模或统计目标对应。 导出宽度，单位像素。 |
+| `height` 图像高度 | 否 | 800 | 先使用默认值；调整阈值时记录理由，并与输入数据规模或统计目标对应。 导出高度，单位像素。 |
+| `dpi` PDF DPI | 否 | 144 | 先使用默认值；调整阈值时记录理由，并与输入数据规模或统计目标对应。 PDF 导出分辨率。 |
+| `exportFormats` 导出格式 | 否 | PNG_SVG_PDF | 优先使用默认模式；只有输入类型或分析目标明确要求时才切换。 图形产物格式。 |
+| `output` 输出前缀 | 否 | 空 | 留空时写入运行目录；自定义路径应位于工作区，并按格式填写扩展名。 留空时保存到本次运行目录。 |
+| `overwrite` 覆盖输出 | 否 | false | 默认 `false`；只有确认目标文件可替换时才设为 `true`。 允许替换已有输出。 |
 
 ## 结果怎么读
 
-- 输出格式：`PNG`、`SVG`、`PDF`、`JSON`。
-- X/Y 是累加基因顺序坐标；染色体边界隐含在基因顺序中。
-- `pairs` 是实际绘制的基因对数；`unmapped` 是任一注释中找不到 ID 的配对数。
-- `genesA`/`genesB`、`chromosomesA`/`chromosomesB` 描述两个注释基因组。
-- 密集对角线表示顺序保守；偏离对角线的簇可能提示重排或注释问题。
+- 输出格式：`PNG`、`SVG`、`PDF`、`JSON`
+- 图中每个点对应一条共线性基因对；按 block 检查顺序和异常离群点，组合 `mcscan.import` 的表格复核。
+- 结果面板是快速检查入口；完整数据、运行清单和日志位于本次运行目录。
+- 若输出了数据表，应同时核对图中点、组别、排序和筛选是否与数据一致。
 
 ## 最小运行示例
 
 ```powershell
-opentools run plot.collinearity --param input=C:\data\collinearity.tsv --param annotationA=C:\data\genomeA.gff3 --param annotationB=C:\data\genomeB.gff3
+opentools run plot.collinearity --param input=C:\data\input.tsv --param annotationA=C:\data\annotationA.gff3 --param annotationB=C:\data\annotationB.gff3
 ```
 
-把占位路径替换为工作区中的真实文件。参数名保持原样。
+把占位路径替换为工作区中的真实文件。参数名必须保持原样，布尔值使用 `true` 或 `false`。
 
 ## 检查清单与失败边界
 
-- 配对为空，或所有基因都未匹配时，会以 `COLLINEARITY_EMPTY` 失败；先看 `unmapped` 计数。
-- 注释中没有 gene/mRNA/transcript 特征时，会以 `COLLINEARITY_ANNOTATION_EMPTY` 失败。
-- GFF3 的 `gene:` 前缀会被去掉；其他 ID 约定（如版本后缀）需要在运行前统一。
-- 默认保护已有输出；确认目标前缀后才使用 `overwrite`。
+- 空数据、全为缺失值、非数值列或阈值两侧没有数据时，图可能为空或无法解释。
+- 已有输出默认不会被覆盖；只有明确设置输出路径并接受覆盖时，才检查 `overwrite`。
 
 ## 相关下一步
 
-- [导入 MCScanX 共线性](tool:mcscan.import)
-- [点图](tool:plot.dotplot)
-- [BLAST 点图](tool:plot.dotplot)
+- [条形图](tool:plot.bar)
+- [富集气泡图](tool:plot.enrichment-bubble)
+- [多物种共线性](tool:plot.synteny)
 
 [返回文档首页](opentools-doc:README.md)

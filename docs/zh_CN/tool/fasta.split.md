@@ -70,6 +70,6 @@ opentools run fasta.split --param input=C:\data\input.fasta --param recordsPerFi
 
 - [按 ID 提取 FASTA](tool:fasta.extract)
 - [FASTA 统计](tool:fasta.stats)
-- [提取 FASTA 子序列](tool:fasta.subsequence)
+- [ORF 预测](tool:sequence.orf)
 
 [返回文档首页](opentools-doc:README.md)

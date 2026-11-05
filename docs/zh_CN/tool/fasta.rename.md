@@ -78,6 +78,6 @@ opentools run fasta.rename --param input=C:\data\input.fasta
 
 - [按 ID 提取 FASTA](tool:fasta.extract)
 - [FASTA 统计](tool:fasta.stats)
-- [拆分 FASTA 文件](tool:fasta.split)
+- [ORF 预测](tool:sequence.orf)
 
 [返回文档首页](opentools-doc:README.md)

@@ -35,6 +35,8 @@ public final class KeggEnrichTool extends AbstractOpenTool {
                             "Optional pack id from resource.manage; its mapping table replaces the file input.", ""),
                     ToolParameter.requiredFile("genes", "Target genes", "One gene ID per line."),
                     ToolParameter.optionalFile("background", "Background genes", "Optional one-gene-per-line background list."),
+                    ToolParameter.decimal("pruneOverlap", "Prune redundant pathways",
+                            "Jaccard threshold for overlapping hit sets; 0 disables pruning.", 0.0, 0.0, 1.0),
                     ToolParameter.optionalOutputFile("output", "Output TSV", "Leave blank to save in the run directory."),
                     ToolParameter.bool("overwrite", "Overwrite output", "Allow replacing an existing output.", false)
             )
@@ -109,24 +111,32 @@ public final class KeggEnrichTool extends AbstractOpenTool {
         if (results.isEmpty()) {
             throw new OpenToolException("NO_ENRICHED_TERMS", "No KEGG pathways were enriched.", "Check gene IDs and annotations.");
         }
+        List<EnrichmentEngine.Result> pruned = EnrichmentSupport.pruneRedundant(
+                results, pruneThreshold(request));
         Path output = FormatToolSupport.outputPath(request, context, "kegg-enrichment.tsv");
-        FormatToolSupport.writeAtomically(output, writer -> EnrichmentSupport.writeResults(writer, results, "hits"));
+        FormatToolSupport.writeAtomically(output, writer -> EnrichmentSupport.writeResults(writer, pruned, "hits"));
         context.progress(1.0, "KEGG enrichment completed");
         Map<String, Object> metrics = new LinkedHashMap<>();
-        metrics.put("terms", results.size());
+        metrics.put("terms", pruned.size());
         if (pack != null) {
             metrics.put("resourceId", pack.id());
             metrics.put("resourceVersion", pack.version());
             metrics.put("resourceSha256", pack.sha256().values().stream().findFirst().orElse(""));
         }
         return new ToolResult(
-                "KEGG enrichment found " + results.size() + " pathways", List.of(results.size()),
+                "KEGG enrichment found " + pruned.size() + " pathways", List.of(pruned.size()),
                 "Hypergeometric P-values with Benjamini-Hochberg correction.", List.of(),
                 new ResultTable(List.of("Term", "Adjusted P", "Hits"),
-                        results.stream().limit(50).map(r -> List.of(r.term(),
+                        pruned.stream().limit(50).map(r -> List.of(r.term(),
                                 Double.toString(r.adjustedP()), Integer.toString(r.hitCount()))).toList()),
                 List.of(new OutputArtifact(output, "KEGG enrichment", "text/tab-separated-values")),
                 metrics
         );
+    }
+
+    private static double pruneThreshold(ToolRequest request) {
+        Object value = request.value("pruneOverlap");
+        return value == null || String.valueOf(value).isBlank()
+                ? 0.0 : Double.parseDouble(String.valueOf(value));
     }
 }

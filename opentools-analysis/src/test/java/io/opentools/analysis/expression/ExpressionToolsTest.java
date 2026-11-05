@@ -108,6 +108,46 @@ final class ExpressionToolsTest {
         assertEquals(3, result.metrics().get("threads"));
     }
 
+    @Test
+    void runsWelchAndMannWhitneyDifferentialTests() throws Exception {
+        Path input = tempDir.resolve("diff-matrix.tsv");
+        Files.writeString(input, """
+                gene	S1	S2	S3	S4
+                A	10	12	30	32
+                B	20	22	21	23
+                C	5	7	15	17
+                """);
+        Path groups = tempDir.resolve("diff-groups.tsv");
+        Files.writeString(groups, "sample\tgroup\nS1\tA\nS2\tA\nS3\tB\nS4\tB\n");
+
+        Path welch = tempDir.resolve("welch.tsv");
+        ToolResult welchResult = run("expression.differential", Map.of(
+                "input", input,
+                "groups", groups,
+                "test", "WELCH_T",
+                "output", welch
+        ));
+        assertEquals(3, welchResult.metrics().get("genes"));
+        List<String> rows = Files.readAllLines(welch);
+        assertEquals(4, rows.size());
+        assertTrue(rows.get(0).contains("adjusted_p_value"));
+        String geneA = rows.stream().filter(row -> row.startsWith("A\t")).findFirst().orElseThrow();
+        String[] fields = geneA.split("\t");
+        assertTrue(Double.parseDouble(fields[9]) <= 1.0);
+        assertTrue(Double.parseDouble(fields[10]) >= Double.parseDouble(fields[9]));
+        assertTrue(Double.parseDouble(fields[7]) < 0);
+
+        Path mann = tempDir.resolve("mann.tsv");
+        run("expression.differential", Map.of(
+                "input", input,
+                "groups", groups,
+                "test", "MANN_WHITNEY",
+                "output", mann
+        ));
+        String mannText = Files.readString(mann);
+        assertTrue(mannText.contains("MANN_WHITNEY"));
+    }
+
     private Path writeCounts() throws Exception {
         Path input = tempDir.resolve("counts.tsv");
         Files.writeString(input, """

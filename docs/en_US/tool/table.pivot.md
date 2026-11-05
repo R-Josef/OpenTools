@@ -44,7 +44,8 @@ treatment	2.4
 | `rowColumn` Row column | no | empty string | Leave optional values blank first; when provided, keep IDs, column names, or syntax consistent with the input. Pivot row key. |
 | `columnColumn` Column column | no | empty string | Leave optional values blank first; when provided, keep IDs, column names, or syntax consistent with the input. Pivot column key. |
 | `valueColumn` Value column | no | empty string | Leave optional values blank first; when provided, keep IDs, column names, or syntax consistent with the input. Numeric value column. |
-| `aggregation` Aggregation | no | SUM | Prefer the default mode and switch only when the input type or analysis goal requires it. SUM, MEAN, COUNT, MIN, or MAX for duplicate cells. |
+| `aggregation` Aggregation | no | SUM | Prefer the default mode and switch only when the input type or analysis goal requires it. SUM, MEAN, COUNT, MIN, MAX, LIST, or COUNT_DISTINCT for duplicate cells. |
+| `listSeparator` List separator | no | \| | Leave optional values blank first; when provided, keep IDs, column names, or syntax consistent with the input. Separator used by LIST aggregation. |
 | `maxCells` Maximum output cells | no | 2000000 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Safety bound for distinct pivot cells held in memory. |
 | `delimiter` Delimiter | no | AUTO | Prefer the default mode and switch only when the input type or analysis goal requires it. Input table delimiter. |
 | `output` Output table | no | empty | Leave blank to write inside the run directory; custom paths should stay in the workspace and use the correct extension. Leave blank to save in the run directory. |
@@ -72,7 +73,7 @@ Replace placeholder paths with real workspace files. Keep parameter IDs unchange
 ## Related next steps
 
 - [Preview Delimited Table](tool:table.preview)
-- [Transpose Table](tool:table.transpose)
-- [Deduplicate Table](tool:table.deduplicate)
+- [Select Table Columns](tool:table.select-columns)
+- [Replace Table Text](tool:table.replace)
 
 [Back to documentation home](opentools-doc:README.md)

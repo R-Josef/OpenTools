@@ -70,7 +70,7 @@ opentools run gxf.gene-density --param input=C:\data\input.gff3 --param windowSi
 ## 相关下一步
 
 - [检查基因组与注释匹配](tool:gxf.genome.match)
-- [注释合并或拆分](tool:gxf.merge-split)
-- [BED 转 GFF3](tool:bed.to-gff)
+- [BED12 区块分析](tool:bed.blocks)
+- [过滤 GFF3/GTF](tool:gxf.filter)
 
 [返回文档首页](opentools-doc:README.md)

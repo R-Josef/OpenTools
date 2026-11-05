@@ -16,7 +16,7 @@ It performs one explicit, reproducible analysis step. The run record preserves n
 ## Prepare the input
 
 - Declared formats: `Term-parent TSV`, `GO info TSV`, `OBO 1.4`
-- Required parameters: `hierarchy`
+- No parameter is marked required; still confirm the dataset, paths, and runtime environment.
 - Confirm that formats, identifiers, headers, and coordinate conventions match the parameter descriptions, and keep the source files.
 
 ## Recommended workflow
@@ -30,8 +30,8 @@ It performs one explicit, reproducible analysis step. The run record preserves n
 
 | Parameter | Required | Default | Guidance |
 | --- | --- | --- | --- |
-| `hierarchy` GO hierarchy | no | empty | Two-column term/parent TSV or OBO 1.4 with [Term] stanzas; required unless `resourceId` selects a GO pack. |
-| `resourceId` GO resource pack | no | empty | Optional pack id from `resource.manage`; its OBO file replaces the hierarchy input. |
+| `hierarchy` GO hierarchy | no | empty | Select a complete real input file; do not submit the placeholder example path. Two-column term/parent TSV or OBO 1.4 with [Term] stanzas; TSV roots use . or a blank parent. |
+| `resourceId` GO resource pack | no | empty string | Leave optional values blank first; when provided, keep IDs, column names, or syntax consistent with the input. Optional pack id from resource.manage; its OBO file replaces the hierarchy input. |
 | `termInfo` Term information | no | empty | Select a complete real input file; do not submit the placeholder example path. Optional term/name/namespace table. |
 | `output` Output TSV | no | empty | Leave blank to write inside the run directory; custom paths should stay in the workspace and use the correct extension. Leave blank to save in the run directory. |
 | `overwrite` Overwrite output | no | false | Keep `false` unless the target is known to be safe to replace. Allow replacing an existing output. |
@@ -45,7 +45,7 @@ It performs one explicit, reproducible analysis step. The run record preserves n
 ## Minimal command example
 
 ```powershell
-opentools run go.level --param hierarchy=C:\data\hierarchy.tsv
+opentools run go.level
 ```
 
 Replace placeholder paths with real workspace files. Keep parameter IDs unchanged and use `true` or `false` for booleans.
@@ -57,7 +57,8 @@ Replace placeholder paths with real workspace files. Keep parameter IDs unchange
 
 ## Related next steps
 
+- [Preranked GSEA](tool:go.gsea)
 - [KEGG Enrichment](tool:kegg.enrich)
-- [GO Enrichment](tool:go.enrich)
+- [Manage GO/KEGG Resource Packs](tool:resource.manage)
 
 [Back to documentation home](opentools-doc:README.md)

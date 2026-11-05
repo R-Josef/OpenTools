@@ -65,6 +65,34 @@ final class EnrichmentSupport {
         return genes;
     }
 
+    static List<EnrichmentEngine.Result> pruneRedundant(
+            List<EnrichmentEngine.Result> results,
+            double jaccardThreshold
+    ) {
+        if (jaccardThreshold <= 0) {
+            return results;
+        }
+        List<EnrichmentEngine.Result> kept = new ArrayList<>();
+        for (EnrichmentEngine.Result candidate : results) {
+            boolean redundant = false;
+            for (EnrichmentEngine.Result accepted : kept) {
+                Set<String> intersection = new LinkedHashSet<>(candidate.genes());
+                intersection.retainAll(accepted.genes());
+                Set<String> union = new LinkedHashSet<>(candidate.genes());
+                union.addAll(accepted.genes());
+                double jaccard = union.isEmpty() ? 1 : intersection.size() / (double) union.size();
+                if (jaccard >= jaccardThreshold) {
+                    redundant = true;
+                    break;
+                }
+            }
+            if (!redundant) {
+                kept.add(candidate);
+            }
+        }
+        return kept;
+    }
+
     static void writeResults(
             BufferedWriter writer,
             List<EnrichmentEngine.Result> results,

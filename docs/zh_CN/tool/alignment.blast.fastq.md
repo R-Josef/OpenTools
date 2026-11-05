@@ -93,7 +93,7 @@ opentools run alignment.blast.fastq --param query=C:\data\query.fastq --param su
 ## 相关下一步
 
 - [trimAl 比对修剪](tool:alignment.trim)
-- [DIAMOND 蛋白比对](tool:alignment.diamond)
 - [双向最佳 BLAST 比对](tool:alignment.blast.reciprocal)
+- [BLAST 对齐查看数据](tool:alignment.blast.alignments)
 
 [返回文档首页](opentools-doc:README.md)

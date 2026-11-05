@@ -1,81 +1,89 @@
 # MAST 基序扫描
 
-`mast.run` · 序列处理 · v1.0.0
+`mast.run` · 序列 · v1.0.0
 
 ## 一句话说明
 
-用 MEME XML motif 文件在 FASTA 序列上运行 MAST，保留命中 XML，并导入 1-based 命中表。
+用 MEME XML 和 FASTA 运行 MAST，并导入命中坐标。
 
-外部 MAST 程序负责扫描；OpenTools 记录命令日志、复制 `mast.xml`，并解析序列 ID、motif、坐标、链、p-value 和匹配文本。
+它完成一个明确、可复现的分析步骤。运行记录会保存规范化参数、输入文件哈希和日志；正式发表前仍应检查原始数据、参数和生物学解释。
 
 ## 什么时候使用
 
-- 用 [MEME](tool:meme.run) 发现的 motif 扫描基因组、启动子或蛋白集合。
-- 比较 motif 在不同序列中的出现情况。
-- 导出命中坐标，供后续重叠、注释或可视化使用。
+- 在组装、注释、比对或下游分析前检查、转换或整理 FASTA/FASTQ 数据。
+- 需要对单一步骤保留参数、日志和输出，便于重复运行或排查问题时。
 
 ## 输入准备
 
 - 声明格式：`MEME XML`、`FASTA`
-- 含 motif 定义的 `meme.xml`。
-- 与 motif 字母表一致的 DNA 或蛋白 FASTA。
-- 需要安装 MAST 并在 `PATH` 中，或设置 `OPENTOOLS_MAST`，或提供 `executablePath`。
-- 本工具不随包附带 MAST，属于外部依赖。
+- 必须提供：`motifs`, `sequences`
+- 确认序列 ID 不重复、FASTA/FASTQ 记录完整；gzip 文件应保持原始记录格式。
 
-### 输入示意
+### 格式示意
+
+**motifs**
 
 ```text
-motifs.xml  +  sequences.fa
+>seq1
+ATGCGTACGT
+>seq2
+ATGCGTTCGT
 ```
+
+
+**sequences**
+
+```text
+>seq1
+ATGCGTACGT
+>seq2
+ATGCGTTCGT
+```
+
 
 ## 推荐运行步骤
 
-1. 确认 motif XML 与序列使用相同字母表。
-2. 用默认参数运行 `mast.run`，查看命中数。
-3. 检查命中表的坐标和 p-value；只有表头是有效的“无命中”结果。
-4. 保留 XML、TSV、日志和参数，便于复现。
-5. 把坐标用于重叠、注释或可视化任务。
+1. 先确认文件格式、序列名/列名和坐标约定一致。
+2. 使用默认值或下表中的推荐值运行校验，先排除路径、表头和类型错误。
+3. 提交任务后同时检查摘要、结果表和输出文件；不要只看“成功”状态。
+4. 如需复现，保留原始输入、参数、运行日志和输出哈希。
 
 ## 参数怎么选
 
 | 参数 | 必填 | 默认值 | 选择建议 |
 | --- | --- | --- | --- |
-| `motifs` MEME motif XML | 是 | 空 | MEME 或兼容工具产出的 `meme.xml`。 |
-| `sequences` 序列 | 是 | 空 | 待扫描的 DNA 或蛋白 FASTA。 |
-| `timeoutMinutes` 超时分钟 | 否 | 60 | 命令最长运行时间。 |
-| `executablePath` MAST 可执行文件 | 否 | 空 | 可选的显式路径。 |
-| `output` 输出 XML | 否 | 空 | 留空时在运行目录保存 `mast.xml`。 |
-| `extraArgs` 额外 MAST 参数 | 否 | 空 | 可解析引号；保留选项会被拒绝。 |
-| `overwrite` 覆盖输出 | 否 | false | 允许替换已有输出。 |
+| `motifs` MEME motif XML | 是 | 空 | 选择真实且完整的输入文件，不用示例占位路径替代。 MEME 或兼容工具产出的 meme.xml。 |
+| `sequences` 序列 | 是 | 空 | 选择真实且完整的输入文件，不用示例占位路径替代。 待扫描的 DNA 或蛋白 FASTA。 |
+| `timeoutMinutes` 超时分钟 | 否 | 60 | 先使用默认值；调整阈值时记录理由，并与输入数据规模或统计目标对应。 命令最长运行时间。 |
+| `executablePath` MAST 可执行文件 | 否 | 空 | 选择真实且完整的输入文件，不用示例占位路径替代。 可选的显式可执行文件路径。 |
+| `output` 输出 XML | 否 | 空 | 留空时写入运行目录；自定义路径应位于工作区，并按格式填写扩展名。 留空时在运行目录保存 mast.xml。 |
+| `extraArgs` 额外 MAST 参数 | 否 | 空字符串 | 可选项通常先留空；填写时保持 ID、列名或语法与输入一致。 可解析引号的额外 CLI 参数。 |
+| `overwrite` 覆盖输出 | 否 | false | 默认 `false`；只有确认目标文件可替换时才设为 `true`。 允许替换已有输出。 |
 
 ## 结果怎么读
 
-- 输出格式：`MAST XML` 与 `TSV`。
-- TSV 列为 `sequence`、`motif`、`start`、`end`、`strand`、`pvalue`、`match`。
-- 坐标为 1-based 闭区间；MAST XML 的 position 从 0 开始，导入时已转换。
-- `metrics.hits` 是命中数；`metrics.sequences` 是至少有一个命中的序列数。
-- 只有表头表示没有命中通过 MAST 阈值；先看 XML/日志再判断是否为失败。
+- 输出格式：`MAST XML`、`TSV`
+- 结果取决于所选输入和参数；检查输出文件、摘要指标和诊断信息是否与实验设计一致。
+- 结果面板是快速检查入口；完整数据、运行清单和日志位于本次运行目录。
 
 ## 最小运行示例
 
 ```powershell
-opentools run mast.run --param motifs=C:\data\meme.xml --param sequences=C:\data\promoters.fa
+opentools run mast.run --param motifs=C:\data\motifs.fasta --param sequences=C:\data\sequences.fasta
 ```
 
-把占位路径替换为工作区中的真实文件。参数名保持原样。
+把占位路径替换为工作区中的真实文件。参数名必须保持原样，布尔值使用 `true` 或 `false`。
 
 ## 检查清单与失败边界
 
-- 必须安装 MAST；找不到可执行文件会以 `EXTERNAL_TOOL_MISSING` 失败。
-- motif 与序列字母表必须一致；DNA/蛋白混用可能失败或没有命中。
-- 解析器同时支持 `motif` 与 `motiff` 属性，并用 `match` 长度计算结束坐标。
-- XML 格式错误会以 `MEME_XML_INVALID` 失败。
-- 默认保护已有输出。
+- FASTA/FASTQ 记录、ID 和碱基/质量字符必须完整；损坏或截断的记录会使任务失败。
+- `extraArgs` 不能覆盖输入、输出、数据库、远程模式或线程数；只允许算法调优选项，并拒绝 `@` 响应文件和 `--`。
+- 已有输出默认不会被覆盖；只有明确设置输出路径并接受覆盖时，才检查 `overwrite`。
 
 ## 相关下一步
 
-- [MEME 基序发现](tool:meme.run)
+- [按 ID 提取 FASTA](tool:fasta.extract)
 - [FASTA 统计](tool:fasta.stats)
-- [MAST 基序扫描](tool:mast.run)
+- [ORF 预测](tool:sequence.orf)
 
 [返回文档首页](opentools-doc:README.md)

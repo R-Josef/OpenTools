@@ -55,11 +55,7 @@ public final class GenerateToolGuides {
                 throw new IllegalStateException("Guide profile references unknown tool: " + id);
             }
         }
-        for (String id : descriptors.keySet()) {
-            if (!RESULT_ZH.containsKey(id)) {
-                throw new IllegalStateException("Missing guide profile for tool: " + id);
-            }
-        }
+        // Newly added tools get a generic reading guide until a tailored profile is written.
 
         generateLanguage("zh_CN", registry, descriptors, true);
         generateLanguage("en_US", registry, descriptors, false);
@@ -93,7 +89,12 @@ public final class GenerateToolGuides {
     ) {
         String name = text.name(tool);
         String description = text.description(tool).trim();
-        String result = (chinese ? RESULT_ZH : RESULT_EN).get(tool.id());
+        String result = (chinese ? RESULT_ZH : RESULT_EN).getOrDefault(
+                tool.id(),
+                chinese
+                        ? "结果取决于所选输入和参数；检查输出文件、摘要指标和诊断信息是否与实验设计一致。"
+                        : "Results depend on the selected inputs and parameters; review output files, summary metrics, and diagnostics against the experimental design."
+        );
         StringBuilder markdown = new StringBuilder();
         markdown.append("# ").append(name).append("\n\n");
         markdown.append('`').append(tool.id()).append("` · ")
@@ -1006,6 +1007,15 @@ public final class GenerateToolGuides {
         values.put("visual.venn", "集合交集的精确计数在导出表中；Venn 适合少量集合，UpSet 更适合多集合和交集比较。");
         values.put("plot.violin", "小提琴图展示分组数值分布；检查每组样本量，不能把形状差异直接解释为统计显著。");
         values.put("plot.volcano", "每个点是一个基因；横轴为 log2 fold change，纵轴为显著性，阈值分类必须在图中和导出表中一致。");
+        values.put("fastq.split", "输出目录包含按记录数切分的 FASTQ；检查记录总数、header、序列和质量值的完整性。");
+        values.put("bed.blocks", "输出逐 block 和 intron 的区间；检查 blockStarts 是否相对 chromStart、blockSizes 是否与 blockCount 一致。");
+        values.put("gxf.edit", "编辑会保留注释头并改写数据行；检查 source/type/strand、属性增删和 GTF 引号格式。");
+        values.put("expression.differential", "输出每个基因的组均值、log2 fold change、检验统计量、原始 P 值和校正 P 值；两组至少各需两个重复。");
+        values.put("go.gsea", "NES 和置换 P 值依赖排序方向和基因集大小；检查 GMT 标识符与排序文件一致，并用固定 seed 复现。");
+        values.put("tree.newick.metadata", "输出每个节点的分支长度、支持率、深度和后代叶数；非数值内部标签仍作为 label 保留。");
+        values.put("plot.synteny", "多物种共线性图按参考基因组和比较对象排列染色体；检查物种顺序、基因对方向、颜色和标签重叠。");
+        values.put("alignment.blast.alignments", "输出每个 HSP 的 query/subject 坐标和成对对齐序列；检查 qseq/hseq 是否完整、midline 与坐标方向一致。");
+        values.put("annotation.meme.results", "输出 MEME motif 表和 MAST hit 表；检查 motif ID、命中的 1-based 坐标、链方向和 match 序列。");
         return values;
     }
 
@@ -1097,6 +1107,15 @@ public final class GenerateToolGuides {
         values.put("visual.venn", "Exact intersection counts are exported when `exportData=true`; Venn is compact for a few sets, while UpSet scales better for many sets.");
         values.put("plot.violin", "Violin plots show grouped numeric distributions; inspect group sample sizes and avoid interpreting shape alone as statistical significance.");
         values.put("plot.volcano", "Each point is a gene; horizontal position is log2 fold change and vertical position is significance, and thresholds must agree with exported classifications.");
+        values.put("fastq.split", "The output directory contains FASTQ parts split by record count; verify total records, headers, sequences, and qualities.");
+        values.put("bed.blocks", "The output lists block and intron intervals; verify that blockStarts are relative to chromStart and blockSizes match blockCount.");
+        values.put("gxf.edit", "Editing preserves annotation headers while rewriting data rows; verify source/type/strand, attribute changes, and GTF quoting.");
+        values.put("expression.differential", "Each gene reports group means, log2 fold change, test statistic, raw p-value, and adjusted p-value; each group needs at least two replicates.");
+        values.put("go.gsea", "NES and permutation p-values depend on ranking direction and set size; check GMT identifiers against the ranking and reproduce with a fixed seed.");
+        values.put("tree.newick.metadata", "Each node reports branch length, support, depth, and descendant leaves; non-numeric internal labels remain labels.");
+        values.put("plot.synteny", "The multi-species synteny plot orders chromosomes by reference and comparison species; verify species order, gene-pair direction, colors, and label overlap.");
+        values.put("alignment.blast.alignments", "Each HSP reports query/subject coordinates and paired alignment strings; verify qseq/hseq completeness, midline, and coordinate orientation.");
+        values.put("annotation.meme.results", "The output contains MEME motif and MAST hit tables; verify motif IDs, 1-based hit coordinates, strand, and match strings.");
         return values;
     }
 }

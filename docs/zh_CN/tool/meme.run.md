@@ -1,86 +1,84 @@
 # MEME 基序发现
 
-`meme.run` · 序列处理 · v1.0.0
+`meme.run` · 序列 · v1.0.0
 
 ## 一句话说明
 
-在 FASTA 上运行 MEME，保留 motif XML，并导入 motif 汇总表。
+在 FASTA 上运行 MEME，导入 motif XML 并输出 motif 汇总表。
 
-外部 MEME 程序负责发现 motif；OpenTools 负责校验命令、记录运行日志、把 `meme.xml` 复制到运行目录，并解析 motif ID、名称、宽度、贡献位点和 E-value。
+它完成一个明确、可复现的分析步骤。运行记录会保存规范化参数、输入文件哈希和日志；正式发表前仍应检查原始数据、参数和生物学解释。
 
 ## 什么时候使用
 
-- 在启动子、peak 或蛋白家族 FASTA 中发现保守 motif。
-- 生成可供 [MAST](tool:mast.run) 扫描的 motif XML。
-- 把 motif 发现参数和输出保存在同一条可复现运行记录中。
+- 在组装、注释、比对或下游分析前检查、转换或整理 FASTA/FASTQ 数据。
+- 需要对单一步骤保留参数、日志和输出，便于重复运行或排查问题时。
 
 ## 输入准备
 
 - 声明格式：`FASTA`
-- DNA 或蛋白序列，ID 唯一。
-- 需要安装 MEME Suite 并在 `PATH` 中，或设置 `OPENTOOLS_MEME`，或提供 `executablePath`。
-- 本工具不随包附带 MEME，属于外部依赖。
+- 必须提供：`input`
+- 确认序列 ID 不重复、FASTA/FASTQ 记录完整；gzip 文件应保持原始记录格式。
 
-### 输入示意
+### 格式示意
+
+**input**
 
 ```text
 >seq1
-ACGTACGTACGTACGT
+ATGCGTACGT
 >seq2
-ACGTACGTACGTACGT
+ATGCGTTCGT
 ```
+
 
 ## 推荐运行步骤
 
-1. 检查序列字母表，去掉重复或过短记录。
-2. 先用 `molecule=DNA`、10 个 motif、宽度 6–50、4 线程。
-3. 查看 motif 汇总；空 XML 是有效的“未发现 motif”结果。
-4. 把生成的 XML 交给 [MAST](tool:mast.run) 扫描。
-5. 保留 XML、汇总 TSV、命令日志和参数。
+1. 先确认文件格式、序列名/列名和坐标约定一致。
+2. 使用默认值或下表中的推荐值运行校验，先排除路径、表头和类型错误。
+3. 提交任务后同时检查摘要、结果表和输出文件；不要只看“成功”状态。
+4. 如需复现，保留原始输入、参数、运行日志和输出哈希。
 
 ## 参数怎么选
 
 | 参数 | 必填 | 默认值 | 选择建议 |
 | --- | --- | --- | --- |
-| `input` 输入序列 | 是 | 空 | DNA 或蛋白 FASTA。 |
-| `molecule` 分子类型 | 否 | DNA | DNA 或 PROTEIN，对应 `-dna`/`-protein`。 |
-| `motifs` Motif 数量 | 否 | 10 | 最多发现的 motif 数。 |
-| `minMotifWidth` 最小宽度 | 否 | 6 | motif 最小宽度。 |
-| `maxMotifWidth` 最大宽度 | 否 | 50 | motif 最大宽度，必须不小于最小值。 |
-| `threads` 线程数 | 否 | 4 | MEME 工作线程数。 |
-| `timeoutMinutes` 超时分钟 | 否 | 60 | 命令最长运行时间。 |
-| `executablePath` MEME 可执行文件 | 否 | 空 | 可选的显式路径。 |
-| `output` 输出 XML | 否 | 空 | 留空时在运行目录保存 `meme.xml`。 |
-| `extraArgs` 额外 MEME 参数 | 否 | 空 | 可解析引号；保留选项会被拒绝。 |
-| `overwrite` 覆盖输出 | 否 | false | 允许替换已有输出。 |
+| `input` 输入序列 | 是 | 空 | 选择真实且完整的输入文件，不用示例占位路径替代。 DNA 或蛋白 FASTA。 |
+| `molecule` 分子类型 | 否 | DNA | 优先使用默认模式；只有输入类型或分析目标明确要求时才切换。 选择 DNA 或蛋白模式。 |
+| `motifs` Motif 数量 | 否 | 10 | 先使用默认值；调整阈值时记录理由，并与输入数据规模或统计目标对应。 最多发现的 motif 数。 |
+| `minMotifWidth` 最小 motif 宽度 | 否 | 6 | 先使用默认值；调整阈值时记录理由，并与输入数据规模或统计目标对应。 motif 最小宽度。 |
+| `maxMotifWidth` 最大 motif 宽度 | 否 | 50 | 先使用默认值；调整阈值时记录理由，并与输入数据规模或统计目标对应。 motif 最大宽度。 |
+| `threads` 线程数 | 否 | 4 | 默认值已按外部程序配置；仅在 CPU、内存或调度策略明确允许时增加。 MEME 工作线程数。 |
+| `timeoutMinutes` 超时分钟 | 否 | 60 | 先使用默认值；调整阈值时记录理由，并与输入数据规模或统计目标对应。 命令最长运行时间。 |
+| `executablePath` MEME 可执行文件 | 否 | 空 | 选择真实且完整的输入文件，不用示例占位路径替代。 可选的显式可执行文件路径。 |
+| `output` 输出 XML | 否 | 空 | 留空时写入运行目录；自定义路径应位于工作区，并按格式填写扩展名。 留空时在运行目录保存 meme.xml。 |
+| `extraArgs` 额外 MEME 参数 | 否 | 空字符串 | 可选项通常先留空；填写时保持 ID、列名或语法与输入一致。 可解析引号的额外 CLI 参数。 |
+| `overwrite` 覆盖输出 | 否 | false | 默认 `false`；只有确认目标文件可替换时才设为 `true`。 允许替换已有输出。 |
 
 ## 结果怎么读
 
-- 输出格式：`MEME XML` 与 `TSV`。
-- TSV 列为 `motif`、`name`、`width`、`sites`、`evalue`。
-- `metrics.motifs` 和 `metrics.sites` 汇总解析结果。
-- 有效运行但没有 motif 时，TSV 只有表头且指标为 0；先看 MEME 日志再判断是否为失败。
+- 输出格式：`MEME XML`、`TSV`
+- 结果取决于所选输入和参数；检查输出文件、摘要指标和诊断信息是否与实验设计一致。
+- 结果面板是快速检查入口；完整数据、运行清单和日志位于本次运行目录。
+- 线程数只影响执行路径和速度；改变线程不应改变科学结果。发现差异时应比较日志、输入和参数。
 
 ## 最小运行示例
 
 ```powershell
-opentools run meme.run --param input=C:\data\promoters.fa --param motifs=10 --param molecule=DNA
+opentools run meme.run --param input=C:\data\input.fasta
 ```
 
-把占位路径替换为工作区中的真实文件。参数名保持原样。
+把占位路径替换为工作区中的真实文件。参数名必须保持原样，布尔值使用 `true` 或 `false`。
 
 ## 检查清单与失败边界
 
-- 必须安装 MEME；找不到可执行文件会以 `EXTERNAL_TOOL_MISSING` 失败。
-- 命令使用参数数组而非 shell 拼接；`extraArgs` 支持引号，但不能覆盖保留选项。
-- 蛋白模式需要蛋白 FASTA；字母表混用可能得到空结果或失败。
-- XML 在解析前会先复制；格式错误以 `MEME_XML_INVALID` 失败。
-- 默认保护已有输出。
+- FASTA/FASTQ 记录、ID 和碱基/质量字符必须完整；损坏或截断的记录会使任务失败。
+- `extraArgs` 不能覆盖输入、输出、数据库、远程模式或线程数；只允许算法调优选项，并拒绝 `@` 响应文件和 `--`。
+- 已有输出默认不会被覆盖；只有明确设置输出路径并接受覆盖时，才检查 `overwrite`。
 
 ## 相关下一步
 
-- [MAST 基序扫描](tool:mast.run)
+- [按 ID 提取 FASTA](tool:fasta.extract)
 - [FASTA 统计](tool:fasta.stats)
-- [MEME 基序发现](tool:meme.run)
+- [ORF 预测](tool:sequence.orf)
 
 [返回文档首页](opentools-doc:README.md)

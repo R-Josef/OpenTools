@@ -4,81 +4,78 @@
 
 ## What this tool does
 
-Submit a query FASTA to the NCBI BLAST URL API, wait for the search to finish, and save the tabular hits.
+Upload a query to the NCBI BLAST URL API, poll for completion, and save tabular hits.
 
 It performs one explicit, reproducible analysis step. The run record preserves normalized parameters, input hashes, and logs; always review the source data, settings, and biological interpretation before publication.
 
 ## When to use it
 
-- Search a public NCBI database when no local BLAST database is available.
+- Run local alignment, multiple-sequence alignment, phylogenetic modeling, or normalize their outputs.
 - Use it when one step needs preserved parameters, logs, and outputs for repeatability or troubleshooting.
-- Prefer local BLAST when the query must not leave the computer.
 
 ## Prepare the input
 
 - Declared formats: `FASTA`
 - Required parameters: `query`, `program`
-- Confirm the molecule type matches the program and database. `blastn` needs a nucleotide database such as `nt`; `blastp` needs a protein database such as `nr`.
-- The query is uploaded to NCBI only after `allowUpload=true`.
+- Confirm query and subject molecule types and formats; for external tools, check executable paths, versions, threads, and timeouts.
 
 ### Input sketch
 
+**query**
+
 ```text
 >seq1
-ATGCGTACGTACGTACGT
+ATGCGTACGT
 >seq2
-ATGCGTTCGTACGTACGT
+ATGCGTTCGT
 ```
+
 
 ## Recommended workflow
 
-1. Confirm that the query is public or may be sent to NCBI.
-2. Choose the program and a matching database, then set `allowUpload=true`.
-3. Submit and watch the run log; the tool polls NCBI with the returned RID.
-4. Inspect the hit count, RID, and output table before interpreting the result.
+1. Confirm that file formats, identifiers or column names, and coordinate conventions agree.
+2. Validate with defaults or the recommendations below to catch paths, headers, and type errors first.
+3. After submission, inspect the summary, result table, and artifacts instead of relying only on the success status.
+4. Keep the original inputs, parameters, run log, and output hashes when the result must be reproducible.
 
 ## How to choose parameters
 
 | Parameter | Required | Default | Guidance |
 | --- | --- | --- | --- |
-| `query` Query FASTA | yes | empty | Select a complete real input file; the sequence is sent to NCBI only with `allowUpload`. |
-| `program` BLAST program | yes | blastn | Use blastn for nucleotide queries, blastp for protein queries, and blastx/tblastn/tblastx for translated searches. |
-| `database` Database | no | nt | Use a database matching the program, such as nt, nr, refseq_protein, or swissprot. |
-| `maxHits` Maximum hits | no | 100 | Sets HITLIST_SIZE; lower it for a faster, smaller response. |
-| `allowUpload` Allow upload | no | false | Must be true to submit. This is the explicit consent that the query leaves the computer. |
-| `timeoutSeconds` Timeout | no | 600 | Total wait for the remote search; increase it for large databases or busy periods. |
-| `pollSeconds` Poll interval | no | 5 | Seconds between status checks; do not set it below the NCBI service guidance. |
-| `baseUrl` Service URL | no | https://blast.ncbi.nlm.nih.gov/Blast.cgi | Keep the default unless a trusted HTTPS mirror is required. HTTP is accepted only on loopback for testing. |
-| `output` Output table | no | empty | Leave blank to write inside the run directory; custom paths should stay in the workspace. |
-| `overwrite` Overwrite output | no | false | Keep `false` unless the target is known to be safe to replace. |
+| `query` Query FASTA | yes | empty | Select a complete real input file; do not submit the placeholder example path. Nucleotide or protein query. The sequence is sent to NCBI only with allowUpload. |
+| `program` BLAST program | yes | blastn | Prefer the default mode and switch only when the input type or analysis goal requires it. NCBI BLAST program name. |
+| `database` Database | no | nt | Leave optional values blank first; when provided, keep IDs, column names, or syntax consistent with the input. NCBI database name such as nt, nr, refseq_protein, or swissprot. |
+| `maxHits` Maximum hits | no | 100 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. HITLIST_SIZE requested from NCBI. |
+| `allowUpload` Allow upload | no | false | Start with the default and change it only after understanding the explanation. Explicitly confirm that the query is sent to NCBI. |
+| `timeoutSeconds` Timeout | no | 600 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Total time to wait for the remote search. |
+| `pollSeconds` Poll interval | no | 5 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Seconds between status checks. |
+| `baseUrl` Service URL | no | https://blast.ncbi.nlm.nih.gov/Blast.cgi | Leave optional values blank first; when provided, keep IDs, column names, or syntax consistent with the input. NCBI BLAST URL API endpoint. HTTPS is required except for loopback testing. |
+| `output` Output table | no | empty | Leave blank to write inside the run directory; custom paths should stay in the workspace and use the correct extension. Leave blank to save in the run directory. |
+| `overwrite` Overwrite output | no | false | Keep `false` unless the target is known to be safe to replace. Allow replacing an existing custom output file. |
 
 ## Read the result
 
 - Output formats: `TSV`
-- The table uses BLAST outfmt 6 columns; the result summary records the RID, program, database, HSP count, and elapsed time.
-- A RID is the NCBI handle for this search. Keep it in the run record when the result must be audited.
-- No hits is a successful empty result, not a failure.
+- Results depend on the selected inputs and parameters; review output files, summary metrics, and diagnostics against the experimental design.
+- The result panel is the quick-review surface; complete data, manifests, and logs live in the run directory.
 
 ## Minimal command example
 
 ```powershell
-opentools run alignment.blast.remote --param query=C:\data\query.fasta --param program=blastn --param database=nt --param allowUpload=true
+opentools run alignment.blast.remote --param query=C:\data\query.fasta --param program=blastn
 ```
 
 Replace placeholder paths with real workspace files. Keep parameter IDs unchanged and use `true` or `false` for booleans.
 
 ## Checks and failure boundaries
 
-- The tool refuses to run without `allowUpload=true`; this keeps accidental uploads out of automation.
-- The service URL must use HTTPS, except for a loopback test endpoint.
-- NCBI can queue, rate-limit, or reject a request; the run log and error message retain the RID and HTTP status.
-- Remote results depend on the database version at run time; record the date and database name for publication.
+- External program versions and arguments can change hits, alignments, or trees; record versions and complete commands for publication.
 - Existing outputs are protected by default; only consider `overwrite` after explicitly choosing the target path.
 
 ## Related next steps
 
-- [Local BLAST](tool:alignment.blast.local)
-- [Dot Plot](tool:plot.dotplot)
-- [Convert BLAST XML to Table](tool:alignment.blast.xml-to-table)
+- [trimAl Alignment Trimming](tool:alignment.trim)
+- [Reciprocal Best BLAST Hits](tool:alignment.blast.reciprocal)
+- [BLAST Alignment Viewer Data](tool:alignment.blast.alignments)
 
 [Back to documentation home](opentools-doc:README.md)

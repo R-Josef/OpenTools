@@ -70,7 +70,7 @@ Replace placeholder paths with real workspace files. Keep parameter IDs unchange
 ## Related next steps
 
 - [Preview Delimited Table](tool:table.preview)
-- [Transpose Table](tool:table.transpose)
-- [Deduplicate Table](tool:table.deduplicate)
+- [Pivot Table](tool:table.pivot)
+- [Replace Table Text](tool:table.replace)
 
 [Back to documentation home](opentools-doc:README.md)

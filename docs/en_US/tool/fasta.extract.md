@@ -79,7 +79,7 @@ Replace placeholder paths with real workspace files. Keep parameter IDs unchange
 ## Related next steps
 
 - [FASTA Statistics](tool:fasta.stats)
-- [Split FASTA File](tool:fasta.split)
-- [Extract FASTA Subsequences](tool:fasta.subsequence)
+- [Predict ORFs](tool:sequence.orf)
+- [Filter FASTA](tool:fasta.filter)
 
 [Back to documentation home](opentools-doc:README.md)

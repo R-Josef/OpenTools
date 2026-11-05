@@ -35,6 +35,8 @@ public final class GoEnrichTool extends AbstractOpenTool {
                             "Optional pack id from resource.manage; its annotation table replaces the file input.", ""),
                     ToolParameter.requiredFile("genes", "Target genes", "One gene ID per line."),
                     ToolParameter.optionalFile("background", "Background genes", "Optional one-gene-per-line background list."),
+                    ToolParameter.decimal("pruneOverlap", "Prune redundant terms",
+                            "Jaccard threshold for overlapping hit sets; 0 disables pruning.", 0.0, 0.0, 1.0),
                     ToolParameter.optionalOutputFile("output", "Output TSV", "Leave blank to save in the run directory."),
                     ToolParameter.bool("overwrite", "Overwrite output", "Allow replacing an existing output.", false)
             )
@@ -109,10 +111,18 @@ public final class GoEnrichTool extends AbstractOpenTool {
         if (results.isEmpty()) {
             throw new OpenToolException("NO_ENRICHED_TERMS", "No GO terms were enriched.", "Check gene IDs and annotations.");
         }
+        List<EnrichmentEngine.Result> pruned = EnrichmentSupport.pruneRedundant(
+                results, pruneThreshold(request));
         Path output = FormatToolSupport.outputPath(request, context, "go-enrichment.tsv");
-        FormatToolSupport.writeAtomically(output, writer -> EnrichmentSupport.writeResults(writer, results, "hits"));
+        FormatToolSupport.writeAtomically(output, writer -> EnrichmentSupport.writeResults(writer, pruned, "hits"));
         context.progress(1.0, "GO enrichment completed");
-        return result(request, output, results, pack);
+        return result(request, output, pruned, pack);
+    }
+
+    private static double pruneThreshold(ToolRequest request) {
+        Object value = request.value("pruneOverlap");
+        return value == null || String.valueOf(value).isBlank()
+                ? 0.0 : Double.parseDouble(String.valueOf(value));
     }
 
     private static ToolResult result(ToolRequest request, Path output,

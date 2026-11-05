@@ -57,7 +57,7 @@ Replace placeholder paths with real workspace files. Keep parameter IDs unchange
 ## Related next steps
 
 - [trimAl Alignment Trimming](tool:alignment.trim)
-- [DIAMOND Protein Alignment](tool:alignment.diamond)
-- [Local BLAST](tool:alignment.blast.local)
+- [BLAST Alignment Viewer Data](tool:alignment.blast.alignments)
+- [HMMER hmmsearch](tool:alignment.hmmer.hmmsearch)
 
 [Back to documentation home](opentools-doc:README.md)

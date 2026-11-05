@@ -80,7 +80,7 @@ opentools run gxf.filter --param input=C:\data\input.gff3
 ## 相关下一步
 
 - [检查基因组与注释匹配](tool:gxf.genome.match)
-- [注释合并或拆分](tool:gxf.merge-split)
-- [BED 转 GFF3](tool:bed.to-gff)
+- [基因密度滑窗](tool:gxf.gene-density)
+- [BED12 区块分析](tool:bed.blocks)
 
 [返回文档首页](opentools-doc:README.md)

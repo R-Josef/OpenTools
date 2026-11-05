@@ -6,9 +6,11 @@ import io.opentools.formats.fasta.FastaMergeTool;
 import io.opentools.formats.fasta.FastaSplitTool;
 import io.opentools.formats.fasta.FastaStatsTool;
 import io.opentools.formats.fasta.CdsTranslateTool;
+import io.opentools.formats.bed.BedBlocksTool;
 import io.opentools.formats.bed.BedStatsTool;
 import io.opentools.formats.bed.BedToGffTool;
 import io.opentools.formats.gxf.GxfCheckRepairTool;
+import io.opentools.formats.gxf.GxfEditTool;
 import io.opentools.formats.gxf.GxfFilterTool;
 import io.opentools.formats.gxf.GxfGeneDensityTool;
 import io.opentools.formats.gxf.GxfGenomeMatchTool;
@@ -34,6 +36,7 @@ public final class BuiltInTools {
         registry.register(new GxfInspectTool());
         registry.register(new GxfGenomeMatchTool());
         registry.register(new GxfSequenceExtractTool());
+        registry.register(new GxfEditTool());
         registry.register(new GxfFilterTool());
         registry.register(new GxfToBedTool());
         registry.register(new GxfOverlapTool());
@@ -43,6 +46,7 @@ public final class BuiltInTools {
         registry.register(new GxfCheckRepairTool());
         registry.register(new GxfGeneDensityTool());
         registry.register(new BedStatsTool());
+        registry.register(new BedBlocksTool());
         registry.register(new BedToGffTool());
         registry.register(new TablePreviewTool());
     }

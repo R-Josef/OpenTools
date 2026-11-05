@@ -45,6 +45,26 @@
   window, nearest-downstream amplicon reporting, and truncation caps.
 - `sequence.ssr`: perfect SSR mining from FASTA with configurable motif length,
   minimum repeats, and locus cap; reports 1-based coordinates and per-motif counts.
+- `fastq.split`: split FASTQ by record count while preserving headers, sequences,
+  and qualities.
+- `bed.blocks`: parse BED12 blockCount/blockSizes/blockStarts, validate block
+  coordinates, and export block and intron intervals.
+- `gxf.edit`: edit GFF3/GTF source, type, strand, and attributes while preserving
+  annotation headers and gzip input.
+- `table.pivot` adds `LIST` and `COUNT_DISTINCT` aggregations for text and
+  multi-value cells, with a configurable list separator.
+- `expression.differential`: two-group Welch t-test or Mann-Whitney U with
+  log2 transformation, BH correction, fold change, and adjusted p-values.
+- `go.gsea`: preranked GSEA with weighted running-sum enrichment scores,
+  deterministic gene-score permutations, NES, and adjusted p-values.
+- `go.enrich` and `kegg.enrich` can prune redundant terms by hit-set Jaccard
+  overlap.
+- `tree.newick.metadata`: export branch lengths, support labels, depth, and
+  descendant-leaf counts for every Newick node.
+- `alignment.blast.alignments`: extract HSP coordinates, E-values, bit scores,
+  qseq/hseq, and midlines from BLAST XML for pairwise alignment review.
+- `annotation.meme.results`: convert MEME motif and MAST hit XML into readable
+  motif and hit tables.
 - `plot.collinearity` now plots MCScanX pairs as a gene-order dot plot between
   two GFF3/GTF-annotated genomes, with block coloring, unmapped-pair counts, and
   genome/chromosome metrics.

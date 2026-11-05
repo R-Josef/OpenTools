@@ -68,8 +68,8 @@ Replace placeholder paths with real workspace files. Keep parameter IDs unchange
 
 ## Related next steps
 
+- [BAM Coverage](tool:hts.bam.coverage)
 - [Filter VCF](tool:hts.vcf.filter)
 - [Subset SAM/BAM/CRAM](tool:hts.bam.subset)
-- [BAM Coverage](tool:hts.bam.coverage)
 
 [Back to documentation home](opentools-doc:README.md)

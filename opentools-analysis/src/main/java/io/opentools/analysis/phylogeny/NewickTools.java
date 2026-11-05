@@ -98,6 +98,112 @@ public final class NewickTools {
         }
     }
 
+    public static final class MetadataTool extends AbstractOpenTool {
+        private static final ToolDescriptor DESCRIPTOR = new ToolDescriptor(
+                "tree.newick.metadata", "Newick Node Metadata",
+                "Export branch lengths, support labels, depth, and descendant counts for every node.",
+                "Phylogeny",
+                List.of("newick metadata", "tree metadata", "树节点元数据", "支持率"),
+                List.of("Newick"),
+                List.of("TSV"),
+                "1.0.0",
+                List.of(
+                        ToolParameter.requiredFile("input", "Input Newick", "Newick tree file."),
+                        ToolParameter.optionalOutputFile("output", "Output TSV",
+                                "Leave blank to save in the run directory."),
+                        ToolParameter.bool("overwrite", "Overwrite output",
+                                "Allow replacing an existing output.", false)
+                )
+        );
+
+        @Override public ToolDescriptor descriptor() { return DESCRIPTOR; }
+        @Override public ValidationResult validate(ToolRequest request) {
+            return validateParameters(request).merge(FormatToolSupport.validateOutput(request, request.path("input")));
+        }
+
+        @Override public ToolResult execute(ToolRequest request, ToolExecutionContext context) throws Exception {
+            NewickNode root = new NewickParser().parse(read(request.path("input")));
+            List<NodeRow> rows = new ArrayList<>();
+            collect(root, "", 0, 0, rows);
+            Path output = FormatToolSupport.outputPath(request, context, "newick-metadata.tsv");
+            FormatToolSupport.writeAtomically(output, writer -> {
+                writer.write("node_id\tparent_id\tlabel\tbranch_length\tsupport"
+                        + "\tis_leaf\tchildren\tleaf_count\tdepth\troot_distance\n");
+                for (NodeRow row : rows) {
+                    writer.write(row.id() + "\t" + row.parent() + "\t" + escape(row.label()) + "\t"
+                            + (row.length() == null ? "" : format(row.length())) + "\t"
+                            + (row.support() == null ? "" : format(row.support())) + "\t"
+                            + row.leaf() + "\t" + row.children() + "\t" + row.leaves() + "\t"
+                            + row.depth() + "\t" + format(row.distance()) + "\n");
+                }
+            });
+            long leaves = rows.stream().filter(NodeRow::leaf).count();
+            context.progress(1.0, "Newick metadata completed");
+            return new ToolResult(
+                    "Exported " + rows.size() + " tree nodes",
+                    List.of(rows.size()),
+                    leaves + " leaves; branch lengths and support labels included.",
+                    List.of(leaves),
+                    new ResultTable(List.of("Metric", "Value"), List.of(
+                            List.of("Nodes", Integer.toString(rows.size())),
+                            List.of("Leaves", Long.toString(leaves))
+                    )),
+                    List.of(new OutputArtifact(output, "Newick node metadata", "text/tab-separated-values")),
+                    Map.of("nodes", rows.size(), "leaves", leaves)
+            );
+        }
+    }
+
+    private static int collect(NewickNode node, String parentId, int depth, double distance, List<NodeRow> rows) {
+        String id = "n" + (rows.size() + 1);
+        double branch = node.length() == null ? 0 : node.length();
+        Double support = null;
+        if (!node.leaf() && !node.name().isBlank()) {
+            try {
+                support = Double.parseDouble(node.name().trim());
+            } catch (NumberFormatException ignored) {
+                // A non-numeric internal label is still exported as a label.
+            }
+        }
+        List<NewickNode> children = node.children();
+        int leafCount = 0;
+        int rowIndex = rows.size();
+        rows.add(null);
+        for (NewickNode child : children) {
+            leafCount += collect(child, id, depth + 1, distance + branch, rows);
+        }
+        if (node.leaf()) {
+            leafCount = 1;
+        }
+        rows.set(rowIndex, new NodeRow(
+                id, parentId, node.name(), node.length(), support, node.leaf(),
+                children.size(), leafCount, depth, distance + branch
+        ));
+        return leafCount;
+    }
+
+    private static String format(double value) {
+        return String.format(java.util.Locale.ROOT, "%.10g", value);
+    }
+
+    private static String escape(String value) {
+        return value == null ? "" : value.replace('\t', ' ').replace('\n', ' ');
+    }
+
+    private record NodeRow(
+            String id,
+            String parent,
+            String label,
+            Double length,
+            Double support,
+            boolean leaf,
+            int children,
+            int leaves,
+            int depth,
+            double distance
+    ) {
+    }
+
     static String read(Path path) throws Exception {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(
                 Compression.open(path), StandardCharsets.UTF_8))) {

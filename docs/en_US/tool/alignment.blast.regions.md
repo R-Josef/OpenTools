@@ -102,7 +102,7 @@ Replace placeholder paths with real workspace files. Keep parameter IDs unchange
 ## Related next steps
 
 - [trimAl Alignment Trimming](tool:alignment.trim)
-- [DIAMOND Protein Alignment](tool:alignment.diamond)
 - [Reciprocal Best BLAST Hits](tool:alignment.blast.reciprocal)
+- [BLAST Alignment Viewer Data](tool:alignment.blast.alignments)
 
 [Back to documentation home](opentools-doc:README.md)

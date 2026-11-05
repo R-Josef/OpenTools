@@ -16,7 +16,7 @@
 ## 输入准备
 
 - 声明格式：`Term-parent TSV`、`GO info TSV`、`OBO 1.4`
-- 必须提供：`hierarchy`
+- 该工具没有必填参数；仍应确认数据集、路径和运行环境。
 - 确认输入格式、ID、表头和坐标约定与参数描述一致，并保留原始文件。
 
 ## 推荐运行步骤
@@ -30,8 +30,8 @@
 
 | 参数 | 必填 | 默认值 | 选择建议 |
 | --- | --- | --- | --- |
-| `hierarchy` GO 层级关系 | 否 | 空 | 两列 term/parent TSV，或包含 [Term] 段的 OBO 1.4；未选择 `resourceId` 对应 GO 资源包时必填。 |
-| `resourceId` GO 资源包 | 否 | 空 | 可选的 `resource.manage` 资源包 ID；其 OBO 文件替代层级输入。 |
+| `hierarchy` GO 层级关系 | 否 | 空 | 选择真实且完整的输入文件，不用示例占位路径替代。 两列 term/parent TSV，或包含 [Term] 段的 OBO 1.4；TSV 根节点父级使用 . 或留空。 |
+| `resourceId` GO 资源包 | 否 | 空字符串 | 可选项通常先留空；填写时保持 ID、列名或语法与输入一致。 可选的 resource.manage 资源包 ID；其 OBO 文件替代层级文件输入。 |
 | `termInfo` GO 项信息 | 否 | 空 | 选择真实且完整的输入文件，不用示例占位路径替代。 可选的 term/name/namespace 表。 |
 | `output` 输出 TSV | 否 | 空 | 留空时写入运行目录；自定义路径应位于工作区，并按格式填写扩展名。 留空时保存到本次运行目录。 |
 | `overwrite` 覆盖输出 | 否 | false | 默认 `false`；只有确认目标文件可替换时才设为 `true`。 允许替换已有输出。 |
@@ -45,7 +45,7 @@
 ## 最小运行示例
 
 ```powershell
-opentools run go.level --param hierarchy=C:\data\hierarchy.tsv
+opentools run go.level
 ```
 
 把占位路径替换为工作区中的真实文件。参数名必须保持原样，布尔值使用 `true` 或 `false`。
@@ -57,7 +57,8 @@ opentools run go.level --param hierarchy=C:\data\hierarchy.tsv
 
 ## 相关下一步
 
+- [预排序 GSEA](tool:go.gsea)
 - [KEGG 富集](tool:kegg.enrich)
-- [GO 富集](tool:go.enrich)
+- [管理 GO/KEGG 资源包](tool:resource.manage)
 
 [返回文档首页](opentools-doc:README.md)

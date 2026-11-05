@@ -1,6 +1,6 @@
 # GO Enrichment
 
-`go.enrich` · Enrichment · v1.0.0
+`go.enrich` · Enrichment · v1.1.0
 
 ## What this tool does
 
@@ -16,7 +16,7 @@ It performs one explicit, reproducible analysis step. The run record preserves n
 ## Prepare the input
 
 - Declared formats: `Gene-GO TSV`, `Gene list`
-- Required parameters: `annotations`, `genes`
+- Required parameters: `genes`
 - Confirm that formats, identifiers, headers, and coordinate conventions match the parameter descriptions, and keep the source files.
 
 ## Recommended workflow
@@ -30,10 +30,11 @@ It performs one explicit, reproducible analysis step. The run record preserves n
 
 | Parameter | Required | Default | Guidance |
 | --- | --- | --- | --- |
-| `annotations` Gene-GO annotation | no | empty | Two columns: gene and semicolon/comma-separated GO terms. Required unless `resourceId` selects a GO pack. |
-| `resourceId` GO resource pack | no | empty | Optional pack id from `resource.manage`; its annotation table replaces the file input. |
+| `annotations` Gene-GO annotation | no | empty | Select a complete real input file; do not submit the placeholder example path. Two columns: gene and semicolon/comma-separated GO terms. |
+| `resourceId` GO resource pack | no | empty string | Leave optional values blank first; when provided, keep IDs, column names, or syntax consistent with the input. Optional pack id from resource.manage; its annotation table replaces the file input. |
 | `genes` Target genes | yes | empty | Select a complete real input file; do not submit the placeholder example path. One gene ID per line. |
 | `background` Background genes | no | empty | Select a complete real input file; do not submit the placeholder example path. Optional one-gene-per-line background list. |
+| `pruneOverlap` Prune redundant terms | no | 0.0 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Jaccard threshold for overlapping hit sets; 0 disables pruning. |
 | `output` Output TSV | no | empty | Leave blank to write inside the run directory; custom paths should stay in the workspace and use the correct extension. Leave blank to save in the run directory. |
 | `overwrite` Overwrite output | no | false | Keep `false` unless the target is known to be safe to replace. Allow replacing an existing output. |
 
@@ -46,7 +47,7 @@ It performs one explicit, reproducible analysis step. The run record preserves n
 ## Minimal command example
 
 ```powershell
-opentools run go.enrich --param annotations=C:\data\annotations.tsv --param genes=C:\data\genes.tsv
+opentools run go.enrich --param genes=C:\data\genes.tsv
 ```
 
 Replace placeholder paths with real workspace files. Keep parameter IDs unchanged and use `true` or `false` for booleans.

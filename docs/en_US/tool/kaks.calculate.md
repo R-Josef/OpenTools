@@ -69,8 +69,8 @@ Replace placeholder paths with real workspace files. Keep parameter IDs unchange
 
 ## Related next steps
 
-- [Run MCScanX](tool:mcscan.run)
 - [Prepare MCScanX Input](tool:mcscan.input)
+- [Run MCScanX](tool:mcscan.run)
 - [Import MCScanX Collinearity](tool:mcscan.import)
 
 [Back to documentation home](opentools-doc:README.md)

@@ -68,8 +68,8 @@ opentools run hts.vcf.stats --param input=C:\data\input.vcf
 
 ## 相关下一步
 
+- [BAM 覆盖度](tool:hts.bam.coverage)
 - [过滤 VCF](tool:hts.vcf.filter)
 - [SAM/BAM/CRAM 子集](tool:hts.bam.subset)
-- [BAM 覆盖度](tool:hts.bam.coverage)
 
 [返回文档首页](opentools-doc:README.md)

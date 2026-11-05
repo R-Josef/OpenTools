@@ -44,7 +44,8 @@ treatment	2.4
 | `rowColumn` 行键列 | 否 | 空字符串 | 可选项通常先留空；填写时保持 ID、列名或语法与输入一致。 透视行键。 |
 | `columnColumn` 列键列 | 否 | 空字符串 | 可选项通常先留空；填写时保持 ID、列名或语法与输入一致。 透视列键。 |
 | `valueColumn` 数值列 | 否 | 空字符串 | 可选项通常先留空；填写时保持 ID、列名或语法与输入一致。 数值列。 |
-| `aggregation` 聚合 | 否 | SUM | 优先使用默认模式；只有输入类型或分析目标明确要求时才切换。 重复单元格使用 SUM、MEAN、COUNT、MIN 或 MAX 聚合。 |
+| `aggregation` 聚合 | 否 | SUM | 优先使用默认模式；只有输入类型或分析目标明确要求时才切换。 重复单元格使用 SUM、MEAN、COUNT、MIN、MAX、LIST 或 COUNT_DISTINCT 聚合。 |
+| `listSeparator` 列表分隔符 | 否 | \| | 可选项通常先留空；填写时保持 ID、列名或语法与输入一致。 LIST 聚合使用的分隔符。 |
 | `maxCells` 最大输出单元格数 | 否 | 2000000 | 先使用默认值；调整阈值时记录理由，并与输入数据规模或统计目标对应。 内存中不同透视单元格的安全上限。 |
 | `delimiter` 分隔符 | 否 | AUTO | 优先使用默认模式；只有输入类型或分析目标明确要求时才切换。 输入表格分隔符。 |
 | `output` 输出表格 | 否 | 空 | 留空时写入运行目录；自定义路径应位于工作区，并按格式填写扩展名。 留空时保存到本次运行目录。 |
@@ -72,7 +73,7 @@ opentools run table.pivot --param input=C:\data\input.tsv
 ## 相关下一步
 
 - [预览分隔文本表格](tool:table.preview)
-- [表格转置](tool:table.transpose)
-- [表格去重](tool:table.deduplicate)
+- [选择表格列](tool:table.select-columns)
+- [表格文本替换](tool:table.replace)
 
 [返回文档首页](opentools-doc:README.md)

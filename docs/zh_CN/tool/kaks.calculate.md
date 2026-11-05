@@ -69,8 +69,8 @@ opentools run kaks.calculate --param input=C:\data\input.fasta
 
 ## 相关下一步
 
-- [运行 MCScanX](tool:mcscan.run)
 - [准备 MCScanX 输入](tool:mcscan.input)
+- [运行 MCScanX](tool:mcscan.run)
 - [导入 MCScanX 共线性](tool:mcscan.import)
 
 [返回文档首页](opentools-doc:README.md)
