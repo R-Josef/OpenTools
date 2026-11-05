@@ -1,6 +1,6 @@
 # Tool reference
 
-OpenTools `0.13.0-SNAPSHOT` registers 102 built-in tools. The in-app Docs tree lists
+OpenTools `0.13.1-SNAPSHOT` registers 102 built-in tools. The in-app Docs tree lists
 all of them. Each tool page can start with a conventional Markdown guide and
 then continues with a generated reference from the active language files and
 `ToolDescriptor`. The generated section includes:

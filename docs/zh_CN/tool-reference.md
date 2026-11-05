@@ -1,6 +1,6 @@
 # 工具参考
 
-OpenTools `0.13.0-SNAPSHOT` 注册 102 个内置工具。应用内 Docs 的左侧目录列出全部
+OpenTools `0.13.1-SNAPSHOT` 注册 102 个内置工具。应用内 Docs 的左侧目录列出全部
 工具。每个工具页可以先显示按约定发现的 Markdown 指南，然后显示根据当前
 `ToolDescriptor` 和语言文件自动生成的参考。自动部分包括：
 

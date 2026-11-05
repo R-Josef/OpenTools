@@ -6,7 +6,7 @@ universal speed.
 
 ## Benchmark environment
 
-- Windows x64, JDK 21, OpenTools 0.13.0-SNAPSHOT.
+- Windows x64, JDK 21, OpenTools 0.13.1-SNAPSHOT.
 - Each command includes JVM startup, project open, plugin scan, task execution, and
   result persistence.
 - Measure the same command on your machine and compare medians of three runs.
