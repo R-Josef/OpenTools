@@ -459,7 +459,7 @@ final class SangerAssemblyViewerPanel extends JPanel {
                 if (index % 10 == 0) g.drawLine(x, y, x, y + 18);
             }
             if (width / (double) referenceLength >= 4.5) {
-                g.setFont(getFont().deriveFont(Font.BOLD, 9f));
+                g.setFont(new Font(Font.MONOSPACED, Font.BOLD, 9));
                 for (int index = 0; index < sequenceLength; index++) {
                     int x = assemblyTrack
                             ? left + (int) Math.round((index - assemblyOffset) * 7 * zoom)
@@ -682,11 +682,9 @@ final class SangerAssemblyViewerPanel extends JPanel {
                                 / Math.max(1, samples - 1));
                         int alignedIndex = traceRead.orientation().startsWith("reverse")
                                 ? readLength - 1 - baseIndex : baseIndex;
-                        int reference = traceRead.cigar().isBlank()
-                                ? traceRead.start() + (int) Math.round(
-                                        (traceRead.end() - traceRead.start()) * sample
-                                                / (double) Math.max(1, samples - 1))
-                                : referencePosition(alignedIndex);
+                        int reference = traceRead.start() + (int) Math.round(
+                                (traceRead.end() - traceRead.start()) * sample
+                                        / (double) Math.max(1, samples - 1));
                         if (reference < 0) continue;
                         int x = referenceLeft + (int) Math.round(width * reference
                                 / (double) Math.max(1, referenceLength - 1));
@@ -698,15 +696,13 @@ final class SangerAssemblyViewerPanel extends JPanel {
                         previousY = y;
                     }
                 }
-                g.setFont(getFont().deriveFont(10f));
+                g.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 10));
                 for (int index = 0; index < trace.sequence().length(); index++) {
                     int alignedIndex = traceRead.orientation().startsWith("reverse")
                             ? readLength - 1 - index : index;
-                    int reference = traceRead.cigar().isBlank()
-                            ? traceRead.start() + (int) Math.round(
-                                    (traceRead.end() - traceRead.start()) * index
-                                            / (double) Math.max(1, readLength - 1))
-                            : referencePosition(alignedIndex);
+                    int reference = traceRead.start() + (int) Math.round(
+                            (traceRead.end() - traceRead.start()) * index
+                                    / (double) Math.max(1, readLength - 1));
                     if (reference < 0) continue;
                     int x = referenceLeft + (int) Math.round(width * reference
                             / (double) Math.max(1, referenceLength - 1));
