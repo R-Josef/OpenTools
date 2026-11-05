@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.11.0-SNAPSHOT
+## 0.12.0-SNAPSHOT
 
 ### Added
 
@@ -47,6 +47,11 @@
   minimum repeats, and locus cap; reports 1-based coordinates and per-motif counts.
 - `fastq.split`: split FASTQ by record count while preserving headers, sequences,
   and qualities.
+- `sanger.assemble`: read AB1/FASTQ/FASTA Sanger reads, trim low-quality ends,
+  assemble overlapping reads, optionally anchor them to a reference, and emit a
+  full contig, reference-anchored consensus, variant table, and provenance BED
+  that distinguishes read-supported, low-confidence, and reference-filled
+  positions.
 - `bed.blocks`: parse BED12 blockCount/blockSizes/blockStarts, validate block
   coordinates, and export block and intron intervals.
 - `gxf.edit`: edit GFF3/GTF source, type, strand, and attributes while preserving

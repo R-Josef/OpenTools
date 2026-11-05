@@ -1,7 +1,7 @@
 # Sequence processing
 
 Sequence tools cover FASTA/FASTQ statistics, filtering, conversion, extraction,
-ORF prediction, SSR mining, primer check (e-PCR), MEME/MAST motif analysis,
+ORF prediction, SSR mining, primer check (e-PCR), MEME/MAST motif analysis, Sanger AB1 assembly,
 and CDS translation. Most record-oriented tools stream input and accept
 gzip-compressed files.
 
@@ -13,4 +13,4 @@ gzip-compressed files.
 - FASTQ AUTO cannot distinguish Phred+64 from Solexa+64 in every file.
 - Use a `.gz` output suffix only with tools that support compressed output.
 
-The in-app Docs tree exposes all 17 built-in sequence tools.
+The in-app Docs tree exposes all 18 built-in sequence tools.

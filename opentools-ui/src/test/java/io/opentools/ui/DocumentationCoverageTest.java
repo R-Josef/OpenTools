@@ -43,7 +43,7 @@ final class DocumentationCoverageTest {
 
     @Test
     void everyBuiltInTaskHasCompleteChineseMarkdown() {
-        assertEquals(101, registry.list().size());
+        assertEquals(102, registry.list().size());
         for (ToolDescriptor tool : registry.list()) {
             String markdown = ToolDocumentation.render(tool, language);
             assertTrue(markdown.contains("## 用途与适用场景"), tool.id());
@@ -87,7 +87,7 @@ final class DocumentationCoverageTest {
         SwingUtilities.invokeAndWait(() -> reference.set(new DocsPanel(registry, language)));
         DocsPanel panel = reference.get();
 
-        assertEquals(101, panel.navigationToolCount());
+        assertEquals(102, panel.navigationToolCount());
         assertEquals(8, panel.navigationCategoryCount());
         assertEquals(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER, panel.horizontalScrollPolicy());
         ToolDescriptor descriptor = registry.find("fasta.stats").orElseThrow().descriptor();

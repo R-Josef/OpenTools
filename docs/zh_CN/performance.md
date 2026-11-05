@@ -5,7 +5,7 @@ OpenTools 是本地优先的 Java 原生工具。本页记录可复现的冒烟�
 
 ## 基准环境
 
-- Windows x64、JDK 21、OpenTools 0.11.0-SNAPSHOT。
+- Windows x64、JDK 21、OpenTools 0.12.0-SNAPSHOT。
 - 每条命令包含 JVM 启动、项目打开、插件扫描、任务执行和结果持久化。
 - 请在本机对同一命令跑三次取中位数后比较。
 

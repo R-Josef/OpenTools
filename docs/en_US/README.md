@@ -37,6 +37,6 @@ same Markdown directory when the interface language is English.
 - [External tools](external-tools.md)
 - [FAQ](faq.md)
 
-The left navigation in the in-app Docs view lists all 101 built-in tools. Tool
+The left navigation in the in-app Docs view lists all 102 built-in tools. Tool
 parameter names, descriptions, defaults, types, options, and ranges come from
 the active `ToolDescriptor` and language files.

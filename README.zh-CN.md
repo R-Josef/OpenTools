@@ -29,7 +29,7 @@ OpenTools 是一个本地优先、工具驱动的开源生物信息学工作台�
 
 ## 功能概览
 
-- 101 个内置工具，覆盖 FASTA/FASTQ、GFF3/GTF、BED、表格、本地与远程 BLAST、DIAMOND、
+- 102 个内置工具，覆盖 FASTA/FASTQ、GFF3/GTF、BED、表格、本地与远程 BLAST、DIAMOND、
   HMMER、多序列比对、系统发育、比较基因组、表达与富集、SAM/BAM/CRAM、
   VCF/BCF、统计图和交互式结果查看。
 - 项目、作业、输入哈希、参数、日志和结果清单统一保存，可重试并复制等价 CLI 命令。
@@ -40,11 +40,12 @@ OpenTools 是一个本地优先、工具驱动的开源生物信息学工作台�
   停止/继续失败策略。
 - 共线性图使用真实的 GFF3/GTF 基因顺序；SSR 挖掘输出完美型微卫星位点；
   引物检查支持 IUPAC 匹配并预测扩增产物。
+- Sanger 组装支持 AB1/FASTQ/FASTA、overlap 拼接和参考锚定 provenance。
 - MEME 基序发现和 MAST 扫描可对接已安装的 MEME Suite；多物种共线性连接可绘制为
   弦/带状概览。
 - GUI、CLI 和 MCP 共用 `ToolDescriptor`、参数校验、工具执行和结果模型。
 - 随包默认插件提供可交互的“金币跑酷”工具，结束后的数据会进入正式作业和结果链路。
-- 内置 Docs 页面离线渲染用户文档，并为全部 101 个工具动态生成参数、范围、
+- 内置 Docs 页面离线渲染用户文档，并为全部 102 个工具动态生成参数、范围、
   示例和失败边界说明。
 - Java 原生工具可直接运行；BLAST+、DIAMOND、HMMER、MEME/MAST、MUSCLE、
   trimAl、IQ-TREE 和 MCScanX 通过外部工具适配器调用。
@@ -62,15 +63,15 @@ OpenTools 是一个本地优先、工具驱动的开源生物信息学工作台�
 
 ## 下载
 
-最新快照 `0.11.0-SNAPSHOT` 提供四个便携包，每个归档在同一 Release 中都带有
+最新快照 `0.12.0-SNAPSHOT` 提供四个便携包，每个归档在同一 Release 中都带有
 对应的 `.sha256.json` 校验文件。
 
 | 平台 | 安装包 | 校验 |
 | --- | --- | --- |
-| Windows x64 | [opentools-0.11.0-SNAPSHOT-windows-x64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.11.0-SNAPSHOT/opentools-0.11.0-SNAPSHOT-windows-x64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.11.0-SNAPSHOT/opentools-0.11.0-SNAPSHOT-windows-x64.zip.sha256.json) |
-| Linux x64 | [opentools-0.11.0-SNAPSHOT-linux-x64.tar.gz](https://github.com/R-Josef/OpenTools/releases/download/0.11.0-SNAPSHOT/opentools-0.11.0-SNAPSHOT-linux-x64.tar.gz) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.11.0-SNAPSHOT/opentools-0.11.0-SNAPSHOT-linux-x64.tar.gz.sha256.json) |
-| macOS x64（Intel） | [opentools-0.11.0-SNAPSHOT-macos-x64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.11.0-SNAPSHOT/opentools-0.11.0-SNAPSHOT-macos-x64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.11.0-SNAPSHOT/opentools-0.11.0-SNAPSHOT-macos-x64.zip.sha256.json) |
-| macOS arm64（Apple Silicon） | [opentools-0.11.0-SNAPSHOT-macos-arm64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.11.0-SNAPSHOT/opentools-0.11.0-SNAPSHOT-macos-arm64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.11.0-SNAPSHOT/opentools-0.11.0-SNAPSHOT-macos-arm64.zip.sha256.json) |
+| Windows x64 | [opentools-0.12.0-SNAPSHOT-windows-x64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.12.0-SNAPSHOT/opentools-0.12.0-SNAPSHOT-windows-x64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.12.0-SNAPSHOT/opentools-0.12.0-SNAPSHOT-windows-x64.zip.sha256.json) |
+| Linux x64 | [opentools-0.12.0-SNAPSHOT-linux-x64.tar.gz](https://github.com/R-Josef/OpenTools/releases/download/0.12.0-SNAPSHOT/opentools-0.12.0-SNAPSHOT-linux-x64.tar.gz) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.12.0-SNAPSHOT/opentools-0.12.0-SNAPSHOT-linux-x64.tar.gz.sha256.json) |
+| macOS x64（Intel） | [opentools-0.12.0-SNAPSHOT-macos-x64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.12.0-SNAPSHOT/opentools-0.12.0-SNAPSHOT-macos-x64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.12.0-SNAPSHOT/opentools-0.12.0-SNAPSHOT-macos-x64.zip.sha256.json) |
+| macOS arm64（Apple Silicon） | [opentools-0.12.0-SNAPSHOT-macos-arm64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.12.0-SNAPSHOT/opentools-0.12.0-SNAPSHOT-macos-arm64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.12.0-SNAPSHOT/opentools-0.12.0-SNAPSHOT-macos-arm64.zip.sha256.json) |
 
 [浏览全部 Release](https://github.com/R-Josef/OpenTools/releases) ·
 [最新 Release](https://github.com/R-Josef/OpenTools/releases/latest)

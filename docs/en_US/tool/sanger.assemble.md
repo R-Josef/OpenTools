@@ -1,0 +1,69 @@
+# Sanger Assembly
+
+`sanger.assemble` · Sequence · v1.0.0
+
+## What this tool does
+
+Assemble AB1, FASTQ, or FASTA Sanger reads by overlap, optionally anchor them to a reference, and report consensus provenance.
+
+It performs one explicit, reproducible analysis step. The run record preserves normalized parameters, input hashes, and logs; always review the source data, settings, and biological interpretation before publication.
+
+## When to use it
+
+- Inspect, convert, or clean FASTA/FASTQ data before assembly, annotation, alignment, or downstream analysis.
+- Use it when one step needs preserved parameters, logs, and outputs for repeatability or troubleshooting.
+
+## Prepare the input
+
+- Declared formats: `AB1`, `FASTQ`, `FASTA`
+- Required parameters: `readsDirectory`
+- Check that identifiers are unambiguous and FASTA/FASTQ records are complete; gzip files must preserve the original record structure.
+
+## Recommended workflow
+
+1. Confirm that file formats, identifiers or column names, and coordinate conventions agree.
+2. Validate with defaults or the recommendations below to catch paths, headers, and type errors first.
+3. After submission, inspect the summary, result table, and artifacts instead of relying only on the success status.
+4. Keep the original inputs, parameters, run log, and output hashes when the result must be reproducible.
+
+## How to choose parameters
+
+| Parameter | Required | Default | Guidance |
+| --- | --- | --- | --- |
+| `readsDirectory` Reads directory | yes | empty | Choose a writable directory and check disk space and naming conflicts before batch output. Directory containing AB1, FASTQ, or FASTA reads. AB1 is preferred when present. |
+| `reference` Reference FASTA | no | empty | Select a complete real input file; do not submit the placeholder example path. Optional reference sequence used to anchor reads and fill uncovered positions. |
+| `minOverlap` Minimum overlap | no | 30 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Minimum overlap length for joining reads. |
+| `minIdentity` Minimum overlap identity | no | 0.85 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Minimum fraction of matching bases in an overlap. |
+| `trimQuality` End-trim quality | no | 20 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Mean Phred quality required in the end-trimming window. |
+| `trimWindow` End-trim window | no | 8 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Sliding window used to trim low-quality read ends. |
+| `minReadLength` Minimum read length | no | 50 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Reads shorter than this after trimming are rejected. |
+| `consensusThreshold` Consensus threshold | no | 0.6 | Start from the default; document why a threshold changes and relate it to input scale or the statistical goal. Minimum quality-weighted base fraction for a confident call. |
+| `outputDirectory` Output directory | no | empty | Choose a writable directory and check disk space and naming conflicts before batch output. Leave blank to save in the run directory. |
+| `overwrite` Overwrite outputs | no | false | Keep `false` unless the target is known to be safe to replace. Allow replacing existing output files. |
+
+## Read the result
+
+- Output formats: `FASTA`, `TSV`, `BED`
+- Review the read/overlap table first, then assembly.fa for the full de novo contig; corrected.fa is reference-anchored, and provenance.bed marks READ_CONSENSUS, LOW_CONFIDENCE, and REFERENCE_FILL. Never treat reference-filled positions as sequencing evidence.
+- The result panel is the quick-review surface; complete data, manifests, and logs live in the run directory.
+
+## Minimal command example
+
+```powershell
+opentools run sanger.assemble --param readsDirectory=C:\data\readsDirectory
+```
+
+Replace placeholder paths with real workspace files. Keep parameter IDs unchanged and use `true` or `false` for booleans.
+
+## Checks and failure boundaries
+
+- FASTA/FASTQ records, IDs, and base or quality characters must be complete; damaged or truncated records fail the job.
+- Existing outputs are protected by default; only consider `overwrite` after explicitly choosing the target path.
+
+## Related next steps
+
+- [Extract FASTA by ID](tool:fasta.extract)
+- [FASTA Statistics](tool:fasta.stats)
+- [Predict ORFs](tool:sequence.orf)
+
+[Back to documentation home](opentools-doc:README.md)

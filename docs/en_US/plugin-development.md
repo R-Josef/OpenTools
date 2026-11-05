@@ -428,7 +428,7 @@ A minimal `pom.xml`:
     <dependency>
       <groupId>io.opentools</groupId>
       <artifactId>opentools-plugin-api</artifactId>
-      <version>0.11.0-SNAPSHOT</version>
+      <version>0.12.0-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>

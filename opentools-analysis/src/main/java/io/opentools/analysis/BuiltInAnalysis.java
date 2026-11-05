@@ -11,6 +11,7 @@ import io.opentools.analysis.sequence.FastqStatsTool;
 import io.opentools.analysis.sequence.SequenceOrfTool;
 import io.opentools.analysis.sequence.PrimerCheckTool;
 import io.opentools.analysis.sequence.SsrMiningTool;
+import io.opentools.analysis.sequence.SangerAssembleTool;
 import io.opentools.analysis.expression.ExpressionCorrelationTool;
 import io.opentools.analysis.expression.ExpressionDifferentialInputTool;
 import io.opentools.analysis.expression.ExpressionDifferentialTool;
@@ -38,6 +39,7 @@ public final class BuiltInAnalysis {
         registry.register(new FastaConvertTool());
         registry.register(new SequenceOrfTool());
         registry.register(new SsrMiningTool());
+        registry.register(new SangerAssembleTool());
         registry.register(new PrimerCheckTool());
         registry.register(new FastqStatsTool());
         registry.register(new FastqFilterTool());
