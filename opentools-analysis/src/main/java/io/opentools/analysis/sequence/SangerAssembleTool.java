@@ -695,7 +695,8 @@ public final class SangerAssembleTool extends AbstractOpenTool {
     private static void writeReadTable(Path path, List<ReadRecord> reads, ReferenceAnchor anchor) throws Exception {
         StringBuilder text = new StringBuilder();
         text.append("read\toriginal_length\ttrim_start\ttrim_end\ttrimmed_length"
-                + "\tmean_quality\treference_start\torientation\tidentity\n");
+                + "\tmean_quality\treference_start\treference_end\tcigar"
+                + "\torientation\tidentity\n");
         for (ReadRecord read : reads) {
             Placement placement = anchor == null ? null : anchor.byName().get(read.name());
             text.append(read.name()).append('\t')
@@ -705,6 +706,9 @@ public final class SangerAssembleTool extends AbstractOpenTool {
                     .append(read.sequence().length()).append('\t')
                     .append(format(meanQuality(read.qualities()))).append('\t')
                     .append(placement == null ? "" : Integer.toString(placement.start())).append('\t')
+                    .append(placement == null ? "" : Integer.toString(placement.alignment().referenceEnd()))
+                    .append('\t')
+                    .append(placement == null ? "" : cigar(placement.alignment().operations())).append('\t')
                     .append(placement == null ? "" : (placement.reverse() ? "reverse" : "forward")).append('\t')
                     .append(placement == null ? "" : format(placement.identity())).append('\n');
         }
@@ -802,6 +806,24 @@ public final class SangerAssembleTool extends AbstractOpenTool {
             text.append(sequence, offset, Math.min(sequence.length(), offset + 80)).append('\n');
         }
         Files.writeString(path, text.toString(), StandardCharsets.UTF_8);
+    }
+
+    private static String cigar(List<Character> operations) {
+        if (operations == null || operations.isEmpty()) return "";
+        StringBuilder text = new StringBuilder();
+        char current = operations.getFirst();
+        int count = 0;
+        for (char operation : operations) {
+            if (operation == current) {
+                count++;
+            } else {
+                text.append(count).append(current);
+                current = operation;
+                count = 1;
+            }
+        }
+        text.append(count).append(current);
+        return text.toString();
     }
 
     private static String format(double value) {

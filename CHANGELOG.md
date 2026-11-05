@@ -73,10 +73,11 @@
   disabled placeholder tab.
 - Fix Visualization image loading after a Sanger job by tracking the plot tab by
   component instead of a cached tab index.
-- The Results panel adds an AB1 tab for `sanger.assemble` jobs, showing trace
-  channels, basecalls, quality shading, per-read selection, horizontal zoom/fit,
-  and vertical Y zoom/fit controls. The default Y range fits the highest peak,
-  and signed trace values are interpreted correctly.
+- The Results panel adds a single Assembly tab for `sanger.assemble` jobs,
+  combining reference/consensus/assembly tracks, coverage, read placement, and
+  the selected read's AB1 chromatogram. The standalone AB1 tab was removed.
+  Trace controls include horizontal and Y zoom/fit, and signed trace values are
+  interpreted correctly.
 - `sanger.assemble` trims common sequencing primers and optional user-supplied
   primer/vector FASTA sequences from both read ends, records the evidence in
   `trimming.tsv`, and can use the reference alignment to write a vector-trimmed

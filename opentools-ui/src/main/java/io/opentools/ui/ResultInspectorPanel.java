@@ -51,6 +51,8 @@ final class ResultInspectorPanel extends JPanel {
     private int memeTabIndex = -1;
     private Ab1ViewerPanel ab1Viewer;
     private int ab1TabIndex = -1;
+    private SangerAssemblyViewerPanel assemblyViewer;
+    private int assemblyTabIndex = -1;
     private JobRecord current;
     private JsonNode currentResult;
     private boolean plotLoaded;
@@ -190,6 +192,9 @@ final class ResultInspectorPanel extends JPanel {
                         tableModel.setDataVector(new Object[0][0], new Object[0]);
                         clearPlot();
                         clearBlast();
+                        clearMeme();
+                        clearAb1();
+                        clearAssembly();
                     }
                     loadSelected();
                 });
@@ -211,6 +216,7 @@ final class ResultInspectorPanel extends JPanel {
         clearBlast();
         clearMeme();
         clearAb1();
+        clearAssembly();
         refresh();
     }
 
@@ -238,6 +244,7 @@ final class ResultInspectorPanel extends JPanel {
             clearBlast();
             clearMeme();
             clearAb1();
+            clearAssembly();
             return;
         }
         Thread.ofVirtual().start(() -> {
@@ -289,7 +296,7 @@ final class ResultInspectorPanel extends JPanel {
                     preparePlotTab(root);
                     prepareBlastTab(root, job);
                     prepareMemeTab(root, job);
-                    prepareAb1Tab(root, job);
+                    prepareAssemblyTab(root, job);
                 });
             } catch (Exception ex) {
                 SwingUtilities.invokeLater(() -> {
@@ -306,6 +313,7 @@ final class ResultInspectorPanel extends JPanel {
                     clearBlast();
                     clearMeme();
                     clearAb1();
+                    clearAssembly();
                 });
             }
         });
@@ -478,6 +486,28 @@ final class ResultInspectorPanel extends JPanel {
             views.remove(memeViewer);
             memeViewer = null;
             memeTabIndex = -1;
+        }
+    }
+
+    private void prepareAssemblyTab(JsonNode root, JobRecord job) {
+        clearAssembly();
+        if (!"sanger.assemble".equals(job.toolId())) return;
+        try {
+            assemblyViewer = new SangerAssemblyViewerPanel(language, root, job);
+            views.addTab(language.text("results.tab.assembly", "Assembly"), assemblyViewer);
+            assemblyTabIndex = views.indexOfComponent(assemblyViewer);
+            clearAb1();
+        } catch (Exception ex) {
+            assemblyViewer = null;
+            assemblyTabIndex = -1;
+        }
+    }
+
+    private void clearAssembly() {
+        if (assemblyViewer != null) {
+            views.remove(assemblyViewer);
+            assemblyViewer = null;
+            assemblyTabIndex = -1;
         }
     }
 
