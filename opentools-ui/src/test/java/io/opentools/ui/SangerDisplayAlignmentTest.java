@@ -51,6 +51,7 @@ final class SangerDisplayAlignmentTest {
         assertEquals(3, display.columnForConsensus(3));
         assertEquals(3, display.columnForAssembly(2));
         assertEquals(2, display.assemblyIndexForReference(2));
+        assertEquals(1, display.assemblyBoundaryColumn(1));
         assertEquals(3, display.assemblyBoundaryColumn(2));
         assertEquals(0, display.referenceSpanStart(0));
         assertEquals(6, display.referenceSpanEndExclusive(5));

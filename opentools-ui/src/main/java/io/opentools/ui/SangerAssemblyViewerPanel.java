@@ -687,7 +687,6 @@ final class SangerAssemblyViewerPanel extends JPanel {
         private final Map<String, Integer> readAssemblyStarts;
         private Ab1Reader.Trace trace;
         private ReadAlignment traceRead;
-        private int traceOffset;
         private double zoom = 1.0;
         private double yZoom = 1.0;
 
@@ -704,36 +703,7 @@ final class SangerAssemblyViewerPanel extends JPanel {
         void setTrace(Ab1Reader.Trace trace, ReadAlignment read) {
             this.trace = trace;
             this.traceRead = read;
-            this.traceOffset = calculateTraceOffset(trace);
             repaint();
-        }
-
-        private int calculateTraceOffset(Ab1Reader.Trace trace) {
-            if (trace == null || trace.peakPositions().length == 0) return 0;
-            int samples = 0;
-            int maximum = 1;
-            for (int[] channel : trace.channels()) {
-                samples = Math.max(samples, channel.length);
-                for (int value : channel) maximum = Math.max(maximum, value);
-            }
-            if (samples == 0) return 0;
-            int threshold = Math.max(1, maximum / 10);
-            int firstSignal = 0;
-            for (int sample = 0; sample < samples; sample++) {
-                boolean signal = false;
-                for (int[] channel : trace.channels()) {
-                    if (sample < channel.length && channel[sample] >= threshold) {
-                        signal = true;
-                        break;
-                    }
-                }
-                if (signal) {
-                    firstSignal = sample;
-                    break;
-                }
-            }
-            int offset = firstSignal - trace.peakPositions()[0];
-            return offset > 100 ? offset : 0;
         }
 
         void setZoom(double value) {
@@ -797,8 +767,12 @@ final class SangerAssemblyViewerPanel extends JPanel {
                 int trimStart = Math.max(0, Math.min(traceLength - 1, traceRead.trimStart()));
                 int trimEnd = Math.max(trimStart + 1, Math.min(traceLength, traceRead.trimEnd()));
                 int trimmedLength = trimEnd - trimStart;
-                int sampleStart = sampleForBase(trimStart, samples, traceLength);
-                int sampleEnd = sampleForBase(trimEnd - 1, samples, traceLength);
+                int firstPeak = sampleForBase(trimStart, samples, traceLength);
+                int lastPeak = sampleForBase(trimEnd - 1, samples, traceLength);
+                int sampleSpacing = Math.max(1,
+                        Math.abs(lastPeak - firstPeak) / Math.max(1, trimmedLength - 1));
+                int sampleStart = Math.max(0, firstPeak - sampleSpacing);
+                int sampleEnd = Math.min(samples - 1, lastPeak + sampleSpacing);
                 int maximum = 1;
                 java.util.List<Integer> sampledValues = new java.util.ArrayList<>();
                 for (int[] channel : trace.channels()) {
@@ -815,47 +789,80 @@ final class SangerAssemblyViewerPanel extends JPanel {
                 boolean reverse = traceRead.orientation().startsWith("reverse");
                 int assemblyStart = readAssemblyStarts.getOrDefault(
                         traceRead.name(), display.assemblyIndexForReference(traceRead.start()));
-                int assemblyEnd = Math.min(display.assemblyLength(), assemblyStart + trimmedLength);
-                int traceSpan = Math.abs(
-                        display.assemblyBoundaryX(assemblyEnd, left, pixelsPerBase)
-                                - display.assemblyBoundaryX(assemblyStart, left, pixelsPerBase));
                 Font baseFont = new Font(Font.MONOSPACED, Font.PLAIN, 9);
                 FontMetrics metrics = getFontMetrics(baseFont);
                 int characterWidth = Math.max(1, metrics.charWidth('M'));
-                boolean drawBases = traceSpan / (double) Math.max(1, trimmedLength)
-                        >= characterWidth + 0.5;
+                boolean drawBases = pixelsPerBase >= characterWidth + 0.5;
+                int[] columns = new int[trimmedLength];
+                int[] peaks = new int[trimmedLength];
+                int[] sources = new int[trimmedLength];
+                int baseCount = 0;
+                for (int step = 0; step < trimmedLength; step++) {
+                    int assemblyIndex = assemblyStart + step;
+                    if (assemblyIndex >= display.assemblyLength()) break;
+                    columns[baseCount] = display.assemblyBoundaryColumn(assemblyIndex);
+                    sources[baseCount] = trimStart + (reverse ? trimmedLength - 1 - step : step);
+                    peaks[baseCount] = sampleForBase(sources[baseCount], samples, traceLength);
+                    baseCount++;
+                }
                 int[] reverseColors = {3, 2, 1, 0};
-                for (int channel = 0; channel < trace.channels().length; channel++) {
-                    int[] values = trace.channels()[channel];
-                    if (values.length == 0) continue;
-                    int colorIndex = reverse
-                            ? reverseColors[Math.min(channel, reverseColors.length - 1)]
-                            : Math.min(channel, colors.length - 1);
-                    g.setColor(colors[colorIndex]);
-                    int previousX = -1;
-                    int previousY = -1;
-                    for (int step = 0; step < trimmedLength; step++) {
-                        int sourceBase = trimStart + (reverse ? trimmedLength - 1 - step : step);
-                        int sample = sampleForBase(sourceBase, samples, traceLength);
-                        int assemblyIndex = assemblyStart + step;
-                        if (assemblyIndex >= display.assemblyLength()) break;
-                        int x = display.assemblyBoundaryX(assemblyIndex, left, pixelsPerBase);
-                        int y = Math.max(0, height - (int) Math.round(
-                                height * values[Math.max(0, Math.min(values.length - 1, sample))]
-                                        / (double) maximum));
-                        if (previousX >= 0) g.drawLine(previousX, previousY, x, y);
-                        previousX = x;
-                        previousY = y;
+                int runStart = 0;
+                while (runStart < baseCount) {
+                    int runEnd = runStart;
+                    while (runEnd + 1 < baseCount
+                            && columns[runEnd + 1] == columns[runEnd] + 1) {
+                        runEnd++;
                     }
+                    int firstSample = peaks[runStart];
+                    int lastSample = peaks[runEnd];
+                    int previousSample = runStart > 0 ? peaks[runStart - 1] : firstSample;
+                    int nextSample = runEnd + 1 < baseCount ? peaks[runEnd + 1] : lastSample;
+                    int firstSpacing = Math.max(1, Math.abs(firstSample - previousSample));
+                    int lastSpacing = Math.max(1, Math.abs(lastSample - nextSample));
+                    int sampleFrom = runStart > 0
+                            ? (previousSample + firstSample) / 2
+                            : Math.max(0, firstSample - firstSpacing);
+                    int sampleTo = runEnd + 1 < baseCount
+                            ? (lastSample + nextSample) / 2
+                            : Math.min(samples - 1, lastSample + lastSpacing);
+                    int sampleMin = Math.min(sampleFrom, sampleTo);
+                    int sampleMax = Math.max(sampleFrom, sampleTo);
+                    int sampleSpan = Math.max(1, sampleMax - sampleMin);
+                    int runStartX = left + (int) Math.round(columns[runStart] * pixelsPerBase);
+                    int runEndX = left + (int) Math.round(
+                            (columns[runEnd] + 1) * pixelsPerBase);
+                    int runSpan = Math.max(1, runEndX - runStartX);
+                    for (int channel = 0; channel < trace.channels().length; channel++) {
+                        int[] values = trace.channels()[channel];
+                        if (values.length == 0) continue;
+                        int colorIndex = reverse
+                                ? reverseColors[Math.min(channel, reverseColors.length - 1)]
+                                : Math.min(channel, colors.length - 1);
+                        g.setColor(colors[colorIndex]);
+                        int previousX = -1;
+                        int previousY = -1;
+                        for (int sample = sampleMin; sample <= sampleMax; sample++) {
+                            int offset = (int) Math.round(
+                                    (sample - sampleMin) * (double) runSpan / sampleSpan);
+                            int x = reverse ? runEndX - offset : runStartX + offset;
+                            int value = values[Math.max(0,
+                                    Math.min(values.length - 1, sample))];
+                            int y = Math.max(0, height - (int) Math.round(
+                                    height * value / (double) maximum));
+                            if (previousX >= 0 && (x != previousX || y != previousY)) {
+                                g.drawLine(previousX, previousY, x, y);
+                            }
+                            previousX = x;
+                            previousY = y;
+                        }
+                    }
+                    runStart = runEnd + 1;
                 }
                 g.setFont(baseFont);
                 if (drawBases) {
-                    for (int step = 0; step < trimmedLength; step++) {
-                        int source = trimStart + (reverse ? trimmedLength - 1 - step : step);
-                        int assemblyIndex = assemblyStart + step;
-                        if (assemblyIndex >= display.assemblyLength()) break;
-                        int x = display.assemblyBoundaryX(assemblyIndex, left, pixelsPerBase);
-                        char base = trace.sequence().charAt(source);
+                    for (int index = 0; index < baseCount; index++) {
+                        int x = left + (int) Math.round((columns[index] + 0.5) * pixelsPerBase);
+                        char base = trace.sequence().charAt(sources[index]);
                         if (reverse) base = complement(base);
                         g.setColor(colors[Math.max(0, Math.min(3, "ACGT".indexOf(base)))]);
                         g.drawString(String.valueOf(base), x - metrics.charWidth(base) / 2,
@@ -870,7 +877,7 @@ final class SangerAssemblyViewerPanel extends JPanel {
         private int sampleForBase(int baseIndex, int samples, int traceLength) {
             if (trace != null && trace.peakPositions().length > baseIndex && baseIndex >= 0) {
                 return Math.max(0, Math.min(samples - 1,
-                        trace.peakPositions()[baseIndex] + traceOffset));
+                        trace.peakPositions()[baseIndex]));
             }
             return Math.max(0, Math.min(samples - 1,
                     (int) Math.round(baseIndex * (samples - 1.0) / Math.max(1, traceLength - 1))));

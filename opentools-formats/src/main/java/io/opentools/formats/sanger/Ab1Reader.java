@@ -57,16 +57,83 @@ public final class Ab1Reader {
             }
         }
         int[] peaks = tagShorts(bytes, directory, "PLOC", 1, little);
-        int[][] channels = new int[4][];
-        for (int channel = 0; channel < 4; channel++) {
+        int[][] data = new int[12][];
+        for (int channel = 0; channel < data.length; channel++) {
             int[] values = tagInts(bytes, directory, "DATA", channel + 1, little);
-            channels[channel] = values == null ? new int[0] : values;
+            data[channel] = values == null ? new int[0] : values;
         }
+        int[] peakPositions = peaks == null ? new int[0] : peaks;
+        int[][] channels = selectChannels(data, sequence, peakPositions);
         String name = path.getFileName().toString();
         int dot = name.lastIndexOf('.');
         if (dot > 0) name = name.substring(0, dot);
         return new Trace(name, sequence, qualities,
-                peaks == null ? new int[0] : peaks, channels);
+                peakPositions, channels);
+    }
+
+    private static int[][] selectChannels(int[][] data, String sequence, int[] peaks) {
+        int[][] corrected = correctedChannels(data);
+        if (corrected != null && peakMatch(corrected, sequence, peaks) >= 0.70) {
+            return corrected;
+        }
+        int[][] raw = standardChannels(data, 0);
+        if (raw != null && peakMatch(raw, sequence, peaks) >= 0.70) {
+            return raw;
+        }
+        if (corrected != null) return corrected;
+        if (raw != null) return raw;
+        int[][] analyzed = standardChannels(data, 4);
+        if (analyzed != null) return analyzed;
+        return new int[][]{new int[0], new int[0], new int[0], new int[0]};
+    }
+
+    private static int[][] correctedChannels(int[][] data) {
+        if (data.length < 12) return null;
+        int[] g = data[8];
+        int[] a = data[9];
+        int[] t = data[10];
+        int[] c = data[11];
+        if (g.length == 0 || a.length == 0 || t.length == 0 || c.length == 0) return null;
+        return new int[][]{a, c, g, t};
+    }
+
+    private static int[][] standardChannels(int[][] data, int start) {
+        if (start < 0 || start + 3 >= data.length) return null;
+        int[] a = data[start];
+        int[] c = data[start + 1];
+        int[] g = data[start + 2];
+        int[] t = data[start + 3];
+        if (a.length == 0 && c.length == 0 && g.length == 0 && t.length == 0) return null;
+        return new int[][]{a, c, g, t};
+    }
+
+    private static double peakMatch(int[][] channels, String sequence, int[] peaks) {
+        int called = 0;
+        int matched = 0;
+        int limit = Math.min(sequence.length(), peaks.length);
+        for (int index = 0; index < limit; index++) {
+            int expected = "ACGT".indexOf(sequence.charAt(index));
+            if (expected < 0) continue;
+            int peak = peaks[index];
+            int best = 0;
+            int bestValue = Integer.MIN_VALUE;
+            boolean available = true;
+            for (int channel = 0; channel < 4; channel++) {
+                if (peak < 0 || peak >= channels[channel].length) {
+                    available = false;
+                    break;
+                }
+                int value = channels[channel][peak];
+                if (value > bestValue) {
+                    bestValue = value;
+                    best = channel;
+                }
+            }
+            if (!available) continue;
+            called++;
+            if (best == expected) matched++;
+        }
+        return called == 0 ? 0 : matched / (double) called;
     }
 
     private static String clean(String sequence) {

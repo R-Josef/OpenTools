@@ -184,7 +184,7 @@ Maven 插件项目应使用：
 <dependency>
   <groupId>io.opentools</groupId>
   <artifactId>opentools-plugin-api</artifactId>
-  <version>0.13.3-SNAPSHOT</version>
+  <version>0.13.4-SNAPSHOT</version>
   <scope>provided</scope>
 </dependency>
 ```
@@ -193,7 +193,7 @@ Maven 插件项目应使用：
 
 ```powershell
 javac --release 21 `
-  -cp "plugin-sdk\opentools-plugin-api-0.13.3-SNAPSHOT.jar" `
+  -cp "plugin-sdk\opentools-plugin-api-0.13.4-SNAPSHOT.jar" `
   -d build\classes `
   src\main\java\example\ExamplePlugin.java
 ```
