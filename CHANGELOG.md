@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.13.2-SNAPSHOT
+## 0.13.3-SNAPSHOT
 
 ### Added
 
@@ -157,6 +157,9 @@
 
 ### Fixed
 
+- The Sanger assembly view now places reads and AB1 traces on the assembly
+  coordinate axis, shares one 10-column grid across reference, consensus, and
+  assembly, and keeps full trace base labels visible without overlap.
 - Jobs now have a bounded concurrency gate, a real QUEUED state, persisted
   progress, cooperative cancellation with a terminal CANCELLED record, and
   startup recovery. Stale RUNNING/QUEUED jobs become FAILED with

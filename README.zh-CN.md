@@ -63,15 +63,15 @@ OpenTools 是一个本地优先、工具驱动的开源生物信息学工作台�
 
 ## 下载
 
-最新快照 `0.13.2-SNAPSHOT` 提供四个便携包，每个归档在同一 Release 中都带有
+最新快照 `0.13.3-SNAPSHOT` 提供四个便携包，每个归档在同一 Release 中都带有
 对应的 `.sha256.json` 校验文件。
 
 | 平台 | 安装包 | 校验 |
 | --- | --- | --- |
-| Windows x64 | [opentools-0.13.2-SNAPSHOT-windows-x64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.13.2-SNAPSHOT/opentools-0.13.2-SNAPSHOT-windows-x64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.2-SNAPSHOT/opentools-0.13.2-SNAPSHOT-windows-x64.zip.sha256.json) |
-| Linux x64 | [opentools-0.13.2-SNAPSHOT-linux-x64.tar.gz](https://github.com/R-Josef/OpenTools/releases/download/0.13.2-SNAPSHOT/opentools-0.13.2-SNAPSHOT-linux-x64.tar.gz) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.2-SNAPSHOT/opentools-0.13.2-SNAPSHOT-linux-x64.tar.gz.sha256.json) |
-| macOS x64（Intel） | [opentools-0.13.2-SNAPSHOT-macos-x64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.13.2-SNAPSHOT/opentools-0.13.2-SNAPSHOT-macos-x64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.2-SNAPSHOT/opentools-0.13.2-SNAPSHOT-macos-x64.zip.sha256.json) |
-| macOS arm64（Apple Silicon） | [opentools-0.13.2-SNAPSHOT-macos-arm64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.13.2-SNAPSHOT/opentools-0.13.2-SNAPSHOT-macos-arm64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.2-SNAPSHOT/opentools-0.13.2-SNAPSHOT-macos-arm64.zip.sha256.json) |
+| Windows x64 | [opentools-0.13.3-SNAPSHOT-windows-x64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.13.3-SNAPSHOT/opentools-0.13.3-SNAPSHOT-windows-x64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.3-SNAPSHOT/opentools-0.13.3-SNAPSHOT-windows-x64.zip.sha256.json) |
+| Linux x64 | [opentools-0.13.3-SNAPSHOT-linux-x64.tar.gz](https://github.com/R-Josef/OpenTools/releases/download/0.13.3-SNAPSHOT/opentools-0.13.3-SNAPSHOT-linux-x64.tar.gz) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.3-SNAPSHOT/opentools-0.13.3-SNAPSHOT-linux-x64.tar.gz.sha256.json) |
+| macOS x64（Intel） | [opentools-0.13.3-SNAPSHOT-macos-x64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.13.3-SNAPSHOT/opentools-0.13.3-SNAPSHOT-macos-x64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.3-SNAPSHOT/opentools-0.13.3-SNAPSHOT-macos-x64.zip.sha256.json) |
+| macOS arm64（Apple Silicon） | [opentools-0.13.3-SNAPSHOT-macos-arm64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.13.3-SNAPSHOT/opentools-0.13.3-SNAPSHOT-macos-arm64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.3-SNAPSHOT/opentools-0.13.3-SNAPSHOT-macos-arm64.zip.sha256.json) |
 
 [浏览全部 Release](https://github.com/R-Josef/OpenTools/releases) ·
 [最新 Release](https://github.com/R-Josef/OpenTools/releases/latest)

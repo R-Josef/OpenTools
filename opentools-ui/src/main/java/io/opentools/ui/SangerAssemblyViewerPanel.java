@@ -59,21 +59,29 @@ final class SangerAssemblyViewerPanel extends JPanel {
         Path corrected = artifact(root, "Reference-anchored consensus");
         Path finalConsensus = artifact(root, "Consensus with indels");
         Path readsTable = artifact(root, "Read and placement summary");
+        Path indelsTable = artifact(root, "Consensus indels");
         String reference = reference(job);
         String insertSequence = firstSequence(insert);
         String assemblySequence = firstSequence(assembly);
         if (assemblySequence.isBlank()) assemblySequence = insertSequence;
-        String consensus = firstSequence(finalConsensus);
-        if (consensus.isBlank()) consensus = firstSequence(corrected);
-        if (reference.isBlank()) reference = consensus;
-        if (assemblySequence.isBlank()) assemblySequence = consensus;
+        String correctedSequence = firstSequence(corrected);
+        String finalConsensusSequence = firstSequence(finalConsensus);
+        if (correctedSequence.isBlank()) correctedSequence = reference;
+        if (reference.isBlank()) reference = correctedSequence;
+        if (reference.isBlank()) reference = finalConsensusSequence;
+        if (assemblySequence.isBlank()) assemblySequence = finalConsensusSequence;
         int assemblyOffset = findAssemblyOffset(assemblySequence, reference, insertSequence);
         List<ReadAlignment> reads = readAlignments(readsTable);
+        List<SangerDisplayAlignment.Indel> indels = readIndels(indelsTable);
+        SangerDisplayAlignment display = SangerDisplayAlignment.build(
+                reference, correctedSequence, finalConsensusSequence, indels,
+                option(job, "minIndelSupport", 1), assemblySequence, insertSequence,
+                assemblyOffset);
         loadTraces(job);
+        Map<String, Integer> assemblyStarts = readAssemblyStarts(display, reads);
 
-        canvas = new AssemblyCanvas(reference, consensus, assemblySequence, assemblyOffset, reads);
-        ab1Canvas = new Ab1ReferenceCanvas(reference.length(), assemblySequence.length(),
-                assemblyOffset, assemblySequence, reads);
+        canvas = new AssemblyCanvas(display, reads, assemblyStarts);
+        ab1Canvas = new Ab1ReferenceCanvas(display, assemblyStarts);
         canvas.setSelectionListener((read, coordinate) -> {
             if (read != null) {
                 Ab1Reader.Trace trace = traces.get(read);
@@ -181,7 +189,7 @@ final class SangerAssemblyViewerPanel extends JPanel {
 
     private void fitShared() {
         int available = Math.max(200, getWidth() - 140);
-        double fit = available / (double) Math.max(1, Math.max(1, canvas.referenceLength()) * 7);
+        double fit = available / (double) Math.max(1, Math.max(1, canvas.spanColumns()) * 7);
         sharedZoom = Math.max(0.2, Math.min(12.0, fit));
         canvas.setZoom(sharedZoom);
         ab1Canvas.setZoom(sharedZoom);
@@ -227,6 +235,47 @@ final class SangerAssemblyViewerPanel extends JPanel {
             }
         }
         return 0;
+    }
+
+    private Map<String, Integer> readAssemblyStarts(
+            SangerDisplayAlignment display,
+            List<ReadAlignment> reads
+    ) {
+        Map<String, Integer> starts = new LinkedHashMap<>();
+        for (ReadAlignment read : reads) {
+            int start = locateReadInAssembly(display.assembly(), traces.get(read.name()), read);
+            if (start < 0) start = display.assemblyIndexForReference(read.start());
+            starts.put(read.name(), Math.max(0, Math.min(display.assemblyLength(), start)));
+        }
+        return starts;
+    }
+
+    private static int locateReadInAssembly(
+            String assembly,
+            Ab1Reader.Trace trace,
+            ReadAlignment read
+    ) {
+        if (assembly == null || assembly.isBlank() || trace == null || read == null) return -1;
+        int length = trace.sequence().length();
+        int trimStart = Math.max(0, Math.min(length, read.trimStart()));
+        int trimEnd = Math.max(trimStart, Math.min(length, read.trimEnd()));
+        if (trimEnd <= trimStart) return -1;
+        String trimmed = trace.sequence().substring(trimStart, trimEnd);
+        String oriented = read.orientation() != null && read.orientation().startsWith("reverse")
+                ? reverseComplement(trimmed) : trimmed;
+        for (int probe : new int[]{60, 40, 30, 20, 15}) {
+            if (oriented.length() < probe) continue;
+            int position = assembly.indexOf(oriented.substring(0, probe));
+            if (position >= 0) return position;
+        }
+        int position = assembly.indexOf(oriented);
+        if (position >= 0) return position;
+        int tail = Math.min(40, oriented.length());
+        if (tail > 0) {
+            position = assembly.indexOf(oriented.substring(oriented.length() - tail));
+            if (position >= 0) return Math.max(0, position - (oriented.length() - tail));
+        }
+        return -1;
     }
 
     private static String reverseComplement(String sequence) {
@@ -304,6 +353,41 @@ final class SangerAssemblyViewerPanel extends JPanel {
         return reads;
     }
 
+    private static List<SangerDisplayAlignment.Indel> readIndels(Path path) throws Exception {
+        if (path == null) return List.of();
+        List<String> lines = Files.readAllLines(path);
+        if (lines.isEmpty()) return List.of();
+        String[] header = lines.getFirst().split("\t", -1);
+        Map<String, Integer> index = new LinkedHashMap<>();
+        for (int i = 0; i < header.length; i++) index.put(header[i], i);
+        List<SangerDisplayAlignment.Indel> indels = new ArrayList<>();
+        for (int lineIndex = 1; lineIndex < lines.size(); lineIndex++) {
+            String[] fields = lines.get(lineIndex).split("\t", -1);
+            if (fields.length == 0 || fields[0].isBlank()) continue;
+            try {
+                indels.add(new SangerDisplayAlignment.Indel(
+                        Integer.parseInt(field(fields, index, "position")),
+                        field(fields, index, "type"),
+                        field(fields, index, "sequence"),
+                        integer(fields, index, "length"),
+                        integer(fields, index, "support")
+                ));
+            } catch (NumberFormatException ignored) {
+                // Ignore malformed rows.
+            }
+        }
+        return indels;
+    }
+
+    private static int option(JobRecord job, String name, int fallback) {
+        if (job.paramsJson() == null) return fallback;
+        try {
+            return JSON.readTree(job.paramsJson()).path(name).asInt(fallback);
+        } catch (Exception ignored) {
+            return fallback;
+        }
+    }
+
     private static String field(String[] fields, Map<String, Integer> index, String name) {
         Integer position = index.get(name);
         return position == null || position >= fields.length ? "" : fields[position];
@@ -331,12 +415,9 @@ final class SangerAssemblyViewerPanel extends JPanel {
     }
 
     private static final class AssemblyCanvas extends JPanel {
-        private final String reference;
-        private final String consensus;
-        private final String assembly;
+        private final SangerDisplayAlignment display;
         private final List<ReadAlignment> reads;
-        private final int[] coverage;
-        private final int assemblyOffset;
+        private final Map<String, Integer> readAssemblyStarts;
         private final int rowHeight = 22;
         private final int top = 100;
         private long selectedCoordinate = -1;
@@ -347,14 +428,14 @@ final class SangerAssemblyViewerPanel extends JPanel {
         private ReadAlignment traceRead;
         private SelectionListener listener = (read, coordinate) -> { };
 
-        AssemblyCanvas(String reference, String consensus, String assembly, int assemblyOffset,
-                       List<ReadAlignment> reads) {
-            this.reference = reference;
-            this.consensus = consensus;
-            this.assembly = assembly;
-            this.assemblyOffset = Math.max(0, assemblyOffset);
+        AssemblyCanvas(
+                SangerDisplayAlignment display,
+                List<ReadAlignment> reads,
+                Map<String, Integer> readAssemblyStarts
+        ) {
+            this.display = display;
             this.reads = reads;
-            this.coverage = coverage(reference.length(), reads);
+            this.readAssemblyStarts = readAssemblyStarts;
             setBackground(Color.WHITE);
             addMouseListener(new MouseAdapter() {
                 @Override public void mouseClicked(MouseEvent event) {
@@ -385,7 +466,8 @@ final class SangerAssemblyViewerPanel extends JPanel {
         String readName(int index) {
             return index >= 0 && index < reads.size() ? reads.get(index).name() : "";
         }
-        int referenceLength() { return reference.length(); }
+        int referenceLength() { return display.referenceLength(); }
+        int spanColumns() { return display.spanColumns(); }
         int selectedRead() { return selected; }
 
         void setZoom(double value) {
@@ -418,37 +500,8 @@ final class SangerAssemblyViewerPanel extends JPanel {
         }
 
         void setCoordinate(int coordinate) {
-            selectedCoordinate = Math.max(0, Math.min(reference.length() - 1, coordinate));
+            selectedCoordinate = Math.max(0, Math.min(display.referenceLength() - 1, coordinate));
             repaint();
-        }
-
-        int referencePosition(String readName, int readBase) {
-            for (ReadAlignment read : reads) {
-                if (!read.name().equals(readName)) continue;
-                int position = read.start();
-                int consumed = 0;
-                for (String part : read.cigar().split("(?<=\\D)|(?=\\d)")) {
-                    if (part.isEmpty()) continue;
-                    char operation = part.charAt(part.length() - 1);
-                    int count;
-                    try {
-                        count = Integer.parseInt(part.substring(0, part.length() - 1));
-                    } catch (NumberFormatException ex) {
-                        continue;
-                    }
-                    if (operation == 'M' || operation == 'I') {
-                        if (readBase < consumed + count) {
-                            return position + (readBase - consumed);
-                        }
-                        consumed += count;
-                        if (operation == 'M') position += count;
-                    } else if (operation == 'D') {
-                        position += count;
-                    }
-                }
-                return position;
-            }
-            return -1;
         }
 
         void selectRead(int index) {
@@ -466,14 +519,14 @@ final class SangerAssemblyViewerPanel extends JPanel {
 
         void fit() {
             int width = getParent() == null ? 900 : getParent().getWidth();
-            int length = Math.max(1, reference.length());
+            int length = Math.max(1, display.spanColumns());
             zoom = Math.max(0.2, Math.min(12.0, Math.max(200, width - 100) / (length * 7.0)));
             resize();
         }
 
         private void resize() {
             int width = Math.max(600,
-                    (int) Math.round(Math.max(1, assembly.length()) * 7 * zoom) + 100);
+                    (int) Math.round(Math.max(1, display.spanColumns()) * 7 * zoom) + 100);
             setPreferredSize(new Dimension(width,
                     top + Math.max(3, reads.size()) * rowHeight + 20));
             revalidate();
@@ -487,29 +540,17 @@ final class SangerAssemblyViewerPanel extends JPanel {
                 g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 int left = 8;
                 double pixelsPerBase = 7 * zoom;
-                int referenceLeft = left + (int) Math.round(assemblyOffset * pixelsPerBase);
+                int referenceLeft = display.referenceLeft(left, pixelsPerBase);
                 int width = Math.max(120,
-                        (int) Math.round(Math.max(1, reference.length()) * pixelsPerBase));
-                int length = Math.max(1, reference.length());
+                        (int) Math.round(Math.max(1, display.coreColumns()) * pixelsPerBase));
                 g.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 10));
-                drawTrack(g, "Reference", reference, 20, referenceLeft, width, new Color(80, 120, 150), false);
-                drawTrack(g, "Consensus", consensus, 45, referenceLeft, width, new Color(36, 139, 135), false);
-                drawTrack(g, "Assembly", assembly, 70, left, width, new Color(190, 130, 40), true);
-                for (int index = 0; index < reads.size(); index++) {
-                    ReadAlignment read = reads.get(index);
-                    int y = top + index * rowHeight;
-                    boolean reverse = read.orientation().startsWith("reverse");
-                    int assemblyStart = reverse ? assemblyOffset + read.start() : read.start();
-                    int assemblyEnd = assemblyStart + Math.max(1, read.trimEnd() - read.trimStart());
-                    int x1 = left + (int) Math.round(Math.max(0, assemblyStart) * 7 * zoom);
-                    int x2 = left + (int) Math.round(Math.min(assembly.length(), assemblyEnd) * 7 * zoom);
-                    g.setColor(index == selected ? new Color(42, 112, 190) : new Color(150, 168, 180));
-                    g.fillRoundRect(x1, y, Math.max(3, x2 - x1), 13, 5, 5);
-                    g.setColor(new Color(55, 65, 72));
-                    g.drawString(read.orientation().startsWith("reverse") ? "<" : ">", Math.max(x1, x2 - 8), y + 11);
-                }
+                drawGrid(g, left, pixelsPerBase);
+                drawReferenceTrack(g, left, pixelsPerBase, referenceLeft, width);
+                drawConsensusTrack(g, left, pixelsPerBase, referenceLeft, width);
+                drawAssemblyTrack(g, left, pixelsPerBase);
+                drawReadBars(g, left, pixelsPerBase);
                 if (selectedCoordinate >= 0) {
-                    int x = referenceLeft + (int) Math.round(width * selectedCoordinate / (double) length);
+                    int x = display.referenceX((int) selectedCoordinate, left, pixelsPerBase);
                     g.setColor(new Color(255, 190, 80, 150));
                     g.fillRect(x - 1, 8, 3, getHeight() - 16);
                 }
@@ -518,171 +559,144 @@ final class SangerAssemblyViewerPanel extends JPanel {
             }
         }
 
-        private void drawTrack(Graphics2D g, String label, String sequence, int y,
-                               int left, int width, Color color, boolean assemblyTrack) {
-            if (sequence == null || sequence.isEmpty()) return;
-            int sequenceLength = Math.max(1, sequence.length());
-            int referenceLength = Math.max(1, reference.length());
-            g.setColor(color);
-            for (int index = 0; index < sequenceLength; index++) {
-                int x = assemblyTrack
-                        ? left + (int) Math.round(index * 7 * zoom)
-                        : left + (int) Math.round(width * index / (double) referenceLength);
-                int gridIndex = assemblyTrack ? index : assemblyOffset + index;
-                if (gridIndex % 10 == 0) g.drawLine(x, y, x, y + 18);
+        private void drawGrid(Graphics2D g, int left, double pixelsPerBase) {
+            g.setColor(new Color(228, 233, 237));
+            for (int column = 0; column < display.spanColumns(); column += 10) {
+                int x = left + (int) Math.round(column * pixelsPerBase);
+                g.drawLine(x, 10, x, 88);
             }
-            if (width / (double) referenceLength >= 4.5) {
-                g.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 10));
-                for (int index = 0; index < sequenceLength; index++) {
-                    int x = assemblyTrack
-                            ? left + (int) Math.round(index * 7 * zoom)
-                            : left + (int) Math.round(width * index / (double) referenceLength);
-                    char base = sequence.charAt(index);
-                    g.setColor(switch (base) {
-                        case 'A' -> new Color(37, 132, 74);
-                        case 'C' -> new Color(49, 98, 180);
-                        case 'G' -> new Color(196, 116, 26);
-                        case 'T' -> new Color(178, 48, 48);
-                        default -> new Color(120, 126, 130);
-                    });
-                    g.drawString(String.valueOf(base), x, y + 18);
+        }
+
+        private void drawReferenceTrack(Graphics2D g, int left, double pixelsPerBase,
+                                        int referenceLeft, int width) {
+            int y = 20;
+            if (pixelsPerBase >= 4.5) {
+                for (int column = 0; column < display.columnCount(); column++) {
+                    SangerDisplayAlignment.Column item = display.column(column);
+                    if (item.referenceIndex() < 0) continue;
+                    int x = display.referenceX(item.referenceIndex(), left, pixelsPerBase);
+                    drawBase(g, display.reference(), item.referenceIndex(), x, y + 18);
                 }
             }
             g.setColor(new Color(210, 216, 220));
-            g.drawLine(left, y + 18, left + width, y + 18);
+            g.drawLine(referenceLeft, y + 18, referenceLeft + width, y + 18);
         }
 
-        private void drawTrace(Graphics2D g, int left, int width, int length) {
-            int traceTop = top + Math.max(3, reads.size()) * rowHeight + 14;
-            g.setColor(new Color(55, 65, 72));
-            g.drawString("AB1", 4, traceTop + 12);
-            if (trace == null || traceRead == null) {
-                g.setColor(new Color(120, 126, 130));
-                g.drawString("No AB1 trace for the selected read.", left, traceTop + 24);
-                return;
+        private void drawConsensusTrack(Graphics2D g, int left, double pixelsPerBase,
+                                        int referenceLeft, int width) {
+            int y = 45;
+            for (int column = 0; column < display.columnCount(); column++) {
+                SangerDisplayAlignment.Column item = display.column(column);
+                if (item.consensusIndex() < 0) continue;
+                int x = display.consensusX(item.consensusIndex(), left, pixelsPerBase);
+                if (item.insertion()) {
+                    g.setColor(new Color(224, 244, 242));
+                    g.fillRect(x - 1, y - 2, Math.max(2, (int) Math.round(pixelsPerBase)), 20);
+                }
+                g.setColor(new Color(36, 139, 135));
             }
-            int samples = 0;
-            int maximum = 1;
-            for (int[] channel : trace.channels()) {
-                samples = Math.max(samples, channel.length);
-                for (int value : channel) maximum = Math.max(maximum, value);
-            }
-            if (samples == 0) {
-                g.drawString("No trace channels.", left, traceTop + 24);
-                return;
-            }
-            int traceHeight = Math.max(80, getHeight() - traceTop - 42);
-            int yMaximum = Math.max(1, (int) Math.round(maximum / yZoom));
-            g.setColor(new Color(230, 233, 235));
-            g.drawLine(left, traceTop + traceHeight, left + width, traceTop + traceHeight);
-            Color[] colors = {
-                    new Color(37, 132, 74), new Color(49, 98, 180),
-                    new Color(196, 116, 26), new Color(178, 48, 48)
-            };
-            int readLength = Math.max(1, trace.sequence().length());
-            for (int channel = 0; channel < trace.channels().length; channel++) {
-                int[] values = trace.channels()[channel];
-                if (values.length == 0) continue;
-                g.setColor(colors[Math.min(channel, colors.length - 1)]);
-                int previousX = -1;
-                int previousY = -1;
-                for (int sample = 0; sample < samples; sample++) {
-                    int baseIndex = (int) Math.round(sample * (readLength - 1.0)
-                            / Math.max(1, samples - 1));
-                    int alignedIndex = traceRead.orientation().startsWith("reverse")
-                            ? readLength - 1 - baseIndex : baseIndex;
-                    int reference = referencePosition(traceRead.name(), alignedIndex);
-                    if (reference < 0) continue;
-                    int x = left + (int) Math.round(width * reference / (double) length);
-                    int y = Math.max(0, traceTop + traceHeight
-                            - (int) Math.round(traceHeight * values[Math.min(sample, values.length - 1)]
-                                    / (double) yMaximum));
-                    if (previousX >= 0) g.drawLine(previousX, previousY, x, y);
-                    previousX = x;
-                    previousY = y;
+            if (pixelsPerBase >= 4.5) {
+                for (int column = 0; column < display.columnCount(); column++) {
+                    SangerDisplayAlignment.Column item = display.column(column);
+                    if (item.consensusIndex() < 0) continue;
+                    int x = display.consensusX(item.consensusIndex(), left, pixelsPerBase);
+                    drawBase(g, display.consensus(), item.consensusIndex(), x, y + 18);
                 }
             }
-            g.setFont(getFont().deriveFont(10f));
-            int peaks = trace.peakPositions().length;
-            for (int index = 0; index < trace.sequence().length(); index++) {
-                int alignedIndex = traceRead.orientation().startsWith("reverse")
-                        ? trace.sequence().length() - 1 - index : index;
-                int reference = referencePosition(traceRead.name(), alignedIndex);
-                if (reference < 0) continue;
-                int x = left + (int) Math.round(width * reference / (double) length);
-                char base = trace.sequence().charAt(index);
-                g.setColor(colors[Math.max(0, Math.min(3, "ACGT".indexOf(base)))]);
-                g.drawString(String.valueOf(base), x - 3, traceTop + traceHeight + 15);
+            g.setColor(new Color(210, 216, 220));
+            g.drawLine(referenceLeft, y + 18, referenceLeft + width, y + 18);
+        }
+
+        private void drawAssemblyTrack(Graphics2D g, int left, double pixelsPerBase) {
+            int y = 70;
+            if (display.assemblyMapped()) {
+                for (int column = 0; column < display.columnCount(); column++) {
+                    SangerDisplayAlignment.Column item = display.column(column);
+                    if (item.assemblyIndex() < 0) continue;
+                    int x = display.assemblyX(item.assemblyIndex(), left, pixelsPerBase);
+                    if (item.insertion()) {
+                        g.setColor(new Color(250, 240, 220));
+                        g.fillRect(x - 1, y - 2, Math.max(2, (int) Math.round(pixelsPerBase)), 20);
+                    }
+                    g.setColor(new Color(190, 130, 40));
+                }
+                if (pixelsPerBase >= 4.5) {
+                    for (int column = 0; column < display.columnCount(); column++) {
+                        SangerDisplayAlignment.Column item = display.column(column);
+                        if (item.assemblyIndex() < 0) continue;
+                        int x = display.assemblyX(item.assemblyIndex(), left, pixelsPerBase);
+                        drawBase(g, display.assembly(), item.assemblyIndex(), x, y + 18);
+                    }
+                }
+            } else {
+                g.setColor(new Color(190, 130, 40));
+                if (pixelsPerBase >= 4.5) {
+                    for (int index = 0; index < display.assemblyLength(); index++) {
+                        int x = left + (int) Math.round(index * pixelsPerBase);
+                        drawBase(g, display.assembly(), index, x, y + 18);
+                    }
+                }
+            }
+            g.setColor(new Color(210, 216, 220));
+            int lineWidth = display.assemblyMapped()
+                    ? (int) Math.round(display.columnCount() * pixelsPerBase)
+                    : (int) Math.round(display.assemblyLength() * pixelsPerBase);
+            g.drawLine(left, y + 18, left + lineWidth, y + 18);
+        }
+
+        private void drawReadBars(Graphics2D g, int left, double pixelsPerBase) {
+            for (int index = 0; index < reads.size(); index++) {
+                ReadAlignment read = reads.get(index);
+                if (read.end() <= read.start()) continue;
+                int assemblyStart = readAssemblyStarts.getOrDefault(
+                        read.name(), display.assemblyIndexForReference(read.start()));
+                if (assemblyStart >= display.assemblyLength()) continue;
+                int assemblyEnd = Math.min(display.assemblyLength(),
+                        assemblyStart + Math.max(1, read.trimEnd() - read.trimStart()));
+                int y = top + index * rowHeight;
+                int x1 = display.assemblyBoundaryX(assemblyStart, left, pixelsPerBase);
+                int x2 = display.assemblyBoundaryX(assemblyEnd, left, pixelsPerBase);
+                g.setColor(index == selected ? new Color(42, 112, 190) : new Color(150, 168, 180));
+                g.fillRoundRect(x1, y, Math.max(3, x2 - x1), 13, 5, 5);
+                g.setColor(new Color(55, 65, 72));
+                g.drawString(read.orientation() != null && read.orientation().startsWith("reverse")
+                        ? "<" : ">", Math.max(x1, x2 - 8), y + 11);
             }
         }
 
-        private void drawCoverage(Graphics2D g, int left, int width, int y, int length) {
-            int max = 1;
-            for (int value : coverage) max = Math.max(max, value);
-            g.setColor(new Color(120, 170, 190));
-            for (int index = 0; index < coverage.length; index++) {
-                int x = left + (int) Math.round(width * index / (double) Math.max(1, length));
-                int height = (int) Math.round(18.0 * coverage[index] / max);
-                g.drawLine(x, y + 18, x, y + 18 - height);
-            }
-            g.setColor(new Color(90, 100, 105));
+        private static void drawBase(Graphics2D g, String sequence, int index, int x, int y) {
+            if (index < 0 || index >= sequence.length()) return;
+            char base = sequence.charAt(index);
+            g.setColor(switch (base) {
+                case 'A' -> new Color(37, 132, 74);
+                case 'C' -> new Color(49, 98, 180);
+                case 'G' -> new Color(196, 116, 26);
+                case 'T' -> new Color(178, 48, 48);
+                default -> new Color(120, 126, 130);
+            });
+            g.drawString(String.valueOf(base), x, y);
         }
 
         private int coordinateAt(int x) {
-            int left = 8;
-            int width = Math.max(120, getWidth() - left - 16);
-            return Math.max(0, Math.min(reference.length() - 1,
-                    (int) Math.round((x - left) * (double) Math.max(1, reference.length()) / width)));
-        }
-
-        private static int[] coverage(int length, List<ReadAlignment> reads) {
-            int[] result = new int[Math.max(1, length)];
-            for (ReadAlignment read : reads) {
-                int position = read.start();
-                for (String part : read.cigar().split("(?<=\\D)|(?=\\d)")) {
-                    if (part.isEmpty()) continue;
-                    char operation = part.charAt(part.length() - 1);
-                    int count;
-                    try {
-                        count = Integer.parseInt(part.substring(0, part.length() - 1));
-                    } catch (NumberFormatException ex) {
-                        continue;
-                    }
-                    if (operation == 'M' || operation == 'D') {
-                        for (int index = 0; index < count && position < result.length; index++, position++) {
-                            result[position]++;
-                        }
-                    } else if (operation == 'I') {
-                        // insertions do not consume reference coordinates
-                    } else {
-                        position += count;
-                    }
-                }
-            }
-            return result;
+            return display.referenceAtX(x, 8, 7 * zoom);
         }
     }
 
     private static final class Ab1ReferenceCanvas extends JPanel {
-        private final int referenceLength;
-        private final int gridLength;
-        private final int assemblyOffset;
-        private final String assembly;
-        private final List<ReadAlignment> reads;
-        private int traceStart = -1;
+        private final SangerDisplayAlignment display;
+        private final Map<String, Integer> readAssemblyStarts;
         private Ab1Reader.Trace trace;
         private ReadAlignment traceRead;
         private int traceOffset;
         private double zoom = 1.0;
         private double yZoom = 1.0;
 
-        Ab1ReferenceCanvas(int referenceLength, int gridLength, int assemblyOffset,
-                           String assembly, List<ReadAlignment> reads) {
-            this.referenceLength = Math.max(1, referenceLength);
-            this.gridLength = Math.max(1, gridLength);
-            this.assemblyOffset = Math.max(0, assemblyOffset);
-            this.assembly = assembly == null ? "" : assembly;
-            this.reads = reads;
+        Ab1ReferenceCanvas(
+                SangerDisplayAlignment display,
+                Map<String, Integer> readAssemblyStarts
+        ) {
+            this.display = display;
+            this.readAssemblyStarts = readAssemblyStarts;
             setBackground(Color.WHITE);
             resize();
         }
@@ -690,7 +704,6 @@ final class SangerAssemblyViewerPanel extends JPanel {
         void setTrace(Ab1Reader.Trace trace, ReadAlignment read) {
             this.trace = trace;
             this.traceRead = read;
-            this.traceStart = locateTrace(trace, read);
             this.traceOffset = calculateTraceOffset(trace);
             repaint();
         }
@@ -723,26 +736,6 @@ final class SangerAssemblyViewerPanel extends JPanel {
             return offset > 100 ? offset : 0;
         }
 
-        private int locateTrace(Ab1Reader.Trace trace, ReadAlignment read) {
-            if (trace == null || read == null || assembly.isEmpty()) return -1;
-            int length = Math.max(1, trace.sequence().length());
-            int start = Math.max(0, Math.min(length - 1, read.trimStart()));
-            int end = Math.max(start + 1, Math.min(length, read.trimEnd()));
-            String trimmed = trace.sequence().substring(start, end);
-            String display = read.orientation().startsWith("reverse")
-                    ? reverseComplement(trimmed) : trimmed;
-            if (read.orientation().startsWith("reverse")) {
-                return Math.max(0, Math.min(assembly.length() - trimmed.length(),
-                        assemblyOffset + read.start()));
-            }
-            int probe = Math.min(40, display.length());
-            if (probe > 0) {
-                int position = assembly.indexOf(display.substring(0, probe));
-                if (position >= 0) return position;
-            }
-            return -1;
-        }
-
         void setZoom(double value) {
             zoom = Math.max(0.2, Math.min(12.0, value));
             resize();
@@ -763,7 +756,7 @@ final class SangerAssemblyViewerPanel extends JPanel {
         }
 
         private void resize() {
-            int width = Math.max(600, (int) Math.round(gridLength * 7 * zoom) + 100);
+            int width = Math.max(600, (int) Math.round(display.spanColumns() * 7 * zoom) + 100);
             int height = (int) Math.round(105 * yZoom);
             setPreferredSize(new Dimension(width, height));
             revalidate();
@@ -776,8 +769,10 @@ final class SangerAssemblyViewerPanel extends JPanel {
             try {
                 g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 int left = 8;
-                int referenceLeft = left + (int) Math.round(assemblyOffset * 7 * zoom);
-                int width = Math.max(120, (int) Math.round(referenceLength * 7 * zoom));
+                double pixelsPerBase = 7 * zoom;
+                int width = Math.max(120, (int) Math.round(
+                        Math.max(1, display.coreColumns()) * pixelsPerBase));
+                int spanWidth = (int) Math.round(display.spanColumns() * pixelsPerBase);
                 int height = Math.max(60, getHeight() - 32);
                 if (trace == null || traceRead == null) {
                     g.setColor(new Color(120, 126, 130));
@@ -793,7 +788,7 @@ final class SangerAssemblyViewerPanel extends JPanel {
                     return;
                 }
                 g.setColor(new Color(230, 233, 235));
-                g.drawLine(left, height, left + width, height);
+                g.drawLine(left, height, left + Math.max(width, spanWidth), height);
                 Color[] colors = {
                         new Color(37, 132, 74), new Color(49, 98, 180),
                         new Color(196, 116, 26), new Color(178, 48, 48)
@@ -818,6 +813,17 @@ final class SangerAssemblyViewerPanel extends JPanel {
                             (int) Math.floor((sampledValues.size() - 1) * 0.95)));
                 }
                 boolean reverse = traceRead.orientation().startsWith("reverse");
+                int assemblyStart = readAssemblyStarts.getOrDefault(
+                        traceRead.name(), display.assemblyIndexForReference(traceRead.start()));
+                int assemblyEnd = Math.min(display.assemblyLength(), assemblyStart + trimmedLength);
+                int traceSpan = Math.abs(
+                        display.assemblyBoundaryX(assemblyEnd, left, pixelsPerBase)
+                                - display.assemblyBoundaryX(assemblyStart, left, pixelsPerBase));
+                Font baseFont = new Font(Font.MONOSPACED, Font.PLAIN, 9);
+                FontMetrics metrics = getFontMetrics(baseFont);
+                int characterWidth = Math.max(1, metrics.charWidth('M'));
+                boolean drawBases = traceSpan / (double) Math.max(1, trimmedLength)
+                        >= characterWidth + 0.5;
                 int[] reverseColors = {3, 2, 1, 0};
                 for (int channel = 0; channel < trace.channels().length; channel++) {
                     int[] values = trace.channels()[channel];
@@ -831,14 +837,9 @@ final class SangerAssemblyViewerPanel extends JPanel {
                     for (int step = 0; step < trimmedLength; step++) {
                         int sourceBase = trimStart + (reverse ? trimmedLength - 1 - step : step);
                         int sample = sampleForBase(sourceBase, samples, traceLength);
-                        int reference = traceRead.start() + (int) Math.round(
-                                (traceRead.end() - traceRead.start()) * step
-                                        / (double) Math.max(1, trimmedLength - 1));
-                        if (reference < 0) continue;
-                        int x = traceStart >= 0
-                                ? left + (int) Math.round((traceStart + step) * 7 * zoom)
-                                : referenceLeft + (int) Math.round(width * reference
-                                        / (double) Math.max(1, referenceLength - 1));
+                        int assemblyIndex = assemblyStart + step;
+                        if (assemblyIndex >= display.assemblyLength()) break;
+                        int x = display.assemblyBoundaryX(assemblyIndex, left, pixelsPerBase);
                         int y = Math.max(0, height - (int) Math.round(
                                 height * values[Math.max(0, Math.min(values.length - 1, sample))]
                                         / (double) maximum));
@@ -847,24 +848,19 @@ final class SangerAssemblyViewerPanel extends JPanel {
                         previousY = y;
                     }
                 }
-                Font baseFont = new Font(Font.MONOSPACED, Font.PLAIN, 10);
                 g.setFont(baseFont);
-                FontMetrics metrics = g.getFontMetrics(baseFont);
-                for (int step = 0; step < trimmedLength; step++) {
-                    int source = trimStart + (reverse ? trimmedLength - 1 - step : step);
-                    int reference = traceRead.start() + (int) Math.round(
-                            (traceRead.end() - traceRead.start()) * step
-                                    / (double) Math.max(1, trimmedLength - 1));
-                    if (reference < 0) continue;
-                    int x = traceStart >= 0
-                            ? left + (int) Math.round((traceStart + step) * 7 * zoom)
-                            : referenceLeft + (int) Math.round(width * reference
-                                    / (double) Math.max(1, referenceLength - 1));
-                    char base = trace.sequence().charAt(source);
-                    if (reverse) base = complement(base);
-                    g.setColor(colors[Math.max(0, Math.min(3, "ACGT".indexOf(base)))]);
-                    g.drawString(String.valueOf(base), x - metrics.charWidth(base) / 2,
-                            height + 14);
+                if (drawBases) {
+                    for (int step = 0; step < trimmedLength; step++) {
+                        int source = trimStart + (reverse ? trimmedLength - 1 - step : step);
+                        int assemblyIndex = assemblyStart + step;
+                        if (assemblyIndex >= display.assemblyLength()) break;
+                        int x = display.assemblyBoundaryX(assemblyIndex, left, pixelsPerBase);
+                        char base = trace.sequence().charAt(source);
+                        if (reverse) base = complement(base);
+                        g.setColor(colors[Math.max(0, Math.min(3, "ACGT".indexOf(base)))]);
+                        g.drawString(String.valueOf(base), x - metrics.charWidth(base) / 2,
+                                height + 14);
+                    }
                 }
             } finally {
                 g.dispose();
@@ -890,31 +886,6 @@ final class SangerAssemblyViewerPanel extends JPanel {
             };
         }
 
-        private int referencePosition(int readBase) {
-            if (traceRead == null) return -1;
-            int position = traceRead.start();
-            int consumed = 0;
-            for (String part : traceRead.cigar().split("(?<=\\D)|(?=\\d)")) {
-                if (part.isEmpty()) continue;
-                char operation = part.charAt(part.length() - 1);
-                int count;
-                try {
-                    count = Integer.parseInt(part.substring(0, part.length() - 1));
-                } catch (NumberFormatException ex) {
-                    continue;
-                }
-                if (operation == 'M' || operation == 'I') {
-                    if (readBase < consumed + count) {
-                        return position + (readBase - consumed);
-                    }
-                    consumed += count;
-                    if (operation == 'M') position += count;
-                } else if (operation == 'D') {
-                    position += count;
-                }
-            }
-            return position;
-        }
     }
 
     private static final class TrackHeader extends JComponent {
