@@ -244,8 +244,8 @@ final class SangerAssemblyViewerPanel extends JPanel {
         Map<String, Integer> starts = new LinkedHashMap<>();
         for (ReadAlignment read : reads) {
             int start = locateReadInAssembly(display.assembly(), traces.get(read.name()), read);
-            if (start < 0) start = display.assemblyIndexForReference(read.start());
-            starts.put(read.name(), Math.max(0, Math.min(display.assemblyLength(), start)));
+            starts.put(read.name(), start < 0 ? -1
+                    : Math.max(0, Math.min(display.assemblyLength(), start)));
         }
         return starts;
     }
@@ -342,6 +342,8 @@ final class SangerAssemblyViewerPanel extends JPanel {
                         Integer.parseInt(end),
                         integer(fields, index, "trim_start"),
                         integer(fields, index, "trim_end"),
+                        integer(fields, index, "read_start"),
+                        integer(fields, index, "read_end"),
                         field(fields, index, "cigar"),
                         field(fields, index, "orientation"),
                         field(fields, index, "identity")
@@ -408,6 +410,8 @@ final class SangerAssemblyViewerPanel extends JPanel {
             int end,
             int trimStart,
             int trimEnd,
+            int readStart,
+            int readEnd,
             String cigar,
             String orientation,
             String identity
@@ -787,8 +791,8 @@ final class SangerAssemblyViewerPanel extends JPanel {
                             (int) Math.floor((sampledValues.size() - 1) * 0.95)));
                 }
                 boolean reverse = traceRead.orientation().startsWith("reverse");
-                int assemblyStart = readAssemblyStarts.getOrDefault(
-                        traceRead.name(), display.assemblyIndexForReference(traceRead.start()));
+                int assemblyStart = readAssemblyStarts.getOrDefault(traceRead.name(), -1);
+                boolean assembled = assemblyStart >= 0;
                 Font baseFont = new Font(Font.MONOSPACED, Font.PLAIN, 9);
                 FontMetrics metrics = getFontMetrics(baseFont);
                 int characterWidth = Math.max(1, metrics.charWidth('M'));
@@ -798,65 +802,65 @@ final class SangerAssemblyViewerPanel extends JPanel {
                 int[] sources = new int[trimmedLength];
                 int baseCount = 0;
                 for (int step = 0; step < trimmedLength; step++) {
-                    int assemblyIndex = assemblyStart + step;
-                    if (assemblyIndex >= display.assemblyLength()) break;
-                    columns[baseCount] = display.assemblyBoundaryColumn(assemblyIndex);
-                    sources[baseCount] = trimStart + (reverse ? trimmedLength - 1 - step : step);
+                    int orientedStep = reverse ? trimmedLength - 1 - step : step;
+                    int column = assembled
+                            ? display.assemblyBoundaryColumn(assemblyStart + step)
+                            : displayColumn(orientedStep, assemblyStart);
+                    if (column < 0 || column >= display.spanColumns()) {
+                        continue;
+                    }
+                    columns[baseCount] = column;
+                    sources[baseCount] = trimStart + orientedStep;
                     peaks[baseCount] = sampleForBase(sources[baseCount], samples, traceLength);
                     baseCount++;
                 }
                 int[] reverseColors = {3, 2, 1, 0};
-                int runStart = 0;
-                while (runStart < baseCount) {
-                    int runEnd = runStart;
-                    while (runEnd + 1 < baseCount
-                            && columns[runEnd + 1] == columns[runEnd] + 1) {
-                        runEnd++;
-                    }
-                    int firstSample = peaks[runStart];
-                    int lastSample = peaks[runEnd];
-                    int previousSample = runStart > 0 ? peaks[runStart - 1] : firstSample;
-                    int nextSample = runEnd + 1 < baseCount ? peaks[runEnd + 1] : lastSample;
-                    int firstSpacing = Math.max(1, Math.abs(firstSample - previousSample));
-                    int lastSpacing = Math.max(1, Math.abs(lastSample - nextSample));
-                    int sampleFrom = runStart > 0
-                            ? (previousSample + firstSample) / 2
-                            : Math.max(0, firstSample - firstSpacing);
-                    int sampleTo = runEnd + 1 < baseCount
-                            ? (lastSample + nextSample) / 2
-                            : Math.min(samples - 1, lastSample + lastSpacing);
-                    int sampleMin = Math.min(sampleFrom, sampleTo);
-                    int sampleMax = Math.max(sampleFrom, sampleTo);
-                    int sampleSpan = Math.max(1, sampleMax - sampleMin);
-                    int runStartX = left + (int) Math.round(columns[runStart] * pixelsPerBase);
-                    int runEndX = left + (int) Math.round(
-                            (columns[runEnd] + 1) * pixelsPerBase);
-                    int runSpan = Math.max(1, runEndX - runStartX);
-                    for (int channel = 0; channel < trace.channels().length; channel++) {
-                        int[] values = trace.channels()[channel];
-                        if (values.length == 0) continue;
-                        int colorIndex = reverse
-                                ? reverseColors[Math.min(channel, reverseColors.length - 1)]
-                                : Math.min(channel, colors.length - 1);
-                        g.setColor(colors[colorIndex]);
-                        int previousX = -1;
-                        int previousY = -1;
-                        for (int sample = sampleMin; sample <= sampleMax; sample++) {
-                            int offset = (int) Math.round(
-                                    (sample - sampleMin) * (double) runSpan / sampleSpan);
-                            int x = reverse ? runEndX - offset : runStartX + offset;
-                            int value = values[Math.max(0,
-                                    Math.min(values.length - 1, sample))];
+                for (int channel = 0; channel < trace.channels().length; channel++) {
+                    int[] values = trace.channels()[channel];
+                    if (values.length == 0) continue;
+                    int colorIndex = reverse
+                            ? reverseColors[Math.min(channel, reverseColors.length - 1)]
+                            : Math.min(channel, colors.length - 1);
+                    g.setColor(colors[colorIndex]);
+                    int previousX = -1;
+                    int previousY = -1;
+                    for (int index = 0; index < baseCount; index++) {
+                        int peak = Math.max(0, Math.min(values.length - 1, peaks[index]));
+                        int previous = index > 0
+                                ? Math.max(0, Math.min(values.length - 1, peaks[index - 1]))
+                                : peak - 1;
+                        int next = index + 1 < baseCount
+                                ? Math.max(0, Math.min(values.length - 1, peaks[index + 1]))
+                                : peak + 1;
+                        int from = index == 0
+                                ? peak - Math.max(1, Math.abs(next - peak)) / 2
+                                : (previous + peak) / 2;
+                        int to = index + 1 == baseCount
+                                ? peak + Math.max(1, Math.abs(peak - previous)) / 2
+                                : (peak + next) / 2;
+                        from = Math.max(0, Math.min(values.length - 1, from));
+                        to = Math.max(0, Math.min(values.length - 1, to));
+                        if (from == to) {
+                            from = Math.max(0, from - 1);
+                            to = Math.min(values.length - 1, to + 1);
+                        }
+                        int x0 = left + (int) Math.round(columns[index] * pixelsPerBase);
+                        int x1 = left + (int) Math.round((columns[index] + 1) * pixelsPerBase);
+                        int span = Math.max(1, x1 - x0);
+                        int step = from <= to ? 1 : -1;
+                        int sampleDirection = to - from;
+                        for (int sample = from; ; sample += step) {
+                            double fraction = (sample - from)
+                                    / (double) (sampleDirection == 0 ? 1 : sampleDirection);
+                            int x = x0 + (int) Math.round(fraction * span);
                             int y = Math.max(0, height - (int) Math.round(
-                                    height * value / (double) maximum));
-                            if (previousX >= 0 && (x != previousX || y != previousY)) {
-                                g.drawLine(previousX, previousY, x, y);
-                            }
+                                    height * values[sample] / (double) maximum));
+                            if (previousX >= 0) g.drawLine(previousX, previousY, x, y);
                             previousX = x;
                             previousY = y;
+                            if (sample == to) break;
                         }
                     }
-                    runStart = runEnd + 1;
                 }
                 g.setFont(baseFont);
                 if (drawBases) {
@@ -872,6 +876,63 @@ final class SangerAssemblyViewerPanel extends JPanel {
             } finally {
                 g.dispose();
             }
+        }
+
+        private int displayColumn(int readBase, int assemblyStart) {
+            int reference = referenceForReadBase(readBase);
+            if (reference >= 0) {
+                int column = display.columnForReference(reference);
+                if (column >= 0) return column;
+            }
+            int assemblyIndex = Math.max(0, assemblyStart + readBase);
+            return display.assemblyBoundaryColumn(assemblyIndex);
+        }
+
+        private int referenceForReadBase(int readBase) {
+            if (traceRead == null || traceRead.cigar() == null || traceRead.cigar().isBlank()) {
+                return traceRead == null ? -1 : traceRead.start() + readBase;
+            }
+            int alignStart = traceRead.readStart();
+            int alignEnd = traceRead.readEnd();
+            int cigarReadLength = 0;
+            for (String part : traceRead.cigar().split("(?<=\\D)|(?=\\d)")) {
+                if (part.isEmpty()) continue;
+                char operation = part.charAt(part.length() - 1);
+                if (operation == 'M' || operation == 'I' || operation == 'S') {
+                    try {
+                        cigarReadLength += Integer.parseInt(part.substring(0, part.length() - 1));
+                    } catch (NumberFormatException ignored) {
+                        // Ignore malformed CIGAR fragments.
+                    }
+                }
+            }
+            if (alignEnd <= alignStart || alignEnd > cigarReadLength) {
+                alignStart = 0;
+                alignEnd = cigarReadLength;
+            }
+            if (readBase < alignStart) return traceRead.start();
+            if (readBase >= alignEnd) return traceRead.end();
+
+            int readPosition = alignStart;
+            int reference = traceRead.start();
+            for (String part : traceRead.cigar().split("(?<=\\D)|(?=\\d)")) {
+                if (part.isEmpty()) continue;
+                char operation = part.charAt(part.length() - 1);
+                int count;
+                try {
+                    count = Integer.parseInt(part.substring(0, part.length() - 1));
+                } catch (NumberFormatException ignored) {
+                    continue;
+                }
+                if (operation == 'M' || operation == 'I' || operation == 'S') {
+                    if (readBase < readPosition + count) {
+                        return operation == 'M' ? reference + (readBase - readPosition) : reference;
+                    }
+                    readPosition += count;
+                }
+                if (operation == 'M' || operation == 'D') reference += count;
+            }
+            return reference;
         }
 
         private int sampleForBase(int baseIndex, int samples, int traceLength) {

@@ -714,7 +714,8 @@ public final class SangerAssembleTool extends AbstractOpenTool {
     private static void writeReadTable(Path path, List<ReadRecord> reads, ReferenceAnchor anchor) throws Exception {
         StringBuilder text = new StringBuilder();
         text.append("read\toriginal_length\ttrim_start\ttrim_end\ttrimmed_length"
-                + "\tmean_quality\treference_start\treference_end\tcigar"
+                + "\tmean_quality\treference_start\treference_end"
+                + "\tread_start\tread_end\tcigar"
                 + "\torientation\tidentity\n");
         for (ReadRecord read : reads) {
             Placement placement = anchor == null ? null : anchor.byName().get(read.name());
@@ -726,6 +727,10 @@ public final class SangerAssembleTool extends AbstractOpenTool {
                     .append(format(meanQuality(read.qualities()))).append('\t')
                     .append(placement == null ? "" : Integer.toString(placement.start())).append('\t')
                     .append(placement == null ? "" : Integer.toString(placement.alignment().referenceEnd()))
+                    .append('\t')
+                    .append(placement == null ? "" : Integer.toString(placement.alignment().readStart()))
+                    .append('\t')
+                    .append(placement == null ? "" : Integer.toString(placement.alignment().readEnd()))
                     .append('\t')
                     .append(placement == null ? "" : cigar(placement.alignment().operations())).append('\t')
                     .append(placement == null ? "" : (placement.reverse() ? "reverse" : "forward")).append('\t')
