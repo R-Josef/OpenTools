@@ -281,15 +281,15 @@ if (-not $native) {
     if (-not (Test-Path -LiteralPath $pacman -PathType Leaf)) {
         throw "MSYS2 pacman was not found: $pacman"
     }
-    foreach ($packageName in @("msys2-runtime", "gcc-libs")) {
-        $expectedVersion = [string]$sourceManifest.windowsBuildRuntime.packages.$packageName
-        $query = & $pacman -Q $packageName 2>$null
+    foreach ($msysPackageName in @("msys2-runtime", "gcc-libs")) {
+        $expectedVersion = [string]$sourceManifest.windowsBuildRuntime.packages.$msysPackageName
+        $query = & $pacman -Q $msysPackageName 2>$null
         if ($LASTEXITCODE -ne 0 -or -not $query) {
-            throw "Required MSYS2 package is not installed: $packageName"
+            throw "Required MSYS2 package is not installed: $msysPackageName"
         }
         $actualVersion = (($query -split "\s+")[1]).Trim()
         if ($actualVersion -ne $expectedVersion) {
-            throw "MSYS2 package $packageName is $actualVersion, but sources.json pins $expectedVersion."
+            throw "MSYS2 package $msysPackageName is $actualVersion, but sources.json pins $expectedVersion."
         }
     }
     $buildRoot = Join-Path $work "msys-build"

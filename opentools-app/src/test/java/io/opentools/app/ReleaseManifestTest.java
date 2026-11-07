@@ -93,6 +93,11 @@ final class ReleaseManifestTest {
         assertTrue(Files.isRegularFile(
                 findProjectRoot().resolve("scripts/package-sources.sh")
         ));
+        String windowsPackager = Files.readString(
+                findProjectRoot().resolve("scripts/package-windows.ps1")
+        );
+        assertFalse(windowsPackager.contains("foreach ($packageName"),
+                "MSYS2 validation must not overwrite the release archive name");
     }
 
     @Test

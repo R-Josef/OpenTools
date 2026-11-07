@@ -180,6 +180,16 @@ jobs:
         env:
           OPENTOOLS_MSYS2_ROOT: ${{ steps.msys2.outputs.msys2-location }}
         run: ./scripts/package-windows.ps1 -MemeDirectory "$env:GITHUB_WORKSPACE\target\meme-cygwin"
+      - name: Verify Windows artifact names
+        shell: pwsh
+        run: |
+          $archives = @(Get-ChildItem target/release -Filter "*.zip")
+          if ($archives.Count -ne 1 -or $archives[0].BaseName -notlike "opentools-*-windows-x64") {
+            throw "Unexpected Windows release archive name: $($archives.Name -join ', ')"
+          }
+          if (-not (Test-Path "$($archives[0].FullName).sha256.json")) {
+            throw "Windows release checksum file is missing."
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: windows-x64
