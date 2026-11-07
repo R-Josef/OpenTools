@@ -21,6 +21,8 @@ function Get-RelativePathCompat {
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $manifestPath = Join-Path $projectRoot "packaging\windows\tools.json"
 $manifest = Get-Content -Raw -LiteralPath $manifestPath | ConvertFrom-Json
+$sourceManifestPath = Join-Path $projectRoot "packaging\sources.json"
+$sourceManifest = Get-Content -Raw -LiteralPath $sourceManifestPath | ConvertFrom-Json
 if ($manifest.release -ne "windows-x64" -or $manifest.platform -ne "windows" -or $manifest.architecture -ne "x64") {
     throw "The tool manifest is not a Windows x64 release manifest."
 }
@@ -233,7 +235,14 @@ $toolArchiveRoots = @{}
 $toolSourceRoots = @{}
 $toolCachePaths = @{}
 $vcRuntime = $manifest.runtimeSupport
-$vcRedist = Get-VerifiedArtifact -Artifact $vcRuntime.archive -Label "Microsoft VC runtime"
+$systemMsvcp = Join-Path $env:SystemRoot "System32\MSVCP140.dll"
+if (-not (Test-Path -LiteralPath $systemMsvcp -PathType Leaf)) {
+    throw "Microsoft VC++ runtime is required but MSVCP140.dll is missing from the build host."
+}
+$systemMsvcpVersion = [version](Get-Item -LiteralPath $systemMsvcp).VersionInfo.FileVersion
+if ($systemMsvcpVersion -lt [version]$vcRuntime.minimumBuild) {
+    throw "MSVCP140.dll version $systemMsvcpVersion is older than required $($vcRuntime.minimumBuild)."
+}
 foreach ($tool in $manifest.tools) {
     $toolRoot = Join-Path $extractRoot $tool.id
     $archivePath = Get-VerifiedArtifact -Artifact $tool.archive -Label "$($tool.name) $($tool.version)"
@@ -267,6 +276,21 @@ if (-not $native) {
     $msysBash = Join-Path $msysRoot "usr\bin\bash.exe"
     if (-not (Test-Path -LiteralPath $msysBash -PathType Leaf)) {
         throw "HMMER, trimAl, and MCScanX need a native build. Pass -NativeBuildDirectory or set OPENTOOLS_MSYS2_ROOT to an MSYS2 installation."
+    }
+    $pacman = Join-Path $msysRoot "usr\bin\pacman.exe"
+    if (-not (Test-Path -LiteralPath $pacman -PathType Leaf)) {
+        throw "MSYS2 pacman was not found: $pacman"
+    }
+    foreach ($packageName in @("msys2-runtime", "gcc-libs")) {
+        $expectedVersion = [string]$sourceManifest.windowsBuildRuntime.packages.$packageName
+        $query = & $pacman -Q $packageName 2>$null
+        if ($LASTEXITCODE -ne 0 -or -not $query) {
+            throw "Required MSYS2 package is not installed: $packageName"
+        }
+        $actualVersion = (($query -split "\s+")[1]).Trim()
+        if ($actualVersion -ne $expectedVersion) {
+            throw "MSYS2 package $packageName is $actualVersion, but sources.json pins $expectedVersion."
+        }
     }
     $buildRoot = Join-Path $work "msys-build"
     $nativeOutput = Join-Path $buildRoot "native"
@@ -378,16 +402,33 @@ Copy-Item -LiteralPath (Join-Path $projectRoot "packaging\windows\README.txt") -
 
 $licensesRoot = Join-Path $imageRoot "licenses"
 $toolsRoot = Join-Path $imageRoot "tools"
-$sourcesRoot = Join-Path $licensesRoot "sources"
+$patchesRoot = Join-Path $licensesRoot "patches"
+$runtimeNoticesRoot = Join-Path $licensesRoot "runtime-notices"
+$legalRoot = Join-Path $licensesRoot "legal"
 $javaLicenses = Join-Path $licensesRoot "java-dependencies"
-New-Item -ItemType Directory -Force -Path $licensesRoot, $toolsRoot, $sourcesRoot, $javaLicenses | Out-Null
+New-Item -ItemType Directory -Force -Path $licensesRoot, $toolsRoot, $patchesRoot, $runtimeNoticesRoot, $legalRoot, $javaLicenses | Out-Null
 Copy-Item -LiteralPath $manifestPath -Destination (Join-Path $licensesRoot "tools-manifest.json")
-Copy-Item -LiteralPath (Join-Path $projectRoot "licenses\WRITTEN_SOURCE_OFFER.md") `
-    -Destination (Join-Path $licensesRoot "WRITTEN_SOURCE_OFFER.md")
+Copy-Item -LiteralPath (Join-Path $projectRoot "licenses\SOURCE_INFO.md") `
+    -Destination (Join-Path $licensesRoot "SOURCE_INFO.md")
+Copy-Item -LiteralPath $sourceManifestPath -Destination (Join-Path $licensesRoot "sources.json")
+Get-ChildItem -LiteralPath (Join-Path $projectRoot "licenses") -File |
+    Where-Object { $_.Extension -eq ".txt" } |
+    ForEach-Object {
+        Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $legalRoot $_.Name)
+    }
 
 $toolRows = @()
 if ($MemeDirectory) {
     $memeRoot = (Resolve-Path -LiteralPath $MemeDirectory).Path
+    $cygwinRuntime = $sourceManifest.components | Where-Object { $_.id -eq "cygwin" }
+    if (-not $cygwinRuntime) {
+        throw "The source manifest does not declare the Cygwin runtime source."
+    }
+    $cygwinDll = Join-Path $memeRoot "bin\cygwin1.dll"
+    $cygwinVersion = [string](Get-Item -LiteralPath $cygwinDll).VersionInfo.ProductVersion
+    if (-not $cygwinVersion.StartsWith([string]$cygwinRuntime.version, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "MEME uses Cygwin $cygwinVersion, but sources.json pins $($cygwinRuntime.version)."
+    }
     foreach ($required in @("bin\meme.exe", "bin\mast.exe", "bin\cygwin1.dll")) {
         if (-not (Test-Path -LiteralPath (Join-Path $memeRoot $required) -PathType Leaf)) {
             throw "The MEME directory is missing required packaged file: $required"
@@ -403,12 +444,15 @@ if ($MemeDirectory) {
         ForEach-Object {
             Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $memeLicenseDir $_.Name) -Force
         }
+    Copy-Item -LiteralPath (Join-Path $projectRoot "scripts\patches\meme-5.5.9-cygwin.patch") `
+        -Destination (Join-Path $patchesRoot "meme-5.5.9-cygwin.patch")
     $toolRows += [pscustomobject]@{
         Tool = "MEME Suite"
         Version = "5.5.9"
         License = "MEME Suite non-commercial license"
         SHA256 = "0406FB7B1DC27F6AAB3D6D3A29ECDF617BBDD946690CFA97CA2129BC210BFD12"
         Source = "https://meme-suite.org/meme/meme-software/5.5.9/meme-5.5.9.tar.gz"
+        SourceMode = "upstream source plus OpenTools patch"
     }
 }
 
@@ -416,20 +460,6 @@ foreach ($tool in $manifest.tools) {
     $destinationRoot = Join-Path $imageRoot $tool.destination
     New-Item -ItemType Directory -Force -Path $destinationRoot | Out-Null
     foreach ($pattern in $tool.copy) {
-        if ($pattern -in @("MSVCP140.dll", "bin/MSVCP140.dll")) {
-            $systemMsvcp = Join-Path $env:SystemRoot "System32\MSVCP140.dll"
-            if (-not (Test-Path -LiteralPath $systemMsvcp -PathType Leaf)) {
-                throw "BLAST+ requires MSVCP140.dll, but the Windows build runtime does not contain it."
-            }
-            $msvcpVersion = [version](Get-Item -LiteralPath $systemMsvcp).VersionInfo.FileVersion
-            if ($msvcpVersion -lt [version]$vcRuntime.minimumBuild) {
-                throw "MSVCP140.dll version $msvcpVersion is older than required $($vcRuntime.minimumBuild)."
-            }
-            $msvcpDestination = Join-Path $destinationRoot $pattern
-            New-Item -ItemType Directory -Force -Path (Split-Path -Parent $msvcpDestination) | Out-Null
-            Copy-Item -LiteralPath $systemMsvcp -Destination $msvcpDestination -Force
-            continue
-        }
         if ($pattern.StartsWith("native/")) {
             if (-not $native) {
                 throw "$($tool.name) requires a native build directory. Run build-msys-dependencies.sh or pass -NativeBuildDirectory."
@@ -480,12 +510,7 @@ foreach ($tool in $manifest.tools) {
         "buildDate=$([DateTimeOffset]::UtcNow.ToString('o'))"
     )
     if ($tool.id -in @("blast", "diamond", "iqtree")) {
-        $msvcpPath = if ($tool.id -eq "diamond") {
-            Join-Path $destinationRoot "MSVCP140.dll"
-        } else {
-            Join-Path $destinationRoot "bin\MSVCP140.dll"
-        }
-        $buildInfo += "msvcp140Version=$((Get-Item -LiteralPath $msvcpPath).VersionInfo.FileVersion)"
+        $buildInfo += "systemMsvcp140Version=$systemMsvcpVersion"
     }
     Set-Content -LiteralPath (Join-Path $licenseDir "BUILD.txt") -Encoding utf8 -Value $buildInfo
     $toolRows += [pscustomobject]@{
@@ -494,12 +519,11 @@ foreach ($tool in $manifest.tools) {
         License = $tool.license
         SHA256 = $tool.archive.sha256
         Source = $tool.sourceUrl
-    }
-
-    if (($tool.id -in @("hmmer", "mcscanx")) -or $tool.sourceArchive) {
-        $sourceArtifact = if ($tool.sourceArchive) { $tool.sourceArchive } else { $tool.archive }
-        $sourceFile = Get-VerifiedArtifact -Artifact $sourceArtifact -Label "$($tool.name) source"
-        Copy-Item -LiteralPath $sourceFile -Destination (Join-Path $sourcesRoot $sourceArtifact.file)
+        SourceMode = if ($tool.sourceAvailability -eq "same-release-source-bundle") {
+            "same-release source bundle"
+        } else {
+            "official source URL"
+        }
     }
 }
 
@@ -517,42 +541,61 @@ list for every OpenTools version.
 "@
 Set-Content -LiteralPath (Join-Path $javaLicenses "README.txt") -Encoding utf8 -Value $javaNotice
 
+$sourceBundleName = "opentools-$version-corresponding-sources.tar.gz"
 $runtimeNotes = @"
 # Windows build runtime notices
 
-HMMER and MCScanX are compiled from pinned upstream source. This build may carry
-MSYS2/MinGW runtime DLLs required by those executables. Their exact names are in
-the corresponding tools directory. MSYS2, Cygwin, GCC runtime, libstdc++, and
-mingw-w64 notices must be reviewed and preserved for redistribution. The pinned
-source archives and build commands are included here; this file records a
-remaining manual legal-review item and does not relicense those runtime files.
+HMMER, trimAl, and MCScanX are compiled from pinned upstream source and carry
+MSYS2 runtime DLLs required by those executables. The release pins
+MSYS2 runtime $($sourceManifest.windowsBuildRuntime.packages.'msys2-runtime') and
+GCC runtime libraries $($sourceManifest.windowsBuildRuntime.packages.'gcc-libs').
+
+MEME and MAST carry Cygwin runtime $($sourceManifest.windowsBuildRuntime.cygwinVersion).
+Their exact source archives are published in the same release as
+$sourceBundleName. MSYS2, Cygwin, GCC runtime, libstdc++, and mingw-w64 license
+terms remain in force and are not relicensed by OpenTools.
 "@
 Set-Content -LiteralPath (Join-Path $licensesRoot "BUILD_RUNTIME_NOTICES.md") -Encoding utf8 -Value $runtimeNotes
 
-$vcLicenseDir = Join-Path $licensesRoot "microsoft-vc-runtime"
+$vcLicenseDir = Join-Path $runtimeNoticesRoot "microsoft-vc-runtime"
 New-Item -ItemType Directory -Force -Path $vcLicenseDir | Out-Null
-Copy-Item -LiteralPath $vcRedist -Destination (Join-Path $vcLicenseDir $vcRuntime.archive.file)
 $vcNotice = @(
-    "Microsoft Visual C++ Redistributable x64",
-    "Pinned installer version: $($vcRuntime.version)",
-    "Installer SHA-256: $($vcRuntime.archive.sha256)",
-    "Official download: $($vcRuntime.archive.url)",
+    "Microsoft Visual C++ Redistributable x64 is a system prerequisite.",
+    "Pinned installer metadata version: $($vcRuntime.version)",
+    "Installer SHA-256: $($vcRuntime.installer.sha256)",
+    "Official download: $($vcRuntime.installer.url)",
     "License terms: $($vcRuntime.licenseUrl)",
     "Support article: $($vcRuntime.sourceUrl)",
-    "Used runtime file: MSVCP140.dll (system build; version is recorded in the BLAST BUILD.txt)",
+    "Used system runtime file: MSVCP140.dll",
+    "Build-host runtime version: $systemMsvcpVersion",
     "",
-    "The redistributable is an independent Microsoft component and is not relicensed by OpenTools. Release maintainers must review current Microsoft redistribution terms."
+    "OpenTools does not bundle vc_redist.x64.exe or add tool-local Microsoft",
+    "runtime DLLs. The private JDK runtime may contain Microsoft runtime",
+    "components under the JDK legal files. Users must obtain the prerequisite",
+    "runtime from Microsoft. Microsoft components are not relicensed by OpenTools."
 )
 Set-Content -LiteralPath (Join-Path $vcLicenseDir "NOTICE.txt") -Encoding utf8 -Value $vcNotice
+
+$sourceInfo = @"
+# Source bundle
+
+The corresponding source bundle for this release is:
+
+$sourceBundleName
+
+It is published as a separate asset in the same release. See `SOURCE_INFO.md`
+for source locations and redistribution guidance.
+"@
+Set-Content -LiteralPath (Join-Path $licensesRoot "SOURCE_BUNDLE.txt") -Encoding utf8 -Value $sourceInfo
 
 $thirdPartyMarkdown = @(
     "# Bundled third-party tools",
     "",
-    "| Tool | Version | License | Source | SHA-256 |",
-    "| --- | --- | --- | --- | --- |"
+    "| Tool | Version | License | Source availability | Source | SHA-256 |",
+    "| --- | --- | --- | --- | --- | --- |"
 )
 foreach ($row in $toolRows) {
-    $thirdPartyMarkdown += "| $($row.Tool) | $($row.Version) | $($row.License) | $($row.Source) | ``$($row.SHA256)`` |"
+    $thirdPartyMarkdown += "| $($row.Tool) | $($row.Version) | $($row.License) | $($row.SourceMode) | $($row.Source) | ``$($row.SHA256)`` |"
 }
 $thirdPartyMarkdown += ""
 $thirdPartyMarkdown += "OpenTools remains GPL-3.0-or-later. Third-party programs retain their own licenses."
@@ -577,6 +620,10 @@ try {
         "OpenTools/docs/en_US/README.md",
         "OpenTools/docs/zh_CN/README.md",
         "OpenTools/licenses/tools-manifest.json",
+        "OpenTools/licenses/SOURCE_INFO.md",
+        "OpenTools/licenses/SOURCE_BUNDLE.txt",
+        "OpenTools/licenses/sources.json",
+        "OpenTools/licenses/legal/LGPL-3.0.txt",
         "OpenTools/tools/blast/bin/blastn.exe",
         "OpenTools/tools/diamond/diamond.exe",
         "OpenTools/tools/hmmer/bin/hmmscan.exe",

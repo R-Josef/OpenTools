@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.13.6-SNAPSHOT
+
+### Changed
+
+- Release downloads now include one shared corresponding-source archive for the
+  OpenTools revision, GPL tools, and exact Windows build runtimes.
+- Portable packages no longer duplicate large third-party source archives or
+  bundle the Microsoft Visual C++ Redistributable installer.
+- The Windows portable package now requires the Microsoft Visual C++ 2015-2022
+  x64 Redistributable as a system prerequisite.
+
 ## 0.13.5-SNAPSHOT
 
 ### Added

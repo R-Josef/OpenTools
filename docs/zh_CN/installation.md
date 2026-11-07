@@ -82,12 +82,14 @@ target/release/opentools-<version>-windows-x64.zip
 target/release/opentools-<version>-linux-x64.tar.gz
 target/release/opentools-<version>-macos-x64.zip
 target/release/opentools-<version>-macos-arm64.zip
+target/release/opentools-<version>-corresponding-sources.tar.gz
 ```
 
 Windows 便携包需要 JDK 21 的 `jpackage`。维护者可先运行
 `scripts/package-windows.ps1`；下载和第三方构建只在构建阶段发生。
 默认缓存目录是 `.release-cache/windows`，可用 `-CacheDirectory` 指定其他位置。
 带标签发布会在 GitHub Actions 的原生 runner 上构建四种归档。
+源码任务还会生成一个供所有平台共用的对应源码包。
 
 ### 第三方工具源码构建
 
@@ -114,7 +116,8 @@ Windows 便携包需要 JDK 21 的 `jpackage`。维护者可先运行
 也可通过显式可执行文件路径、`OPENTOOLS_*` 或 `PATH` 指定。不要把编译产物
 提交到 Git。下载缓存位于 `.release-cache/<release>`。BLAST+、DIAMOND、
 IQ-TREE 和 MUSCLE 当前使用固定版本的上游二进制；如需源码构建，需自行编译，
-并同步修改对应 manifest 和许可证说明。
+并同步修改对应 manifest 和许可证说明。运行 `scripts/package-sources.sh`
+可生成发布所用的独立对应源码包。
 
 ## 升级
 

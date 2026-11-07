@@ -294,7 +294,7 @@ copy_pattern() {
     done
 }
 
-mkdir -p "$data_root/tools" "$data_root/licenses/tools" "$data_root/licenses/sources"
+mkdir -p "$data_root/tools" "$data_root/licenses/tools"
 while IFS= read -r tool_json; do
     id="$(jq -r '.id' <<<"$tool_json")"
     destination="$(jq -r '.destination' <<<"$tool_json")"
@@ -344,10 +344,6 @@ while IFS= read -r tool_json; do
         printf 'buildHost=%s %s\n' "$platform" "$architecture"
         printf 'buildDate=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     } > "$license_dir/NOTICE.txt"
-    if [[ "$(jq -r '.sourceBuilt // false' <<<"$tool_json")" == "true" ]]; then
-        file="$(jq -r '.archive.file' <<<"$tool_json")"
-        cp "$cache_dir/$file" "$data_root/licenses/sources/$file"
-    fi
 done < <(jq -c '.tools[]' "$manifest")
 
 cp -R "$project_root/lang" "$data_root/lang"
@@ -372,13 +368,16 @@ if [[ "$platform" == "linux" ]]; then
     cp "$platform_readme" "$image_root/README.txt"
 fi
 cp "$manifest" "$data_root/licenses/tools-manifest.json"
-cp "$project_root/licenses/WRITTEN_SOURCE_OFFER.md" "$data_root/licenses/"
+cp "$project_root/licenses/SOURCE_INFO.md" "$data_root/licenses/"
+cp "$project_root/packaging/sources.json" "$data_root/licenses/sources.json"
+mkdir -p "$data_root/licenses/legal"
+cp "$project_root"/licenses/*.txt "$data_root/licenses/legal/"
 
 jq -r '
   "# Bundled third-party tools", "",
-  "| Tool | Version | License | Source | SHA-256 |",
-  "| --- | --- | --- | --- | --- |",
-  (.tools[] | "| \(.name) | \(.version) | \(.license) | \(.sourceUrl) | `\(.archive.sha256 // ("md5:" + .archive.md5))` |"),
+  "| Tool | Version | License | Source availability | Source | SHA-256 |",
+  "| --- | --- | --- | --- | --- | --- |",
+  (.tools[] | "| \(.name) | \(.version) | \(.license) | \(if .sourceBuilt then "same-release source bundle" else "official source URL" end) | \(.sourceUrl) | `\(.archive.sha256 // ("md5:" + .archive.md5))` |"),
   "", "OpenTools remains GPL-3.0-or-later. Third-party programs retain their own licenses."
 ' "$manifest" > "$data_root/THIRD_PARTY_TOOLS.md"
 

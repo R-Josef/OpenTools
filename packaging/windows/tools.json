@@ -8,19 +8,16 @@
     "name": "Microsoft Visual C++ Redistributable x64",
     "version": "14.44.35211.0",
     "minimumBuild": "14.40",
-    "archive": {
+    "deployment": "system-prerequisite",
+    "installer": {
       "file": "vc_redist.x64.exe",
       "url": "https://aka.ms/vs/17/release/vc_redist.x64.exe",
-      "sha256": "CC0FF0EB1DC3F5188AE6300FAEF32BF5BEEBA4BDD6E8E445A9184072096B713B",
-      "type": "binary",
-      "root": ""
+      "sha256": "CC0FF0EB1DC3F5188AE6300FAEF32BF5BEEBA4BDD6E8E445A9184072096B713B"
     },
     "license": "Microsoft Visual Studio Redistributable license terms",
     "licenseUrl": "https://visualstudio.microsoft.com/license-terms/mlt984625/",
     "sourceUrl": "https://learn.microsoft.com/cpp/windows/latest-supported-vc-redist",
-    "usedFiles": [
-      "System32/MSVCP140.dll"
-    ]
+    "usedFiles": ["System32/MSVCP140.dll"]
   },
   "tools": [
     {
@@ -42,14 +39,12 @@
         "bin/tblastn.exe",
         "bin/tblastx.exe",
         "bin/makeblastdb.exe",
-        "bin/MSVCP140.dll",
         "bin/*.dll"
       ],
       "requiredFiles": [
         "bin/blastn.exe",
         "bin/blastp.exe",
-        "bin/makeblastdb.exe",
-        "bin/MSVCP140.dll"
+        "bin/makeblastdb.exe"
       ],
       "license": "NCBI Public Domain Notice",
       "licenseUrl": "https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.17.0/",
@@ -64,7 +59,8 @@
           "destination": "README"
         }
       ],
-      "build": "official-win64-binary"
+      "build": "official-win64-binary",
+      "sourceAvailability": "official-url"
     },
     {
       "id": "diamond",
@@ -79,12 +75,10 @@
       },
       "destination": "tools/diamond",
       "copy": [
-        "diamond.exe",
-        "MSVCP140.dll"
+        "diamond.exe"
       ],
       "requiredFiles": [
-        "diamond.exe",
-        "MSVCP140.dll"
+        "diamond.exe"
       ],
       "license": "GPL-3.0",
       "licenseUrl": "https://github.com/bbuchfink/diamond/blob/v2.2.8/LICENSE",
@@ -97,7 +91,8 @@
           "destination": "LICENSE"
         }
       ],
-      "build": "official-win64-binary"
+      "build": "official-win64-binary",
+      "sourceAvailability": "same-release-source-bundle"
     },
     {
       "id": "hmmer",
@@ -155,7 +150,8 @@
           "src/hmmscan.exe",
           "src/hmmsearch.exe"
         ]
-      }
+      },
+      "sourceAvailability": "official-url"
     },
     {
       "id": "muscle",
@@ -186,7 +182,8 @@
           "destination": "LICENSE"
         }
       ],
-      "build": "official-win64-binary"
+      "build": "official-win64-binary",
+      "sourceAvailability": "same-release-source-bundle"
     },
     {
       "id": "trimal",
@@ -242,7 +239,8 @@
           "statal.exe",
           "trimal.exe"
         ]
-      }
+      },
+      "sourceAvailability": "same-release-source-bundle"
     },
     {
       "id": "iqtree",
@@ -258,12 +256,10 @@
       "destination": "tools/iqtree",
       "copy": [
         "bin/iqtree2.exe",
-        "bin/MSVCP140.dll",
         "bin/*.dll"
       ],
       "requiredFiles": [
-        "bin/iqtree2.exe",
-        "bin/MSVCP140.dll"
+        "bin/iqtree2.exe"
       ],
       "license": "GPL-2.0",
       "licenseUrl": "https://github.com/iqtree/iqtree2/blob/v2.4.0/LICENSE",
@@ -289,7 +285,8 @@
           "licenseUrl": "https://www.intel.com/content/dam/develop/external/us/en/documents/pdf/intel-simplified-software-license.pdf"
         }
       ],
-      "build": "official-win64-binary"
+      "build": "official-win64-binary",
+      "sourceAvailability": "same-release-source-bundle"
     },
     {
       "id": "mcscanx",
@@ -344,7 +341,8 @@
           "MCScanX_h.exe",
           "duplicate_gene_classifier.exe"
         ]
-      }
+      },
+      "sourceAvailability": "official-url"
     }
   ]
 }

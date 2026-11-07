@@ -57,6 +57,32 @@ try {
     $jar.Dispose()
 }
 
+$packageArchive = [IO.Compression.ZipFile]::OpenRead($zipPath)
+try {
+    $packageEntries = @($packageArchive.Entries.FullName)
+    foreach ($entry in @(
+        "OpenTools/licenses/SOURCE_INFO.md",
+        "OpenTools/licenses/SOURCE_BUNDLE.txt",
+        "OpenTools/licenses/sources.json",
+        "OpenTools/licenses/legal/LGPL-3.0.txt"
+    )) {
+        if ($entry -notin $packageEntries) {
+            throw "Portable package is missing source/license material: $entry"
+        }
+    }
+    if ($packageEntries | Where-Object { $_ -like "OpenTools/licenses/sources/*" }) {
+        throw "Portable package must not duplicate upstream source archives."
+    }
+    if ($packageEntries | Where-Object { $_ -like "OpenTools/licenses/*vc_redist*" }) {
+        throw "Portable package must not bundle the VC++ Redistributable installer."
+    }
+    if ($packageEntries | Where-Object { $_ -like "OpenTools/tools/*MSVCP140.dll" }) {
+        throw "Portable tools must use the system VC++ runtime instead of local Microsoft DLLs."
+    }
+} finally {
+    $packageArchive.Dispose()
+}
+
 $userHome = Join-Path $destination "user-home"
 $project = Join-Path $destination "project"
 New-Item -ItemType Directory -Force -Path $userHome, $project | Out-Null

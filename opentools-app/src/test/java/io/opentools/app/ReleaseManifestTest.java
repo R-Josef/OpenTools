@@ -27,10 +27,13 @@ final class ReleaseManifestTest {
         assertEquals("x64", manifest.path("architecture").asText());
         assertTrue(manifest.path("tools").isArray());
         assertEquals(7, manifest.path("tools").size());
-        assertTrue(manifest.path("runtimeSupport").path("archive").path("url").asText()
+        JsonNode runtimeSupport = manifest.path("runtimeSupport");
+        assertEquals("system-prerequisite", runtimeSupport.path("deployment").asText());
+        assertTrue(runtimeSupport.path("installer").path("url").asText()
                 .startsWith("https://"));
-        assertTrue(manifest.path("runtimeSupport").path("archive").path("sha256").asText()
+        assertTrue(runtimeSupport.path("installer").path("sha256").asText()
                 .matches("[0-9A-F]{64}"));
+        assertTrue(runtimeSupport.path("archive").isMissingNode());
 
         Set<String> ids = new HashSet<>();
         for (JsonNode tool : manifest.path("tools")) {
@@ -44,10 +47,52 @@ final class ReleaseManifestTest {
             assertTrue(hash.matches("[0-9A-F]{64}"), "invalid SHA-256 for " + tool.path("id").asText());
             assertTrue(tool.path("licenseFiles").isArray());
             assertFalse(tool.path("licenseFiles").isEmpty());
+            for (JsonNode copiedFile : tool.path("copy")) {
+                assertFalse(copiedFile.asText().endsWith("MSVCP140.dll"),
+                        "tool-local Microsoft runtime DLL: " + tool.path("id").asText());
+            }
+            for (JsonNode requiredFile : tool.path("requiredFiles")) {
+                assertFalse(requiredFile.asText().endsWith("MSVCP140.dll"),
+                        "tool-local Microsoft runtime dependency: " + tool.path("id").asText());
+            }
         }
         assertEquals(Set.of(
                 "blast", "diamond", "hmmer", "muscle", "trimal", "iqtree", "mcscanx"
         ), ids);
+    }
+
+    @Test
+    void sourceManifestPinsSharedCorrespondingSourceArchives() throws Exception {
+        JsonNode manifest = new ObjectMapper().readTree(
+                Files.readString(findProjectRoot().resolve("packaging/sources.json"))
+        );
+
+        assertEquals(1, manifest.path("schemaVersion").asInt());
+        assertEquals("3.6.12",
+                manifest.path("windowsBuildRuntime").path("cygwinVersion").asText());
+        assertEquals("3.6.12-1",
+                manifest.path("windowsBuildRuntime").path("packages").path("msys2-runtime").asText());
+        assertEquals("16.2.0-1",
+                manifest.path("windowsBuildRuntime").path("packages").path("gcc-libs").asText());
+
+        Set<String> ids = new HashSet<>();
+        for (JsonNode component : manifest.path("components")) {
+            String id = component.path("id").asText();
+            assertTrue(ids.add(id), "duplicate source component id");
+            assertFalse(component.path("version").asText().isBlank());
+            assertFalse(component.path("license").asText().isBlank());
+            assertTrue(Set.of("required", "disclosure").contains(component.path("sourceUse").asText()));
+            assertTrue(component.path("archive").path("url").asText().startsWith("https://"));
+            assertTrue(component.path("archive").path("sha256").asText()
+                    .matches("[0-9A-F]{64}"), "invalid source SHA-256 for " + id);
+        }
+        assertEquals(Set.of(
+                "diamond", "muscle", "trimal", "iqtree", "meme",
+                "cygwin", "msys2-runtime", "msys2-gcc"
+        ), ids);
+        assertTrue(Files.isRegularFile(
+                findProjectRoot().resolve("scripts/package-sources.sh")
+        ));
     }
 
     @Test

@@ -30,6 +30,8 @@ Plugin API 2.1 将插件描述、页面、工具、参数和结果的本地化�
 - 不希望安装 Java、conda、MSYS2；
 - 需要固定版本外部工具和可复现环境。
 
+需要系统已安装 Microsoft Visual C++ 2015-2022 x64 运行库。
+
 目录：
 
 ```text
@@ -57,6 +59,11 @@ opentools-<version>-windows-x64/
 
 `OpenTools.exe` 是正式 GUI 入口，`OpenToolsCLI.exe` 是终端与 MCP 入口。
 `.bat` 文件仅用于开发调试，不是终端用户依赖。
+
+每个 Release 还提供一个共享的
+`opentools-<version>-corresponding-sources.tar.gz`，包含 OpenTools 对应源码、
+GPL 工具源码、Windows 构建使用的精确 Cygwin/MSYS2 运行库源码，以及 MEME
+源码和补丁。便携包只保留许可证和构建记录，不重复携带这些源码归档。
 
 ## Linux x64 便携包
 
@@ -103,7 +110,8 @@ Windows x64：
 ```
 
 Windows 包使用 JDK 21 `jpackage`。CI 会安装带 `make` 和 `gcc` 的 MSYS2；本地维护者
-可通过 `-NativeBuildDirectory` 复用已编译的 HMMER、trimAl 和 MCScanX。
+可通过 `-NativeBuildDirectory` 复用已编译的 HMMER、trimAl 和 MCScanX。实际
+MSYS2/Cygwin 运行库版本必须与 `packaging/sources.json` 一致，否则打包失败。
 
 Linux x64：
 
@@ -144,16 +152,21 @@ Unix 打包脚本通用参数：
 
 `Build release packages` GitHub Actions 工作流可手动启动，用于验证四种构建且不会
 发布 Release。推送版本标签后会构建并验证全部平台，再创建或更新对应 GitHub
-Release，上传所有归档和校验 JSON。
+Release，上传所有归档、共享对应源码包和校验 JSON。
 
 ## 签名与安装器
 
 当前便携归档没有安装器或自动更新。Windows 和 Linux 归档未签名；macOS 快照包使用
 临时签名且未公证。Developer ID 签名与公证需要独立的发布凭据。
 
+Windows 包不再分发 `vc_redist.x64.exe`，也不在工具目录额外复制 Microsoft 运行库
+DLL；私有 JDK 运行时可能包含受自身法律文件约束的 Microsoft 运行库组件。用户需要
+单独安装 Microsoft Visual C++ 运行库。
+
 ## 可复现信息
 
 每个第三方工具在 pinned manifest 中固定版本、官方 URL、SHA-256 或 NCBI 官方 MD5、
 目标目录、许可证
 和源码 URL。构建脚本支持本地缓存和离线复用，哈希不符立即终止。发布包附带
-`licenses/tools/`、`licenses/java-dependencies/`、来源清单和源码获取说明。
+`licenses/tools/`、`licenses/java-dependencies/`、来源清单和源码获取说明；
+`scripts/package-sources.sh` 生成同 Release 的对应源码包。

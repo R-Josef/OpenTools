@@ -68,15 +68,17 @@ packages contain no agent or model code.
 
 ## Download
 
-The latest snapshot `0.13.5-SNAPSHOT` ships four portable packages. Every archive
-has a matching `.sha256.json` checksum file in the same release.
+The latest snapshot `0.13.6-SNAPSHOT` ships four portable packages and one
+shared corresponding-source package. Every archive has a matching
+`.sha256.json` checksum file in the same release.
 
-| Platform | Package | Checksum |
+| Download | Archive | Checksum |
 | --- | --- | --- |
-| Windows x64 | [opentools-0.13.5-SNAPSHOT-windows-x64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.13.5-SNAPSHOT/opentools-0.13.5-SNAPSHOT-windows-x64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.5-SNAPSHOT/opentools-0.13.5-SNAPSHOT-windows-x64.zip.sha256.json) |
-| Linux x64 | [opentools-0.13.5-SNAPSHOT-linux-x64.tar.gz](https://github.com/R-Josef/OpenTools/releases/download/0.13.5-SNAPSHOT/opentools-0.13.5-SNAPSHOT-linux-x64.tar.gz) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.5-SNAPSHOT/opentools-0.13.5-SNAPSHOT-linux-x64.tar.gz.sha256.json) |
-| macOS x64 (Intel) | [opentools-0.13.5-SNAPSHOT-macos-x64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.13.5-SNAPSHOT/opentools-0.13.5-SNAPSHOT-macos-x64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.5-SNAPSHOT/opentools-0.13.5-SNAPSHOT-macos-x64.zip.sha256.json) |
-| macOS arm64 (Apple Silicon) | [opentools-0.13.5-SNAPSHOT-macos-arm64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.13.5-SNAPSHOT/opentools-0.13.5-SNAPSHOT-macos-arm64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.5-SNAPSHOT/opentools-0.13.5-SNAPSHOT-macos-arm64.zip.sha256.json) |
+| Windows x64 | [opentools-0.13.6-SNAPSHOT-windows-x64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.13.6-SNAPSHOT/opentools-0.13.6-SNAPSHOT-windows-x64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.6-SNAPSHOT/opentools-0.13.6-SNAPSHOT-windows-x64.zip.sha256.json) |
+| Linux x64 | [opentools-0.13.6-SNAPSHOT-linux-x64.tar.gz](https://github.com/R-Josef/OpenTools/releases/download/0.13.6-SNAPSHOT/opentools-0.13.6-SNAPSHOT-linux-x64.tar.gz) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.6-SNAPSHOT/opentools-0.13.6-SNAPSHOT-linux-x64.tar.gz.sha256.json) |
+| macOS x64 (Intel) | [opentools-0.13.6-SNAPSHOT-macos-x64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.13.6-SNAPSHOT/opentools-0.13.6-SNAPSHOT-macos-x64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.6-SNAPSHOT/opentools-0.13.6-SNAPSHOT-macos-x64.zip.sha256.json) |
+| macOS arm64 (Apple Silicon) | [opentools-0.13.6-SNAPSHOT-macos-arm64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.13.6-SNAPSHOT/opentools-0.13.6-SNAPSHOT-macos-arm64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.6-SNAPSHOT/opentools-0.13.6-SNAPSHOT-macos-arm64.zip.sha256.json) |
+| Corresponding sources | [opentools-0.13.6-SNAPSHOT-corresponding-sources.tar.gz](https://github.com/R-Josef/OpenTools/releases/download/0.13.6-SNAPSHOT/opentools-0.13.6-SNAPSHOT-corresponding-sources.tar.gz) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.6-SNAPSHOT/opentools-0.13.6-SNAPSHOT-corresponding-sources.tar.gz.sha256.json) |
 
 [Browse all releases](https://github.com/R-Josef/OpenTools/releases) |
 [Latest release](https://github.com/R-Josef/OpenTools/releases/latest)
@@ -85,6 +87,8 @@ Windows x64, Linux x64, macOS x64, and macOS arm64 are built by the platform
 matrix in `.github/workflows/release.yml`. Installers, automatic updates, and
 macOS Developer ID signing are not included yet. General JAR and
 build-from-source details live in [release packages](docs/en_US/release-packages.md).
+The Windows package requires the Microsoft Visual C++ 2015-2022 x64
+Redistributable as a system prerequisite.
 
 ## First run
 
@@ -95,6 +99,9 @@ build-from-source details live in [release packages](docs/en_US/release-packages
 4. Use `OpenToolsCLI.exe`, `bin/OpenToolsCLI`, or
    `OpenTools.app/Contents/MacOS/OpenToolsCLI` for terminals and MCP.
 5. Open **Docs** from the main navigation at any time.
+
+On Windows, install the Microsoft Visual C++ 2015-2022 x64 Redistributable
+before starting the package if it is not already present.
 
 Building from source:
 
@@ -116,7 +123,9 @@ manifests under [packaging](packaging/).
 
 Third-party executables are independent programs and are not relicensed as
 OpenTools. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and the package
-`licenses/` directory.
+`licenses/` directory. GPL and runtime sources are published in the separate
+same-release corresponding-source archive rather than duplicated in each
+portable package.
 
 ## Documentation
 
@@ -133,5 +142,7 @@ from `docs/en_US`; Simplified Chinese (`zh_CN`) reads from `docs/zh_CN`.
 ## License
 
 OpenTools is distributed under [GPL-3.0-or-later](LICENSE). Bundled third-party
-programs keep their upstream licenses. Release maintainers must review the
-license, source-offer, and runtime redistribution obligations for every update.
+programs keep their upstream licenses. Every tagged release publishes its
+corresponding source in the shared source archive described in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Release maintainers must
+review license and runtime redistribution obligations for every update.

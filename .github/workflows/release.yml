@@ -30,6 +30,27 @@ jobs:
       - name: Run test suite
         run: mvn -B test
 
+  sources:
+    needs: validate
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag }}
+      - name: Restore source archive cache
+        uses: actions/cache@v4
+        with:
+          path: .release-cache/sources
+          key: corresponding-sources-${{ hashFiles('packaging/sources.json', 'scripts/package-sources.sh') }}
+      - name: Build corresponding source archive
+        run: bash scripts/package-sources.sh --tag "${{ inputs.tag }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: corresponding-sources
+          path: target/release/opentools-*-corresponding-sources.tar.gz*
+          if-no-files-found: error
+          retention-days: 7
+
   linux-x64:
     needs: validate
     runs-on: ubuntu-22.04
@@ -168,6 +189,7 @@ jobs:
 
   publish:
     needs:
+      - sources
       - linux-x64
       - macos-x64
       - macos-arm64

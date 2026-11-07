@@ -23,7 +23,8 @@ default plugin JAR, its language resources, and `plugins/plugin-state.json`.
 ## Windows x64 portable package
 
 Use this package on Windows 10/11 x64 when you want a fixed, self-contained
-environment without Java, conda, or MSYS2 setup.
+environment without Java, conda, or MSYS2 setup. The Microsoft Visual C++
+2015-2022 x64 Redistributable is required as a system prerequisite.
 
 ```text
 opentools-<version>-windows-x64/
@@ -52,6 +53,12 @@ opentools-<version>-windows-x64/
 
 `OpenTools.exe` is the GUI entry, and `OpenToolsCLI.exe` is the terminal and MCP
 entry. Development `.bat` files are not end-user dependencies.
+
+Each release also publishes a shared
+`opentools-<version>-corresponding-sources.tar.gz`. It contains the OpenTools
+revision, GPL tool sources, exact Cygwin and MSYS2 runtime sources, and the MEME
+source and patch. Portable archives keep notices and build records but do not
+duplicate these source archives.
 
 ## Linux x64 portable package
 
@@ -99,7 +106,8 @@ Windows x64:
 
 The Windows package uses JDK 21 `jpackage`. CI installs MSYS2 with `make` and
 `gcc`; local maintainers may pass `-NativeBuildDirectory` to reuse native
-HMMER, trimAl, and MCScanX builds.
+HMMER, trimAl, and MCScanX builds. Packaging fails when the installed MSYS2 or
+Cygwin runtime does not match `packaging/sources.json`.
 
 Linux x64:
 
@@ -143,7 +151,8 @@ Common Unix packaging options:
 The `Build release packages` GitHub Actions workflow can be started manually to
 validate all four builds without publishing. Pushing a version tag builds and
 validates every platform, then creates or updates the matching GitHub Release
-with all archives and checksum JSON files.
+with all archives, the shared corresponding-source archive, and checksum JSON
+files.
 
 ## Signing and installers
 
@@ -152,10 +161,16 @@ Linux archives are unsigned; macOS snapshot packages use ad-hoc signing and are
 not notarized. Developer ID signing and notarization require separate release
 credentials.
 
+The Windows package does not redistribute `vc_redist.x64.exe` or add tool-local
+copies of Microsoft runtime DLLs. The private JDK runtime may contain Microsoft
+runtime components under its own legal files. Users install the Microsoft Visual
+C++ Redistributable separately.
+
 ## Reproducibility
 
 The pinned manifest records versions, official URLs, SHA-256 or official NCBI
 MD5 values,
 destinations, licenses, and source URLs. Build caches can be reused offline and
 checksum mismatches stop the package immediately. See `licenses/` and
-`tools-manifest.json` in the extracted package.
+`tools-manifest.json` in the extracted package. `scripts/package-sources.sh`
+generates the same-release corresponding-source archive.

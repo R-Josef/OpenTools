@@ -10,11 +10,13 @@ Changing language in Settings rebuilds the interface immediately; restarting is 
 required.
 
 This package contains a private Java runtime and independent third-party Windows
-programs under tools/. Java, conda, and MSYS2 are not required.
+programs under tools/. Java, conda, and MSYS2 are not required. The Microsoft
+Visual C++ 2015-2022 x64 Redistributable is a system prerequisite.
 
 OpenTools is GPL-3.0-or-later. Third-party programs retain their own licenses.
-See licenses/ and THIRD_PARTY_NOTICES.md. This portable ZIP is unsigned and has
-no installer or automatic updater.
+See licenses/ and THIRD_PARTY_NOTICES.md. Corresponding sources are in the
+separate same-release source archive. This portable ZIP is unsigned and has no
+installer or automatic updater.
 
 Command-line use:
   OpenToolsCLI.exe tools list --json

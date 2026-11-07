@@ -63,15 +63,16 @@ OpenTools 是一个本地优先、工具驱动的开源生物信息学工作台�
 
 ## 下载
 
-最新快照 `0.13.5-SNAPSHOT` 提供四个便携包，每个归档在同一 Release 中都带有
-对应的 `.sha256.json` 校验文件。
+最新快照 `0.13.6-SNAPSHOT` 提供四个便携包和一个共享的对应源码包。每个归档在
+同一 Release 中都带有对应的 `.sha256.json` 校验文件。
 
-| 平台 | 安装包 | 校验 |
+| 下载项 | 归档 | 校验 |
 | --- | --- | --- |
-| Windows x64 | [opentools-0.13.5-SNAPSHOT-windows-x64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.13.5-SNAPSHOT/opentools-0.13.5-SNAPSHOT-windows-x64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.5-SNAPSHOT/opentools-0.13.5-SNAPSHOT-windows-x64.zip.sha256.json) |
-| Linux x64 | [opentools-0.13.5-SNAPSHOT-linux-x64.tar.gz](https://github.com/R-Josef/OpenTools/releases/download/0.13.5-SNAPSHOT/opentools-0.13.5-SNAPSHOT-linux-x64.tar.gz) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.5-SNAPSHOT/opentools-0.13.5-SNAPSHOT-linux-x64.tar.gz.sha256.json) |
-| macOS x64（Intel） | [opentools-0.13.5-SNAPSHOT-macos-x64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.13.5-SNAPSHOT/opentools-0.13.5-SNAPSHOT-macos-x64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.5-SNAPSHOT/opentools-0.13.5-SNAPSHOT-macos-x64.zip.sha256.json) |
-| macOS arm64（Apple Silicon） | [opentools-0.13.5-SNAPSHOT-macos-arm64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.13.5-SNAPSHOT/opentools-0.13.5-SNAPSHOT-macos-arm64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.5-SNAPSHOT/opentools-0.13.5-SNAPSHOT-macos-arm64.zip.sha256.json) |
+| Windows x64 | [opentools-0.13.6-SNAPSHOT-windows-x64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.13.6-SNAPSHOT/opentools-0.13.6-SNAPSHOT-windows-x64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.6-SNAPSHOT/opentools-0.13.6-SNAPSHOT-windows-x64.zip.sha256.json) |
+| Linux x64 | [opentools-0.13.6-SNAPSHOT-linux-x64.tar.gz](https://github.com/R-Josef/OpenTools/releases/download/0.13.6-SNAPSHOT/opentools-0.13.6-SNAPSHOT-linux-x64.tar.gz) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.6-SNAPSHOT/opentools-0.13.6-SNAPSHOT-linux-x64.tar.gz.sha256.json) |
+| macOS x64（Intel） | [opentools-0.13.6-SNAPSHOT-macos-x64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.13.6-SNAPSHOT/opentools-0.13.6-SNAPSHOT-macos-x64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.6-SNAPSHOT/opentools-0.13.6-SNAPSHOT-macos-x64.zip.sha256.json) |
+| macOS arm64（Apple Silicon） | [opentools-0.13.6-SNAPSHOT-macos-arm64.zip](https://github.com/R-Josef/OpenTools/releases/download/0.13.6-SNAPSHOT/opentools-0.13.6-SNAPSHOT-macos-arm64.zip) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.6-SNAPSHOT/opentools-0.13.6-SNAPSHOT-macos-arm64.zip.sha256.json) |
+| 对应源码 | [opentools-0.13.6-SNAPSHOT-corresponding-sources.tar.gz](https://github.com/R-Josef/OpenTools/releases/download/0.13.6-SNAPSHOT/opentools-0.13.6-SNAPSHOT-corresponding-sources.tar.gz) | [sha256](https://github.com/R-Josef/OpenTools/releases/download/0.13.6-SNAPSHOT/opentools-0.13.6-SNAPSHOT-corresponding-sources.tar.gz.sha256.json) |
 
 [浏览全部 Release](https://github.com/R-Josef/OpenTools/releases) ·
 [最新 Release](https://github.com/R-Josef/OpenTools/releases/latest)
@@ -80,6 +81,7 @@ Windows x64、Linux x64、macOS x64 和 macOS arm64 由
 `.github/workflows/release.yml` 的平台矩阵构建。安装器、自动更新和 macOS
 Developer ID 签名尚未包含。通用 JAR 与源码构建说明见
 [发布包说明](docs/zh_CN/release-packages.md)。
+Windows 包需要系统已安装 Microsoft Visual C++ 2015-2022 x64 运行库。
 
 ## 安装与首次运行
 
@@ -92,6 +94,9 @@ Developer ID 签名尚未包含。通用 JAR 与源码构建说明见
 4. 终端和 MCP 分别使用 `OpenToolsCLI.exe`、`bin/OpenToolsCLI` 或
    `OpenTools.app/Contents/MacOS/OpenToolsCLI`。
 5. 首次启动会创建或打开本地项目，可从 Home 打开工具目录或 Docs。
+
+Windows 用户若尚未安装 Microsoft Visual C++ 2015-2022 x64 运行库，请在启动前先
+安装官方运行库。
 
 不要只复制单个启动器；运行时、应用和工具目录必须保持在同一发布目录。
 
@@ -131,14 +136,15 @@ Explorer 或重新登录，才能让新启动的程序继承更新后的环境�
 构建维护者从官方固定地址下载并校验 SHA-256，缓存后可离线复用。终端用户不需要
 conda。第三方许可证、源码地址和构建信息见 `licenses/`、
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 与
-[外部工具说明](docs/zh_CN/external-tools.md)。
+[外部工具说明](docs/zh_CN/external-tools.md)。GPL 与运行库源码放在同一
+Release 的独立对应源码包中，不再重复塞进各平台便携包。
 
 ## 许可证
 
 OpenTools 使用 [GNU GPL v3.0 or later](LICENSE)。第三方可执行程序作为同一 ZIP
 中的独立聚合程序分发，不改变其原有许可证，也不被重新许可为 GPL。发布包保留
-逐项许可证、版权、来源、哈希和源码获取方式。具体兼容性与再分发义务仍应由发布
-维护者在每次升级时进行人工法律复核。
+逐项许可证、版权、来源和哈希；每个带标签发布还会在同一 Release 提供共享对应
+源码包。具体兼容性与再分发义务仍应由发布维护者在每次升级时进行人工法律复核。
 
 ## 文档
 

@@ -36,7 +36,9 @@ package contains the following independent programs:
 | IQ-TREE | 2.4.0 | GPL-2.0 | <https://github.com/iqtree/iqtree2> |
 | MCScanX | 1.0.0 | BSD-2-Clause | <https://github.com/wyp1125/MCScanX> |
 | MEME Suite (MEME, MAST) | 5.5.9 | MEME Suite Academic/Non-Profit License | <https://meme-suite.org/meme/meme-software/5.5.9/meme-5.5.9.tar.gz> |
-| Cygwin runtime (`cygwin1.dll`) | build runner | LGPL-3.0-or-later | <https://cygwin.com/licensing.html> |
+| Cygwin runtime (`cygwin1.dll`) | 3.6.12 | LGPL-3.0-or-later | <https://cygwin.com/licensing.html> |
+| MSYS2 runtime (`msys-2.0.dll`) | 3.6.12-1 | GPL-3.0-or-later | <https://packages.msys2.org/packages/msys2-runtime> |
+| MSYS2 GCC runtime DLLs | 16.2.0-1 | LGPL/GPL with GCC exception | <https://packages.msys2.org/packages/gcc-libs> |
 
 MEME and MAST are source-built for Windows with Cygwin. The portable package
 contains `tools/meme/bin/meme.exe`, `tools/meme/bin/mast.exe`,
@@ -59,20 +61,29 @@ redistribution and source-availability obligations before publishing.
 The portable package includes complete upstream license/notice files under
 `licenses/tools/`, official-package notices under each tool's
 `official-package-notices/`, exact version/source/SHA-256 records in
-`licenses/tools-manifest.json`, and source-built HMMER/MCScanX source archives
-under `licenses/sources/`.
+`licenses/tools-manifest.json`, and source availability guidance in
+`licenses/SOURCE_INFO.md`.
 
 trimAl is rebuilt from the pinned official source release because the official
 Windows binary archive lacks documented runtime DLLs. The exact compiler command
-is retained in its `BUILD.txt` and the pinned source archive is included.
+is retained in its `BUILD.txt`.
+
+Large upstream source archives are published in the separate
+`opentools-<version>-corresponding-sources.tar.gz` asset in the same release.
+That archive contains the OpenTools source revision, GPL tool sources, the
+exact Cygwin and MSYS2 runtime sources used by the Windows build, and the MEME
+source plus the applied patch. Portable packages do not duplicate these source
+archives.
 
 ## Microsoft VC++ runtime
 
-NCBI BLAST+ requires a compatible Microsoft C++ runtime. The package records the
-pinned Microsoft Visual C++ Redistributable download and includes its official
-installer and notice under `licenses/microsoft-vc-runtime/`. A compatible
-`MSVCP140.dll` is placed next to BLAST+ to avoid the older DLL shipped with the
-jpackage launcher runtime.
+NCBI BLAST+, DIAMOND, and IQ-TREE require a compatible Microsoft C++ runtime.
+The Windows package treats the Microsoft Visual C++ 2015-2022 x64
+Redistributable as a system prerequisite. It does not include
+`vc_redist.x64.exe` or tool-local copies of Microsoft runtime DLLs. The private
+JDK runtime may contain Microsoft runtime components governed by the JDK legal
+files. The official download URL, minimum build, and installer hash are recorded under
+`licenses/runtime-notices/microsoft-vc-runtime/`.
 
 Microsoft components retain Microsoft license terms and are not relicensed by
 OpenTools. Current redistribution terms must be reviewed at release time.
@@ -89,6 +100,7 @@ OpenTools. Current redistribution terms must be reviewed at release time.
 - source URLs;
 - source-built tool commands and outputs.
 
-`licenses/WRITTEN_SOURCE_OFFER.md` explains how source locations are retained in
-the package. Release maintainers must perform a manual legal review whenever a
-tool, runtime, build command, or license changes.
+`licenses/SOURCE_INFO.md` explains how corresponding source is published and
+when a redistributor must provide it independently. Release maintainers must
+perform a manual legal review whenever a tool, runtime, build command, patch,
+or license changes.

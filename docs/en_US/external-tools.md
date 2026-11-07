@@ -82,6 +82,6 @@ a missing-tool diagnostic.
   platforms.
 
 Third-party programs retain their own licenses. The portable package keeps
-license notices, official source URLs, pinned SHA-256 values, and source archives
-or source-offer information. Manual legal review is required after version or
-build changes.
+license notices, official source URLs, and pinned SHA-256 values. Required
+corresponding sources are published in the separate same-release source archive.
+Manual legal review is required after version or build changes.

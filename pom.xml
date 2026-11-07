@@ -6,7 +6,7 @@
 
     <groupId>io.opentools</groupId>
     <artifactId>opentools-parent</artifactId>
-    <version>0.13.5-SNAPSHOT</version>
+    <version>0.13.6-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>OpenTools</name>

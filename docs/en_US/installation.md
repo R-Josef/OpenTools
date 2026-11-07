@@ -87,6 +87,7 @@ target/release/opentools-<version>-windows-x64.zip
 target/release/opentools-<version>-linux-x64.tar.gz
 target/release/opentools-<version>-macos-x64.zip
 target/release/opentools-<version>-macos-arm64.zip
+target/release/opentools-<version>-corresponding-sources.tar.gz
 ```
 
 The Windows portable package uses JDK 21 `jpackage`. Maintainers can run
@@ -94,6 +95,8 @@ The Windows portable package uses JDK 21 `jpackage`. Maintainers can run
 time and can be reused from the verified cache. The default cache is
 `.release-cache/windows`; pass `-CacheDirectory` to use another location.
 Tagged releases build all four archives on native GitHub Actions runners.
+The source job also creates one shared corresponding-source archive for all
+platform releases.
 
 ### Building third-party tools from source
 
@@ -123,7 +126,8 @@ discovery order finds it, or point to it with an explicit executable path,
 scripts cache downloads under `.release-cache/<release>`. BLAST+, DIAMOND,
 IQ-TREE, and MUSCLE are currently installed from pinned upstream binaries, not
 built by these source scripts; build them manually only if you also update the
-matching manifest and notices.
+matching manifest and notices. Run `scripts/package-sources.sh` to generate the
+separate corresponding-source archive used by the release.
 
 ## Updating
 

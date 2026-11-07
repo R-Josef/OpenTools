@@ -405,7 +405,7 @@ my-plugin/
     <dependency>
       <groupId>io.opentools</groupId>
       <artifactId>opentools-plugin-api</artifactId>
-      <version>0.13.5-SNAPSHOT</version>
+      <version>0.13.6-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>

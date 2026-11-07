@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "description": "Source archives published with the corresponding binary release.",
+  "windowsBuildRuntime": {
+    "cygwinVersion": "3.6.12",
+    "packages": {
+      "msys2-runtime": "3.6.12-1",
+      "gcc-libs": "16.2.0-1"
+    }
+  },
+  "components": [
+    {
+      "id": "diamond",
+      "name": "DIAMOND",
+      "version": "2.2.8",
+      "license": "GPL-3.0",
+      "sourceUse": "required",
+      "archive": {
+        "file": "diamond-2.2.8-source.zip",
+        "url": "https://github.com/bbuchfink/diamond/archive/refs/tags/v2.2.8.zip",
+        "sha256": "F8FA3221D2B195FD0FAF4590C77A79A861AAD94817AB94BC30B7600F351E5147"
+      }
+    },
+    {
+      "id": "muscle",
+      "name": "MUSCLE",
+      "version": "5.3",
+      "license": "GPL-3.0",
+      "sourceUse": "required",
+      "archive": {
+        "file": "muscle-5.3-source.zip",
+        "url": "https://github.com/rcedgar/muscle/archive/refs/tags/v5.3.zip",
+        "sha256": "C39F977E0D42D36858FE27DAACB94D49EBED7D411EB2FF3A7B16672FB32DFCF4"
+      }
+    },
+    {
+      "id": "trimal",
+      "name": "trimAl",
+      "version": "1.5.1",
+      "license": "GPL-3.0",
+      "sourceUse": "required",
+      "archive": {
+        "file": "trimal-1.5.1-source.tar.gz",
+        "url": "https://github.com/inab/trimal/archive/refs/tags/v1.5.1.tar.gz",
+        "sha256": "58751054861B152E92214FF8C01A132071230614E8E777A7C9280D03648CDE3B"
+      }
+    },
+    {
+      "id": "iqtree",
+      "name": "IQ-TREE",
+      "version": "2.4.0",
+      "license": "GPL-2.0",
+      "sourceUse": "required",
+      "archive": {
+        "file": "iqtree-2.4.0-source.zip",
+        "url": "https://github.com/iqtree/iqtree2/archive/refs/tags/v2.4.0.zip",
+        "sha256": "441D178A633C442C675EA0930FE9D886CA839AE9D77A5B2394D49A2D3DB802A3"
+      }
+    },
+    {
+      "id": "meme",
+      "name": "MEME Suite",
+      "version": "5.5.9",
+      "license": "MEME Suite Academic/Non-Profit License",
+      "sourceUse": "disclosure",
+      "archive": {
+        "file": "meme-5.5.9-source.tar.gz",
+        "url": "https://meme-suite.org/meme/meme-software/5.5.9/meme-5.5.9.tar.gz",
+        "sha256": "0406FB7B1DC27F6AAB3D6D3A29ECDF617BBDD946690CFA97CA2129BC210BFD12"
+      },
+      "repoFiles": [
+        {
+          "source": "scripts/patches/meme-5.5.9-cygwin.patch",
+          "destination": "meme-5.5.9-cygwin.patch"
+        }
+      ]
+    },
+    {
+      "id": "cygwin",
+      "name": "Cygwin runtime",
+      "version": "3.6.12",
+      "license": "LGPL-3.0-or-later with Cygwin linking exception",
+      "sourceUse": "required",
+      "archive": {
+        "file": "cygwin-3.6.12-source.tar.gz",
+        "url": "https://github.com/cygwin/cygwin/archive/refs/tags/cygwin-3.6.12.tar.gz",
+        "sha256": "2A16335C068ADD1B3A648B09D54394A2F980E782C140865BB8B56AF2F0CF4CAC"
+      }
+    },
+    {
+      "id": "msys2-runtime",
+      "name": "MSYS2 runtime",
+      "version": "3.6.12-1",
+      "license": "GPL-3.0-or-later",
+      "sourceUse": "required",
+      "archive": {
+        "file": "msys2-runtime-3.6.12-1-source.tar.zst",
+        "url": "https://mirror.msys2.org/msys/sources/msys2-runtime-3.6.12-1.src.tar.zst",
+        "sha256": "345868A2F280EA124152CB5F202A604E47BED90BFC9518D98A2C30EF2C61A751"
+      }
+    },
+    {
+      "id": "msys2-gcc",
+      "name": "MSYS2 GCC runtime libraries",
+      "version": "16.2.0-1",
+      "license": "LGPL-2.1-or-later and GPL-3.0-or-later with GCC Runtime Library Exception",
+      "sourceUse": "required",
+      "archive": {
+        "file": "gcc-16.2.0-1-source.tar.zst",
+        "url": "https://mirror.msys2.org/msys/sources/gcc-16.2.0-1.src.tar.zst",
+        "sha256": "19C927F27DA78AAD25A449A4E6E3BFE8650541CC09AC2E701A4EC4D7E61137B9"
+      }
+    }
+  ]
+}
